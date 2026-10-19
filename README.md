@@ -18,8 +18,11 @@ don't rewrite old ones).
 
 ## Viewing
 
+- **Dashboard** (browse all artifacts by pipeline stage) — http://100.81.11.110:8000/
 - **Plan** — http://100.81.11.110:8000/plan/plan.html
 - **STL viewer** (in-browser, overhang-colored) — http://100.81.11.110:8000/web/viewer.html
 
-Both are served over Tailscale by `python3 -m http.server 8000` from the repo root.
+All served over Tailscale by `python3 -m http.server 8000` from the repo root.
+Artifacts are tracked in `manifest.json` and listed by stage (surface → triangulation →
+lattice → slicer) on the dashboard.
 

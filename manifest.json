@@ -1,0 +1,31 @@
+{
+  "stages": [
+    {
+      "id": "surface",
+      "label": "Surface",
+      "description": "Parametrization of the shape (cube-sphere).",
+      "artifacts": [
+        { "path": "output/phase1/cube_sphere.png", "kind": "image", "label": "Cube-sphere (gnomonic)" },
+        { "path": "output/phase1/latlong.png", "kind": "image", "label": "Lat/long (degenerate poles)" }
+      ]
+    },
+    {
+      "id": "triangulation",
+      "label": "Triangulation",
+      "description": "Triangle mesh of the surface.",
+      "artifacts": []
+    },
+    {
+      "id": "lattice",
+      "label": "Lattice",
+      "description": "Rod + node cage (the printable object).",
+      "artifacts": []
+    },
+    {
+      "id": "slicer",
+      "label": "Slicer",
+      "description": "PrusaSlicer output & support check.",
+      "artifacts": []
+    }
+  ]
+}

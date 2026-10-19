@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Printable Surfaces — Pipeline</title>
+<style>
+  :root {
+    --bg: #0f1115; --panel: #171a21; --panel-2: #1d212b; --border: #2a2f3a;
+    --text: #e6e8ee; --muted: #9aa3b2; --accent: #6ea8fe;
+    --green: #34d399; --gray: #8b93a3;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font: 15px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  }
+  header {
+    padding: 1.6rem 2rem 1.2rem; border-bottom: 1px solid var(--border);
+    background: linear-gradient(180deg, #131722, var(--bg));
+    display: flex; align-items: baseline; justify-content: space-between; flex-wrap: wrap; gap: .5rem;
+  }
+  header h1 { margin: 0; font-size: 1.4rem; letter-spacing: -.02em; }
+  header a { color: var(--accent); text-decoration: none; font-size: .9rem; }
+  header a:hover { text-decoration: underline; }
+  main { max-width: 72rem; margin: 0 auto; padding: 1.5rem 1.5rem 4rem; }
+
+  /* pipeline strip */
+  .pipeline {
+    display: flex; align-items: stretch; gap: 0; flex-wrap: wrap;
+    background: var(--panel); border: 1px solid var(--border); border-radius: 12px;
+    padding: .9rem 1rem; margin-bottom: 1.5rem;
+  }
+  .stage-chip {
+    flex: 1 1 0; min-width: 150px; text-align: center; padding: .4rem .3rem;
+  }
+  .stage-chip .n {
+    font-size: .7rem; text-transform: uppercase; letter-spacing: .07em; color: var(--muted);
+  }
+  .stage-chip .l { font-weight: 650; font-size: 1.05rem; }
+  .stage-chip .c { font-size: .8rem; color: var(--muted); }
+  .arrow {
+    align-self: center; color: var(--muted); font-size: 1.3rem; padding: 0 .35rem;
+    user-select: none; flex: 0 0 auto;
+  }
+
+  /* stage cards */
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1rem; }
+  .card {
+    background: var(--panel); border: 1px solid var(--border); border-radius: 12px;
+    padding: 1rem 1.1rem;
+  }
+  .card h2 { margin: 0 0 .15rem; font-size: 1.05rem; }
+  .card .desc { color: var(--muted); font-size: .85rem; margin-bottom: .7rem; }
+  .card .count { color: var(--muted); font-size: .78rem; font-variant-numeric: tabular-nums; }
+
+  .artifact {
+    display: flex; align-items: center; gap: .6rem; padding: .45rem .5rem;
+    border: 1px solid var(--border); border-radius: 8px; margin-top: .45rem;
+    background: var(--panel-2); cursor: pointer; transition: border-color .12s, background .12s;
+  }
+  .artifact:hover { border-color: var(--accent); background: #232936; }
+  .artifact .thumb { flex: 0 0 46px; height: 46px; border-radius: 6px; overflow: hidden; background: #0d0f14; display:flex; align-items:center; justify-content:center; }
+  .artifact .thumb img { width: 100%; height: 100%; object-fit: cover; }
+  .artifact .thumb .ico { font-size: 1.2rem; color: var(--accent); }
+  .artifact .meta { flex: 1 1 auto; min-width: 0; }
+  .artifact .meta .label { font-weight: 600; font-size: .9rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .artifact .meta .path { font-family: ui-monospace, monospace; font-size: .72rem; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .artifact .tag { flex: 0 0 auto; font-size: .68rem; font-weight: 650; letter-spacing: .03em; padding: .1rem .45rem; border-radius: 999px; }
+  .tag.stl { background: rgba(110,168,254,.15); color: var(--accent); border: 1px solid rgba(110,168,254,.3); }
+  .tag.image { background: rgba(52,211,153,.15); color: var(--green); border: 1px solid rgba(52,211,153,.3); }
+  .tag.other { background: rgba(139,147,163,.12); color: var(--gray); border: 1px solid rgba(139,147,163,.3); }
+
+  .empty { color: var(--muted); font-size: .85rem; font-style: italic; padding: .4rem .5rem; }
+
+  /* modal */
+  #modal { position: fixed; inset: 0; display: none; z-index: 50; }
+  #modal.open { display: block; }
+  #modal .backdrop { position: absolute; inset: 0; background: rgba(0,0,0,.72); }
+  #modal .box {
+    position: absolute; inset: 3% 3% 3% 3%; background: var(--panel);
+    border: 1px solid var(--border); border-radius: 12px; overflow: hidden;
+    display: flex; flex-direction: column;
+  }
+  #modal .bar { display: flex; align-items: center; justify-content: space-between; padding: .55rem .9rem; border-bottom: 1px solid var(--border); }
+  #modal .bar .t { font-weight: 600; font-size: .95rem; }
+  #modal .bar .x { background: none; border: 1px solid var(--border); color: var(--text); border-radius: 6px; width: 30px; height: 30px; cursor: pointer; font-size: 1.1rem; line-height: 1; }
+  #modal .bar .x:hover { background: var(--panel-2); }
+  #modal .content { flex: 1 1 auto; min-height: 0; background: #0b0d12; }
+  #modal .content iframe { width: 100%; height: 100%; border: 0; display: block; }
+  #modal .content img { max-width: 100%; max-height: 100%; display: block; margin: 0 auto; object-fit: contain; }
+  #modal .content .imgwrap { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; padding: 1rem; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Printable Surfaces — Pipeline</h1>
+  <a href="/plan/plan.html" target="_blank">View the plan →</a>
+</header>
+
+<main>
+  <div class="pipeline" id="pipeline"></div>
+  <div class="grid" id="stages"></div>
+</main>
+
+<div id="modal">
+  <div class="backdrop" onclick="closeModal()"></div>
+  <div class="box">
+    <div class="bar">
+      <span class="t" id="modal-title"></span>
+      <button class="x" onclick="closeModal()">×</button>
+    </div>
+    <div class="content" id="modal-content"></div>
+  </div>
+</div>
+
+<script>
+const KIND_META = {
+  stl:    { tag: 'STL',   tagCls: 'stl',   ico: '🧊' },
+  image:  { tag: 'IMG',   tagCls: 'image', ico: '🖼' },
+  gcode:  { tag: 'GCODE', tagCls: 'other', ico: '📄' },
+  other:  { tag: 'FILE',  tagCls: 'other', ico: '📄' },
+};
+
+function openModal(kind, path, label) {
+  const modal = document.getElementById('modal');
+  document.getElementById('modal-title').textContent = label;
+  const content = document.getElementById('modal-content');
+  if (kind === 'stl') {
+    const url = 'web/viewer.html?file=' + encodeURIComponent(path);
+    content.innerHTML = '<iframe src="' + url + '" allowfullscreen></iframe>';
+  } else if (kind === 'image') {
+    content.innerHTML = '<div class="imgwrap"><img src="' + encodeURI(path) + '" alt="' + label + '"></div>';
+  } else {
+    content.innerHTML = '<div class="imgwrap"><a href="/' + encodeURI(path) + '" target="_blank">Open ' + path + '</a></div>';
+  }
+  modal.classList.add('open');
+}
+function closeModal() {
+  document.getElementById('modal').classList.remove('open');
+  document.getElementById('modal-content').innerHTML = '';
+}
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+
+function artifactEl(a) {
+  const meta = KIND_META[a.kind] || KIND_META.other;
+  const div = document.createElement('div');
+  div.className = 'artifact';
+  div.onclick = () => openModal(a.kind, a.path, a.label);
+
+  const thumb = document.createElement('div');
+  thumb.className = 'thumb';
+  if (a.kind === 'image') {
+    thumb.innerHTML = '<img src="' + encodeURI(a.path) + '" loading="lazy" alt="">';
+  } else {
+    thumb.innerHTML = '<span class="ico">' + meta.ico + '</span>';
+  }
+
+  const metaDiv = document.createElement('div');
+  metaDiv.className = 'meta';
+  metaDiv.innerHTML = '<div class="label">' + a.label + '</div><div class="path">' + a.path + '</div>';
+
+  const tag = document.createElement('span');
+  tag.className = 'tag ' + meta.tagCls;
+  tag.textContent = meta.tag;
+
+  div.append(thumb, metaDiv, tag);
+  return div;
+}
+
+function stageCard(stage) {
+  const card = document.createElement('div');
+  card.className = 'card';
+  card.id = 'stage-' + stage.id;
+  const arts = stage.artifacts || [];
+  card.innerHTML =
+    '<h2>' + stage.label + '</h2>' +
+    '<div class="desc">' + (stage.description || '') + '</div>' +
+    '<div class="count">' + arts.length + ' artifact' + (arts.length === 1 ? '' : 's') + '</div>';
+  if (arts.length === 0) {
+    const e = document.createElement('div');
+    e.className = 'empty';
+    e.textContent = 'Nothing here yet — artifacts appear as phases run.';
+    card.appendChild(e);
+  } else {
+    arts.forEach(a => card.appendChild(artifactEl(a)));
+  }
+  return card;
+}
+
+function renderPipeline(stages) {
+  const el = document.getElementById('pipeline');
+  el.innerHTML = '';
+  stages.forEach((s, i) => {
+    if (i > 0) {
+      const arr = document.createElement('span');
+      arr.className = 'arrow';
+      arr.textContent = '→';
+      el.appendChild(arr);
+    }
+    const chip = document.createElement('div');
+    chip.className = 'stage-chip';
+    chip.innerHTML =
+      '<div class="n">stage ' + (i + 1) + '</div>' +
+      '<div class="l">' + s.label + '</div>' +
+      '<div class="c">' + (s.artifacts || []).length + ' artifact' + ((s.artifacts || []).length === 1 ? '' : 's') + '</div>';
+    chip.onclick = () => document.getElementById('stage-' + s.id).scrollIntoView({ behavior: 'smooth', block: 'center' });
+    chip.style.cursor = 'pointer';
+    el.appendChild(chip);
+  });
+}
+
+function renderStages(stages) {
+  const el = document.getElementById('stages');
+  el.innerHTML = '';
+  stages.forEach(s => el.appendChild(stageCard(s)));
+}
+
+fetch('manifest.json')
+  .then(r => r.json())
+  .then(data => {
+    renderPipeline(data.stages);
+    renderStages(data.stages);
+  })
+  .catch(err => {
+    document.getElementById('stages').innerHTML =
+      '<div class="card"><div class="desc">Failed to load manifest.json: ' + err.message + '</div></div>';
+  });
+</script>
+</body>
+</html>

@@ -392,10 +392,41 @@
     </details>
   </article>
 
+  <article class="phase">
+    <div class="head">
+      <span class="num">Phase 7</span>
+      <span class="title">Pipeline dashboard (landing page)</span>
+      <span class="badge done">✓ Done</span>
+    </div>
+    <div class="deliverable">
+      <h4>Deliverable</h4>
+      <ul>
+        <li>A landing page at the server root (<code>http://100.81.11.110:8000/</code>) that lists every generated artifact, grouped by pipeline stage.</li>
+        <li>The four stages rendered as a flow: <strong>surface → triangulation → lattice → slicer</strong>.</li>
+        <li>Clicking an STL opens the 3-D viewer inline; clicking an image opens it inline — no need to know file paths.</li>
+        <li>A manifest (<code>manifest.json</code>) + <code>artifacts.register()</code> helper so future phases auto-populate the dashboard.</li>
+      </ul>
+    </div>
+    <details class="notes">
+      <summary>Implementation notes</summary>
+      <div class="body">
+        <ul>
+          <li><strong>Entry point is now the root URL</strong> (<code>http://100.81.11.110:8000/</code> → <code>index.html</code>); the bare viewer (<code>/web/viewer.html</code>) and plan (<code>/plan/plan.html</code>) still work directly.</li>
+          <li>Dashboard is driven by <code>manifest.json</code> (stages + artifacts). Phases should call
+              <code>from printable_surfaces.artifacts import register; register(stage, path, kind, label)</code>
+              after writing a file, with <code>stage ∈ {surface, triangulation, lattice, slicer}</code> and
+              <code>kind ∈ {stl, image, gcode, other}</code>. Idempotent by path.</li>
+          <li>STLs open in an <code>&lt;iframe&gt;</code> embedding <code>web/viewer.html?file=…</code>; images open in a lightbox.</li>
+          <li><strong>For later phases:</strong> emit STLs under <code>output/&lt;stage&gt;/</code> and register them; the dashboard lists them automatically.</li>
+        </ul>
+      </div>
+    </details>
+  </article>
+
 </main>
 
 <footer>
-  Living document · append, don't rewrite · last updated 2026-10-19 (phase 6 appended: web serving + STL viewer)
+  Living document · append, don't rewrite · last updated 2026-10-19 (phase 7 appended: pipeline dashboard)
 </footer>
 </body>
 </html>
