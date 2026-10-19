@@ -15,3 +15,11 @@ Pipeline idea:
 
 The work is tracked in the living planning document `plan/plan.html` (append new phases,
 don't rewrite old ones).
+
+## Viewing
+
+- **Plan** — http://100.81.11.110:8000/plan/plan.html
+- **STL viewer** (in-browser, overhang-colored) — http://100.81.11.110:8000/web/viewer.html
+
+Both are served over Tailscale by `python3 -m http.server 8000` from the repo root.
+

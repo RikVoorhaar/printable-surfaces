@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>STL Viewer — printable-surfaces</title>
+<style>
+  :root {
+    --bg: #12151b; --panel: rgba(20, 24, 32, 0.92); --border: #2a2f3a;
+    --text: #e6e8ee; --muted: #9aa3b2; --accent: #6ea8fe;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; background: var(--bg); color: var(--text);
+    font: 14px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; overflow: hidden; }
+  #c { display: block; width: 100vw; height: 100vh; }
+  #panel {
+    position: fixed; top: 12px; left: 12px; width: 300px;
+    background: var(--panel); border: 1px solid var(--border); border-radius: 10px;
+    padding: 12px 14px; backdrop-filter: blur(6px);
+  }
+  #panel .t { font-weight: 650; font-size: 15px; margin-bottom: 8px; }
+  #panel .t small { color: var(--muted); font-weight: 400; }
+  #panel input[type=text] {
+    width: 100%; padding: 7px 8px; border-radius: 6px; border: 1px solid var(--border);
+    background: #0d0f14; color: var(--text); font-family: ui-monospace, monospace; font-size: 12px;
+  }
+  #panel .row { display: flex; gap: 6px; margin: 8px 0; }
+  #panel button {
+    padding: 7px 12px; border-radius: 6px; border: 1px solid var(--border);
+    background: #1d212b; color: var(--text); cursor: pointer; font-weight: 600; white-space: nowrap;
+  }
+  #panel button:hover { background: #252b37; }
+  #panel label { display: flex; align-items: center; gap: 6px; color: var(--muted); font-size: 13px; cursor: pointer; }
+  #stats { margin-top: 8px; font-size: 12px; color: var(--muted); font-family: ui-monospace, monospace; word-break: break-all; }
+  #stats.err { color: #f87171; }
+  .hint { margin-top: 6px; font-size: 11px; color: var(--muted); opacity: .7; }
+  #legend {
+    position: fixed; bottom: 14px; left: 12px; font-size: 12px; color: var(--muted);
+    background: var(--panel); border: 1px solid var(--border); border-radius: 8px; padding: 8px 10px;
+  }
+  #legend .sw { display: inline-block; width: 11px; height: 11px; border-radius: 3px; margin-right: 5px; vertical-align: -1px; }
+</style>
+<script type="importmap">
+{
+  "imports": {
+    "three": "./vendor/three.module.js",
+    "three/addons/": "./vendor/addons/"
+  }
+}
+</script>
+</head>
+<body>
+<canvas id="c"></canvas>
+
+<div id="panel">
+  <div class="t">STL Viewer <small>· printable-surfaces</small></div>
+  <input id="path" type="text" placeholder="output/phase2/sphere.stl" spellcheck="false">
+  <div class="row">
+    <button id="load">Load</button>
+    <label><input type="checkbox" id="overhang" checked> color by overhang</label>
+  </div>
+  <div id="stats">—</div>
+  <div class="hint">Enter a root-relative path, or drag &amp; drop an .stl file.</div>
+</div>
+
+<div id="legend">
+  <span><span class="sw" style="background:#4ade80"></span>&ge;45° (safe)</span>
+  <span style="margin-left:10px"><span class="sw" style="background:#facc15"></span>0–45° (steep)</span>
+  <span style="margin-left:10px"><span class="sw" style="background:#f87171"></span>&lt;0° (overhang)</span>
+</div>
+
+<script type="module">
+import * as THREE from 'three';
+import { STLLoader } from 'three/addons/loaders/STLLoader.js';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+const canvas = document.getElementById('c');
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+renderer.setPixelRatio(window.devicePixelRatio);
+renderer.setSize(window.innerWidth, window.innerHeight);
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x12151b);
+
+const camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 10000);
+camera.position.set(60, 50, 90);
+
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+
+scene.add(new THREE.HemisphereLight(0xffffff, 0x2a2a2a, 1.3));
+const dirLight = new THREE.DirectionalLight(0xffffff, 1.6);
+dirLight.position.set(1, 2, 1);
+scene.add(dirLight);
+
+let grid = null;
+let axes = null;
+let mesh = null;
+
+const plainMat = new THREE.MeshStandardMaterial({ color: 0x9fb4d0, metalness: 0.15, roughness: 0.45, flatShading: true });
+const overhangMat = new THREE.MeshStandardMaterial({ vertexColors: true, metalness: 0.05, roughness: 0.6, flatShading: true });
+
+const loader = new STLLoader();
+const statsEl = document.getElementById('stats');
+const pathEl = document.getElementById('path');
+const overhangEl = document.getElementById('overhang');
+
+function overhangColor(nz) {
+  const c = new THREE.Color();
+  if (nz >= 0.7071) c.setHSL(0.38, 0.75, 0.5);      // green: >= 45 deg from horizontal
+  else if (nz >= 0.0) c.setHSL(0.13, 0.8, 0.5);      // yellow: 0..45 deg
+  else c.setHSL(0.0, 0.8, 0.55);                     // red: downward-facing
+  return c;
+}
+
+function colorize(geometry) {
+  const pos = geometry.attributes.position;
+  const colors = new Float32Array(pos.count * 3);
+  const a = new THREE.Vector3(), b = new THREE.Vector3(), c = new THREE.Vector3();
+  const e1 = new THREE.Vector3(), e2 = new THREE.Vector3(), n = new THREE.Vector3();
+  for (let i = 0; i < pos.count; i += 3) {
+    a.fromBufferAttribute(pos, i);
+    b.fromBufferAttribute(pos, i + 1);
+    c.fromBufferAttribute(pos, i + 2);
+    e1.subVectors(b, a); e2.subVectors(c, a);
+    n.crossVectors(e1, e2).normalize();
+    const col = overhangColor(n.z);
+    for (let k = 0; k < 3; k++) {
+      colors[(i + k) * 3] = col.r;
+      colors[(i + k) * 3 + 1] = col.g;
+      colors[(i + k) * 3 + 2] = col.b;
+    }
+  }
+  geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+}
+
+function setGeometry(geometry) {
+  geometry.computeVertexNormals();
+  colorize(geometry);
+
+  if (mesh) { scene.remove(mesh); mesh.geometry.dispose(); }
+
+  geometry.computeBoundingBox();
+  const bb = geometry.boundingBox;
+  const size = new THREE.Vector3().subVectors(bb.max, bb.min);
+  const center = new THREE.Vector3().addVectors(bb.min, bb.max).multiplyScalar(0.5);
+  geometry.translate(-center.x, -center.y, -center.z);
+
+  mesh = new THREE.Mesh(geometry, overhangEl.checked ? overhangMat : plainMat);
+  scene.add(mesh);
+
+  const maxDim = Math.max(size.x, size.y, size.z) || 1;
+  const dist = maxDim * 1.9;
+  camera.position.set(dist * 0.8, dist * 0.6, dist);
+  camera.near = maxDim / 200; camera.far = maxDim * 200; camera.updateProjectionMatrix();
+  controls.target.set(0, 0, 0);
+  controls.update();
+
+  if (grid) scene.remove(grid);
+  const gs = Math.max(maxDim * 1.6, 10);
+  grid = new THREE.GridHelper(gs, 20, 0x3a3f4a, 0x23272f);
+  grid.position.y = -size.y / 2;
+  scene.add(grid);
+
+  if (axes) scene.remove(axes);
+  axes = new THREE.AxesHelper(maxDim * 0.75);
+  scene.add(axes);
+
+  const tri = geometry.attributes.position.count / 3;
+  statsEl.className = '';
+  statsEl.textContent =
+    `tris ${tri.toLocaleString()} · ${size.x.toFixed(1)} × ${size.y.toFixed(1)} × ${size.z.toFixed(1)} mm`;
+}
+
+function setError(msg) {
+  statsEl.className = 'err';
+  statsEl.textContent = 'error: ' + msg;
+}
+
+async function loadUrl(url) {
+  const res = await fetch(url);
+  if (!res.ok) throw new Error('HTTP ' + res.status + ' for ' + url);
+  return res.arrayBuffer();
+}
+
+function toUrl(p) { return p.startsWith('/') ? p : '/' + p; }
+
+async function doLoadPath() {
+  const raw = pathEl.value.trim();
+  if (!raw) return;
+  try {
+    const buf = await loadUrl(toUrl(raw));
+    setGeometry(loader.parse(buf));
+  } catch (e) { setError(e.message); }
+}
+
+function doLoadBuffer(buf) {
+  try { setGeometry(loader.parse(buf)); } catch (e) { setError(e.message); }
+}
+
+document.getElementById('load').addEventListener('click', doLoadPath);
+pathEl.addEventListener('keydown', e => { if (e.key === 'Enter') doLoadPath(); });
+
+overhangEl.addEventListener('change', () => { if (mesh) mesh.material = overhangEl.checked ? overhangMat : plainMat; });
+
+document.addEventListener('dragover', e => e.preventDefault());
+document.addEventListener('drop', e => {
+  e.preventDefault();
+  const f = e.dataTransfer.files && e.dataTransfer.files[0];
+  if (f) f.arrayBuffer().then(doLoadBuffer).catch(err => setError(err.message));
+});
+
+// Initial load from ?file= query param.
+const params = new URLSearchParams(location.search);
+const initial = params.get('file');
+if (initial) { pathEl.value = initial; doLoadPath(); }
+
+window.addEventListener('resize', () => {
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+});
+
+(function animate() {
+  requestAnimationFrame(animate);
+  controls.update();
+  renderer.render(scene, camera);
+})();
+</script>
+</body>
+</html>

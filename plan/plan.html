@@ -154,6 +154,7 @@
       <tr><td>Dimensions</td><td>~60&nbsp;mm bounding box, ~1.2&nbsp;mm rods, ~1.8&nbsp;mm joints (all configurable).</td></tr>
       <tr><td>Verification goal</td><td><strong>Zero support generation</strong> in PrusaSlicer is the pass criterion.</td></tr>
       <tr><td>Shape roadmap</td><td><strong>Sphere only</strong> for now; further shapes appended later.</td></tr>
+      <tr><td>Visualization</td><td>Every STL must be viewable <strong>in a web browser</strong>; served over Tailscale (server at <code>100.81.11.110:8000</code>). See Phase 6.</td></tr>
     </table>
   </div>
 
@@ -362,10 +363,39 @@
     modeling, material profiles (TPU), assembly/multi-part splitting.
   </div>
 
+  <article class="phase">
+    <div class="head">
+      <span class="num">Phase 6</span>
+      <span class="title">Web serving &amp; STL viewer</span>
+      <span class="badge done">✓ Done</span>
+    </div>
+    <div class="deliverable">
+      <h4>Deliverable</h4>
+      <ul>
+        <li>A self-contained in-browser STL viewer (<code>web/viewer.html</code>) using vendored three.js — works offline.</li>
+        <li>A static server hosting the plan + viewer + all generated STLs, reachable over Tailscale.</li>
+        <li>Face coloring by overhang angle (green ≥45°, yellow 0–45°, red &lt;0°) as a live check on the printability criterion.</li>
+      </ul>
+    </div>
+    <details class="notes">
+      <summary>Implementation notes</summary>
+      <div class="body">
+        <ul>
+          <li><strong>URLs (Tailscale):</strong> plan → <code>http://100.81.11.110:8000/plan/plan.html</code>;
+              viewer → <code>http://100.81.11.110:8000/web/viewer.html</code>.</li>
+          <li>The viewer loads any STL by root-relative path (e.g. <code>output/phase2/sphere.stl</code>) or via drag-and-drop; it centers, auto-fits, and reports triangle count + bounding-box size in mm.</li>
+          <li>Server: <code>python3 -m http.server 8000 --bind 0.0.0.0</code> from the repo root, so <code>output/</code> STLs are served directly. three.js <code>0.160.0</code> is vendored under <code>web/vendor/</code> (no CDN/internet needed on the viewing machine).</li>
+          <li><strong>Done out of sequence</strong> — needed before Phase 2 so its STL can be inspected in-browser as it is produced.</li>
+          <li><strong>For later phases:</strong> emit STLs under <code>output/&lt;phase&gt;/</code>; they become viewable immediately at <code>/output/&lt;phase&gt;/&lt;name&gt;.stl</code>.</li>
+        </ul>
+      </div>
+    </details>
+  </article>
+
 </main>
 
 <footer>
-  Living document · append, don't rewrite · last updated 2026-10-19 (reframe + phases 1–5 appended)
+  Living document · append, don't rewrite · last updated 2026-10-19 (phase 6 appended: web serving + STL viewer)
 </footer>
 </body>
 </html>
