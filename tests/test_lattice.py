@@ -2,7 +2,13 @@
 
 import numpy as np
 
-from printable_surfaces.lattice import build_frame_mesh, edges_from_faces, merge_vertices
+from printable_surfaces.lattice import (
+    build_frame_mesh,
+    clip_segment_to_sphere,
+    diamond_lattice,
+    edges_from_faces,
+    merge_vertices,
+)
 
 
 def test_merge_vertices_dedupes_and_remaps():
@@ -29,3 +35,29 @@ def test_build_frame_mesh_is_finite_and_nonempty():
     mesh = build_frame_mesh(nodes, edges, rod_radius=1.0, joint_radius=1.5)
     assert len(mesh.faces) > 0
     assert np.isfinite(mesh.vertices).all()
+
+
+def test_clip_segment_inside_returns_full_segment():
+    c = np.array([0.0, 0.0, 0.0])
+    q0, q1 = clip_segment_to_sphere(np.array([-5.0, 0.0, 0.0]), np.array([5.0, 0.0, 0.0]), c, 10.0)
+    assert np.allclose(q0, [-5.0, 0.0, 0.0])
+    assert np.allclose(q1, [5.0, 0.0, 0.0])
+
+
+def test_clip_segment_crossing_sphere():
+    c = np.array([0.0, 0.0, 0.0])
+    q0, q1 = clip_segment_to_sphere(np.array([-20.0, 0.0, 0.0]), np.array([20.0, 0.0, 0.0]), c, 10.0)
+    assert np.allclose(q0, [-10.0, 0.0, 0.0])
+    assert np.allclose(q1, [10.0, 0.0, 0.0])
+
+
+def test_clip_segment_fully_outside_is_none():
+    c = np.array([0.0, 0.0, 0.0])
+    assert clip_segment_to_sphere(np.array([20.0, 0.0, 0.0]), np.array([30.0, 0.0, 0.0]), c, 10.0) is None
+
+
+def test_diamond_lattice_nodes_within_sphere():
+    nodes, edges = diamond_lattice(radius=30.0, a=20.0)
+    assert len(nodes) > 0 and len(edges) > 0
+    assert (np.linalg.norm(nodes, axis=1) <= 30.0 + 1e-6).all()
+    assert edges.max() < len(nodes)

@@ -31,21 +31,6 @@
           "path": "output/triangulation/sphere_wireframe_n06.stl",
           "kind": "stl",
           "label": "Triangulation \u00b7 21% (152 nodes)"
-        },
-        {
-          "path": "output/triangulation/sphere_wireframe_n07.stl",
-          "kind": "stl",
-          "label": "Triangulation \u00b7 30% (218 nodes)"
-        },
-        {
-          "path": "output/triangulation/sphere_wireframe_n08.stl",
-          "kind": "stl",
-          "label": "Triangulation \u00b7 40% (296 nodes)"
-        },
-        {
-          "path": "output/triangulation/sphere_wireframe_n09.stl",
-          "kind": "stl",
-          "label": "Triangulation \u00b7 53% (386 nodes)"
         }
       ]
     },
@@ -65,19 +50,24 @@
           "label": "Surface frame \u00b7 21% (450 rods)"
         },
         {
-          "path": "output/lattice/sphere_surface_frame_n07.stl",
+          "path": "output/lattice/sphere_interior_diamond_13pct.stl",
           "kind": "stl",
-          "label": "Surface frame \u00b7 30% (648 rods)"
+          "label": "Interior (diamond) \u00b7 13% (380 rods)"
         },
         {
-          "path": "output/lattice/sphere_surface_frame_n08.stl",
+          "path": "output/lattice/sphere_full_cage_13pct.stl",
           "kind": "stl",
-          "label": "Surface frame \u00b7 40% (882 rods)"
+          "label": "Full cage \u00b7 13% (288 surf + 380 int rods)"
         },
         {
-          "path": "output/lattice/sphere_surface_frame_n09.stl",
+          "path": "output/lattice/sphere_interior_diamond_21pct.stl",
           "kind": "stl",
-          "label": "Surface frame \u00b7 53% (1152 rods)"
+          "label": "Interior (diamond) \u00b7 21% (672 rods)"
+        },
+        {
+          "path": "output/lattice/sphere_full_cage_21pct.stl",
+          "kind": "stl",
+          "label": "Full cage \u00b7 21% (450 surf + 672 int rods)"
         }
       ]
     },
@@ -85,7 +75,28 @@
       "id": "slicer",
       "label": "Slicer",
       "description": "PrusaSlicer output & support check.",
-      "artifacts": []
+      "artifacts": [
+        {
+          "path": "output/slicer/sphere_full_cage_13pct.gcode",
+          "kind": "gcode",
+          "label": "Full cage 13% \u00b7 sliced OK \u00b7 warns: overhang, low bed adhesion, thin part, loose extrusions"
+        },
+        {
+          "path": "output/slicer/sphere_full_cage_13pct.txt",
+          "kind": "other",
+          "label": "Full cage 13% \u00b7 report"
+        },
+        {
+          "path": "output/slicer/sphere_full_cage_21pct.gcode",
+          "kind": "gcode",
+          "label": "Full cage 21% \u00b7 sliced OK \u00b7 warns: overhang, low bed adhesion, thin part, loose extrusions"
+        },
+        {
+          "path": "output/slicer/sphere_full_cage_21pct.txt",
+          "kind": "other",
+          "label": "Full cage 21% \u00b7 report"
+        }
+      ]
     }
   ]
 }

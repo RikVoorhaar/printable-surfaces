@@ -158,6 +158,17 @@
     </table>
   </div>
 
+  <h2>Decisions — follow-up (density, scale, order)</h2>
+  <div class="decisions">
+    <table>
+      <tr><th>Topic</th><th>Decision</th></tr>
+      <tr><td>Surface density</td><td><strong>13% and 21%</strong> selected (n=5, n=6); the other densities dropped.</td></tr>
+      <tr><td>Object scale</td><td>Bounding box <strong>60 → 100&nbsp;mm</strong>; rod diameter kept at <strong>1.2&nbsp;mm</strong> (going thinner sacrifices strength).</td></tr>
+      <tr><td>Phase order</td><td><strong>Interior lattice before slicing</strong> (Phase 3 = lattice, Phase 4 = slicer).</td></tr>
+      <tr><td>Interior lattice</td><td><strong>Diamond</strong> (degree-4) clipped to the sphere, combined with the surface frame into a full cage.</td></tr>
+    </table>
+  </div>
+
   <h2>Phases</h2>
   <div class="legend">
     <span>Status:</span>
@@ -196,8 +207,7 @@
               <code>numpy-stl</code>'s top-level module is <code>stl</code> and has no
               <code>__version__</code>; import by name, don't rely on a version attr.</li>
           <li><strong>For later phases:</strong> PrusaSlicer CLI is <em>external</em> (not pip-installable)
-              and is <strong>not currently installed</strong>. Phase 3 must install/verify it
-              (<code>prusa-slicer --version</code>) and record its path.</li>
+              and was <strong>not installed</strong> at setup. It is now handled in Phase 4 (AppImage + bundled libs).</li>
           <li>Shell gotcha: a stale <code>VIRTUAL_ENV</code> (pointing at an unrelated project) was present;
               <code>uv run</code> ignores it, but unset it if tooling behaves oddly.</li>
           <li>STL emission can go through either <code>trimesh</code> or <code>numpy-stl</code>;
@@ -283,25 +293,25 @@
   <article class="phase">
     <div class="head">
       <span class="num">Phase 3</span>
-      <span class="title">PrusaSlicer CLI setup + first slice</span>
-      <span class="badge todo">Not started</span>
+      <span class="title">Interior lattice (diamond)</span>
+      <span class="badge done">✓ Done</span>
     </div>
     <div class="deliverable">
       <h4>Deliverable</h4>
       <ul>
-        <li>Install/verify PrusaSlicer CLI and record its path (<code>prusa-slicer --version</code>).</li>
-        <li>A repeatable <code>slice</code> command that slices the Phase 2 STL with a zero-support config.</li>
-        <li>A pass/fail report: does PrusaSlicer generate any supports?</li>
+        <li>A <strong>diamond-cubic lattice</strong> (degree-4) filling the sphere's interior, clipped to the surface.</li>
+        <li>The <strong>full cage</strong> = surface frame + interior lattice, at the two selected densities (13%, 21%).</li>
+        <li>STLs registered on the dashboard under <em>lattice</em>.</li>
       </ul>
     </div>
     <details class="notes">
       <summary>Implementation notes</summary>
       <div class="body">
         <ul>
-          <li>PrusaSlicer is not pip-installable — install via <code>apt</code>, AppImage, or flatpak, and record the exact method in this phase's notes.</li>
-          <li>Slice with supports <em>disabled</em>; the goal is to see whether the geometry itself requires supports, and capture any warnings/errors.</li>
-          <li>Expectation to watch: the sphere <em>surface frame</em> may still trigger supports near the bottom cap where rods run too horizontal — that's the signal Phase 5 must fix.</li>
-          <li>Store generated <code>.gcode</code> under a git-ignored path (see <code>.gitignore</code>).</li>
+          <li><code>lattice.diamond_lattice(radius, a)</code>: diamond cubic via two interpenetrating FCC sublattices; each atom bonds to 4 neighbours at tetrahedral angles (~109.5°). Rods crossing the sphere boundary are truncated at the surface (<code>clip_segment_to_sphere</code>).</li>
+          <li>Interior density set by unit-cell size <code>a</code>: 13% → <code>a=30&nbsp;mm</code> (380 rods), 21% → <code>a=24&nbsp;mm</code> (672 rods).</li>
+          <li>The surface frame and interior are concatenated (not unioned); interior rods terminate on the shell but aren't fused to it yet — connection + watertight union remain for Phase 5.</li>
+          <li>Only <strong>diamond</strong> done so far; honeycomb / Voronoi / graphite-on-diamond "carbon" remain future lattice types.</li>
         </ul>
       </div>
     </details>
@@ -310,25 +320,25 @@
   <article class="phase">
     <div class="head">
       <span class="num">Phase 4</span>
-      <span class="title">Lattice prototype &amp; comparison</span>
-      <span class="badge todo">Not started</span>
+      <span class="title">PrusaSlicer CLI + slicing</span>
+      <span class="badge done">✓ Done</span>
     </div>
     <div class="deliverable">
       <h4>Deliverable</h4>
       <ul>
-        <li>Generate ≥3 lattice types for the sphere: surface frame, <strong>diamond</strong> (degree-4), <strong>honeycomb</strong> (degree-3), <strong>Voronoi</strong>, and the <strong>graphite/diamond "carbon"</strong> idea.</li>
-        <li>Render all side-by-side and pick the coolest (with rationale recorded).</li>
+        <li>PrusaSlicer CLI working headless (AppImage 2.8.1 + locally-extracted WebKit libs, no root).</li>
+        <li>Both full cages sliced to G-code; slicer printability warnings captured.</li>
+        <li>G-code + reports registered on the dashboard under <em>slicer</em>.</li>
       </ul>
     </div>
     <details class="notes">
       <summary>Implementation notes</summary>
       <div class="body">
         <ul>
-          <li>Diamond lattice: tetrahedral coordination (~109.5°), degree-4 — matches the "degree-4 interior" hint.</li>
-          <li>Honeycomb: hexagonal, 3-regular — matches the "degree-3 surface" hint.</li>
-          <li>Voronoi/Delaunay: organic, random-looking, harder to control.</li>
-          <li>Interior lattices are clipped to the shape using the Phase 1 inside/outside test.</li>
-          <li>Compare on aesthetics AND structural printability (rod-length distribution, overhang angles).</li>
+          <li>PrusaSlicer 2.8.1 Linux AppImage (latest 2.9.x dropped the AppImage). Extracted with <code>--appimage-extract</code>; the binary links <code>libwebkit2gtk-4.1</code>/<code>libjavascriptcoregtk-4.1</code>/<code>libsoup-3.0</code> (+5 transitive libs), absent here, so I downloaded those 8 <code>.deb</code>s and extracted them locally — no sudo. See <code>src/printable_surfaces/slicer.py</code>.</li>
+          <li><strong>Both cages slice OK</strong>, but PrusaSlicer reports: <em>Collapsing overhang, Low bed adhesion, Thin fragile part, Loose extrusions</em> — the current rod cage still needs support/brim. That's the signal Phase 5 must address.</li>
+          <li><strong>Swap note:</strong> per request, interior lattice (Phase 3) now precedes slicing (Phase 4).</li>
+          <li>G-code is large (~24–34&nbsp;MB) and git-ignored; reports at <code>output/slicer/*.txt</code>.</li>
         </ul>
       </div>
     </details>
@@ -363,7 +373,8 @@
   <div class="pending">
     <strong>Future phases (append later, not yet scoped):</strong> Klein bottle, torus,
     apple (implicit / marching-cubes), orientation search over SO(3), bridging-length
-    modeling, material profiles (TPU), assembly/multi-part splitting.
+    modeling, material profiles (TPU), assembly/multi-part splitting, other lattice
+    types (honeycomb, Voronoi, graphite/diamond "carbon").
   </div>
 
   <article class="phase">
@@ -429,7 +440,7 @@
 </main>
 
 <footer>
-  Living document · append, don't rewrite · last updated 2026-10-19 (phase 7 appended: pipeline dashboard)
+  Living document · append, don't rewrite · last updated 2026-10-19 (phases 3–4 swapped &amp; done: interior lattice + slicing)
 </footer>
 </body>
 </html>
