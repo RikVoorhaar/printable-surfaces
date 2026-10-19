@@ -1,0 +1,13 @@
+[project]
+name = "printable-surfaces"
+version = "0.1.0"
+description = "Turn smooth surfaces into printable 3-D objects via parametrization, triangulation, and printability-aware meshing."
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "matplotlib>=3.11.2",
+    "numpy>=2.5.4",
+    "numpy-stl>=4.1.1",
+    "scipy>=1.18.1",
+    "trimesh>=5.1.1",
+]

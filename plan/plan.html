@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Printable Surfaces — Plan</title>
+<style>
+  :root {
+    --bg: #0f1115;
+    --panel: #171a21;
+    --panel-2: #1d212b;
+    --border: #2a2f3a;
+    --text: #e6e8ee;
+    --muted: #9aa3b2;
+    --accent: #6ea8fe;
+    --green: #34d399;
+    --yellow: #fbbf24;
+    --red: #f87171;
+    --gray: #8b93a3;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font: 15px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  header {
+    padding: 2.5rem 2rem 1.5rem;
+    border-bottom: 1px solid var(--border);
+    background: linear-gradient(180deg, #131722, var(--bg));
+  }
+  header h1 { margin: 0 0 .35rem; font-size: 1.7rem; letter-spacing: -.02em; }
+  header .sub { color: var(--muted); max-width: 60rem; }
+  main { max-width: 62rem; margin: 0 auto; padding: 2rem; }
+  h2 { font-size: 1.15rem; margin: 2.5rem 0 .75rem; letter-spacing: -.01em; }
+  .contract {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--accent);
+    border-radius: 10px;
+    padding: 1.1rem 1.25rem;
+  }
+  .contract h3 { margin: 0 0 .5rem; font-size: .95rem; color: var(--accent); }
+  .contract ol { margin: 0; padding-left: 1.2rem; }
+  .contract li { margin: .3rem 0; }
+  .contract code {
+    background: var(--panel-2);
+    padding: .1rem .35rem;
+    border-radius: 4px;
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: .85em;
+    color: var(--accent);
+  }
+  .legend { display: flex; gap: 1.25rem; flex-wrap: wrap; color: var(--muted); font-size: .85rem; margin-bottom: 1rem; }
+  .phase {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1.1rem 1.25rem;
+    margin-bottom: 1rem;
+  }
+  .phase .head { display: flex; align-items: baseline; gap: .75rem; flex-wrap: wrap; }
+  .phase .title { font-weight: 650; font-size: 1.02rem; }
+  .phase .num { color: var(--muted); font-variant-numeric: tabular-nums; font-family: ui-monospace, monospace; }
+  .badge {
+    font-size: .72rem; font-weight: 650; letter-spacing: .03em;
+    padding: .15rem .55rem; border-radius: 999px; white-space: nowrap;
+  }
+  .badge.done    { background: rgba(52,211,153,.15); color: var(--green); border: 1px solid rgba(52,211,153,.35); }
+  .badge.active  { background: rgba(251,191,36,.15); color: var(--yellow); border: 1px solid rgba(251,191,36,.35); }
+  .badge.blocked { background: rgba(248,113,113,.15); color: var(--red); border: 1px solid rgba(248,113,113,.35); }
+  .badge.todo    { background: rgba(139,147,163,.12); color: var(--gray); border: 1px solid rgba(139,147,163,.3); }
+  .deliverable { margin: .7rem 0 0; }
+  .deliverable h4, .notes h4 { margin: 0 0 .25rem; font-size: .78rem; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
+  .deliverable ul { margin: 0; padding-left: 1.2rem; }
+  .deliverable li { margin: .2rem 0; }
+  details.notes {
+    margin-top: .8rem;
+    background: var(--panel-2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: .55rem .7rem;
+  }
+  details.notes summary {
+    cursor: pointer; user-select: none; font-weight: 600; font-size: .88rem;
+    color: var(--accent); list-style: none;
+  }
+  details.notes summary::-webkit-details-marker { display: none; }
+  details.notes summary::before { content: "▸ "; }
+  details.notes[open] summary::before { content: "▾ "; }
+  details.notes .body { padding: .5rem .2rem .1rem; color: var(--muted); font-size: .9rem; }
+  details.notes .body code {
+    background: var(--panel); padding: .05rem .3rem; border-radius: 4px;
+    font-family: ui-monospace, monospace; font-size: .85em; color: var(--text);
+  }
+  details.notes .body ul { margin: .3rem 0; padding-left: 1.2rem; }
+  .pending {
+    border: 1px dashed var(--border); border-radius: 10px; padding: 1rem 1.25rem;
+    color: var(--muted); background: transparent;
+  }
+  footer { color: var(--muted); font-size: .8rem; text-align: center; padding: 1rem 0 3rem; }
+  a { color: var(--accent); }
+</style>
+</head>
+<body>
+<header>
+  <h1>Printable Surfaces — Plan</h1>
+  <p class="sub">
+    Turn smooth surfaces (sphere, Klein bottle, torus, fruit, …) into <em>printable</em>
+    3-D objects: parametrize → triangulate → fix &amp; emit STL → build a printability
+    graph (max overhang, full support) → verify with the PrusaSlicer CLI.
+  </p>
+</header>
+
+<main>
+
+  <h2>Living document rules</h2>
+  <div class="contract">
+    <p style="margin-top:0;color:var(--muted);">
+      This document is <strong>living</strong>. New phases are <strong>appended</strong> in
+      the future rather than editing earlier phases. Earlier phases keep their original
+      deliverable and status; corrections go into a new phase or a clearly-marked amendment.
+    </p>
+  </div>
+
+  <h2>Agent contract</h2>
+  <div class="contract">
+    <h3>Contract</h3>
+    <ol>
+      <li>Complete whichever <strong>phases</strong> are requested by the user, in order.</li>
+      <li>Commit <strong>atomically</strong> along the way — one logical change per commit, with a clear message, so every phase's artifacts are independently reviewable and revertible.</li>
+      <li>After finishing (or materially changing) a phase, <strong>update this document</strong>:
+        set the phase's status, and record <em>implementation notes that matter for later phases</em>
+        (decisions, gotchas, versions, interfaces, file paths) inside that phase's collapsible notes.</li>
+      <li>Do not silently rewrite history: append new phases instead of editing completed ones.</li>
+    </ol>
+  </div>
+
+  <h2>Phases</h2>
+  <div class="legend">
+    <span>Status:</span>
+    <span class="badge done">✓ Done</span>
+    <span class="badge active">In progress</span>
+    <span class="badge blocked">Blocked</span>
+    <span class="badge todo">Not started</span>
+  </div>
+
+  <article class="phase">
+    <div class="head">
+      <span class="num">Phase 0</span>
+      <span class="title">Environment setup</span>
+      <span class="badge done">✓ Done</span>
+    </div>
+    <div class="deliverable">
+      <h4>Deliverable</h4>
+      <ul>
+        <li>A <code>uv</code>-managed Python project (<code>pyproject.toml</code> + <code>uv.lock</code>) on Python 3.12.</li>
+        <li>Core dependencies installed &amp; importable: <code>numpy</code>, <code>scipy</code>, <code>trimesh</code>, <code>numpy-stl</code>, <code>matplotlib</code>.</li>
+        <li><code>.gitignore</code> covering <code>.venv</code>, Python caches, and generated <code>.stl/.gcode/.3mf</code> artifacts.</li>
+        <li>Updated <code>README.md</code> describing the project intent and pipeline.</li>
+        <li>This living planning document (<code>plan/plan.html</code>).</li>
+        <li>A passing import smoke-test of all dependencies.</li>
+      </ul>
+    </div>
+    <details class="notes">
+      <summary>Implementation notes</summary>
+      <div class="body">
+        <ul>
+          <li><code>uv init --name printable-surfaces --python 3.12</code>, then
+              <code>uv add numpy scipy trimesh numpy-stl matplotlib</code>.</li>
+          <li>Resolved versions: <code>numpy 2.5.4</code>, <code>scipy 1.18.1</code>,
+              <code>trimesh 5.1.1</code>, <code>numpy-stl 4.1.1</code>, <code>matplotlib 3.11.2</code>.</li>
+          <li>Smoke test: all modules import under <code>uv run python</code>. Note
+              <code>numpy-stl</code>'s top-level module is <code>stl</code> and has no
+              <code>__version__</code>; import by name, don't rely on a version attr.</li>
+          <li><strong>For later phases:</strong> PrusaSlicer CLI is <em>external</em> (not pip-installable).
+              A future phase must verify it via <code>prusa-slicer --version</code> and record its path.</li>
+          <li>Shell gotcha: a stale <code>VIRTUAL_ENV</code> (pointing at an unrelated project) was present;
+              <code>uv run</code> ignores it, but unset it if tooling behaves oddly.</li>
+          <li>STL emission can go through either <code>trimesh</code> or <code>numpy-stl</code>;
+              the triangulation/remeshing phase should pick one as canonical.</li>
+        </ul>
+      </div>
+    </details>
+  </article>
+
+  <div class="pending">
+    <strong>Phase 1+</strong> — to be defined. We are currently grilling the requirements to
+    break the pipeline (parametrize → triangulate → fix/orient → STL → printability graph →
+    PrusaSlicer verification) into concrete, deliverable phases.
+  </div>
+
+</main>
+
+<footer>
+  Living document · append, don't rewrite · last updated at environment setup (Phase 0)
+</footer>
+</body>
+</html>

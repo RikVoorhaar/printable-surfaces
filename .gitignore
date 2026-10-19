@@ -1,0 +1,17 @@
+# Python / uv
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+dist/
+build/
+
+# PrusaSlicer / generated artifacts
+*.gcode
+*.3mf
+!*.example.3mf
+
+# OS / editor
+.DS_Store
+.idea/
+.vscode/
