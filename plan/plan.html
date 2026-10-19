@@ -31,10 +31,10 @@
     background: linear-gradient(180deg, #131722, var(--bg));
   }
   header h1 { margin: 0 0 .35rem; font-size: 1.7rem; letter-spacing: -.02em; }
-  header .sub { color: var(--muted); max-width: 60rem; }
+  header .sub { color: var(--muted); max-width: 62rem; }
   main { max-width: 62rem; margin: 0 auto; padding: 2rem; }
   h2 { font-size: 1.15rem; margin: 2.5rem 0 .75rem; letter-spacing: -.01em; }
-  .contract {
+  .contract, .decisions {
     background: var(--panel);
     border: 1px solid var(--border);
     border-left: 3px solid var(--accent);
@@ -44,7 +44,7 @@
   .contract h3 { margin: 0 0 .5rem; font-size: .95rem; color: var(--accent); }
   .contract ol { margin: 0; padding-left: 1.2rem; }
   .contract li { margin: .3rem 0; }
-  .contract code {
+  code {
     background: var(--panel-2);
     padding: .1rem .35rem;
     border-radius: 4px;
@@ -52,6 +52,10 @@
     font-size: .85em;
     color: var(--accent);
   }
+  .decisions table { border-collapse: collapse; width: 100%; font-size: .9rem; }
+  .decisions th, .decisions td { text-align: left; padding: .4rem .6rem; border-bottom: 1px solid var(--border); vertical-align: top; }
+  .decisions th { color: var(--muted); font-weight: 600; font-size: .75rem; text-transform: uppercase; letter-spacing: .05em; }
+  .decisions td:first-child { color: var(--muted); white-space: nowrap; }
   .legend { display: flex; gap: 1.25rem; flex-wrap: wrap; color: var(--muted); font-size: .85rem; margin-bottom: 1rem; }
   .phase {
     background: var(--panel);
@@ -90,26 +94,25 @@
   details.notes summary::before { content: "▸ "; }
   details.notes[open] summary::before { content: "▾ "; }
   details.notes .body { padding: .5rem .2rem .1rem; color: var(--muted); font-size: .9rem; }
+  details.notes .body ul { margin: .3rem 0; padding-left: 1.2rem; }
   details.notes .body code {
     background: var(--panel); padding: .05rem .3rem; border-radius: 4px;
     font-family: ui-monospace, monospace; font-size: .85em; color: var(--text);
   }
-  details.notes .body ul { margin: .3rem 0; padding-left: 1.2rem; }
   .pending {
     border: 1px dashed var(--border); border-radius: 10px; padding: 1rem 1.25rem;
     color: var(--muted); background: transparent;
   }
   footer { color: var(--muted); font-size: .8rem; text-align: center; padding: 1rem 0 3rem; }
-  a { color: var(--accent); }
 </style>
 </head>
 <body>
 <header>
   <h1>Printable Surfaces — Plan</h1>
   <p class="sub">
-    Turn smooth surfaces (sphere, Klein bottle, torus, fruit, …) into <em>printable</em>
-    3-D objects: parametrize → triangulate → fix &amp; emit STL → build a printability
-    graph (max overhang, full support) → verify with the PrusaSlicer CLI.
+    Turn shapes (starting with the sphere) into <em>printable rod-and-node lattices</em> —
+    cool geometric cages. Define the shape → generate a lattice (surface frame + interior) →
+    thicken rods → emit STL → verify <strong>support-free</strong> with the PrusaSlicer CLI.
   </p>
 </header>
 
@@ -135,6 +138,23 @@
         (decisions, gotchas, versions, interfaces, file paths) inside that phase's collapsible notes.</li>
       <li>Do not silently rewrite history: append new phases instead of editing completed ones.</li>
     </ol>
+  </div>
+
+  <h2>Decisions — shared understanding (grilling, 2026-10-19)</h2>
+  <div class="decisions">
+    <table>
+      <tr><th>Topic</th><th>Decision</th></tr>
+      <tr><td>Object form</td><td>A pure <strong>rod-and-node lattice</strong> (a "cage"), no skin. "Degree-3 on the surface / degree-4 in the interior" is an <em>aesthetic hint</em>, not a hard spec.</td></tr>
+      <tr><td>Shape input</td><td>Parametric surfaces first, via a common <code>Surface</code> interface; implicit surfaces (apple → marching cubes) appended later.</td></tr>
+      <tr><td>Sphere parametrization</td><td>Cube-sphere (6 charts, pole-free); justified by a short comparison in Phase 1.</td></tr>
+      <tr><td>Lattice generation</td><td><strong>Prototype several</strong> types (surface frame, diamond, honeycomb, Voronoi, graphite/diamond "carbon" idea) and compare before committing.</td></tr>
+      <tr><td>Printability criterion</td><td>Configurable max overhang angle, default <strong>45°</strong> (PLA ≈ 45°, TPU ≈ 30°). "Everything supported" = no element exceeds the overhang rule. Bridging length deferred.</td></tr>
+      <tr><td>Build orientation</td><td>Fixed <strong>+Z</strong> for now; orientation search is a future phase.</td></tr>
+      <tr><td>STL contract</td><td>Millimetres, binary, <code>trimesh</code> canonical (<code>numpy-stl</code> cross-check).</td></tr>
+      <tr><td>Dimensions</td><td>~60&nbsp;mm bounding box, ~1.2&nbsp;mm rods, ~1.8&nbsp;mm joints (all configurable).</td></tr>
+      <tr><td>Verification goal</td><td><strong>Zero support generation</strong> in PrusaSlicer is the pass criterion.</td></tr>
+      <tr><td>Shape roadmap</td><td><strong>Sphere only</strong> for now; further shapes appended later.</td></tr>
+    </table>
   </div>
 
   <h2>Phases</h2>
@@ -174,27 +194,164 @@
           <li>Smoke test: all modules import under <code>uv run python</code>. Note
               <code>numpy-stl</code>'s top-level module is <code>stl</code> and has no
               <code>__version__</code>; import by name, don't rely on a version attr.</li>
-          <li><strong>For later phases:</strong> PrusaSlicer CLI is <em>external</em> (not pip-installable).
-              A future phase must verify it via <code>prusa-slicer --version</code> and record its path.</li>
+          <li><strong>For later phases:</strong> PrusaSlicer CLI is <em>external</em> (not pip-installable)
+              and is <strong>not currently installed</strong>. Phase 3 must install/verify it
+              (<code>prusa-slicer --version</code>) and record its path.</li>
           <li>Shell gotcha: a stale <code>VIRTUAL_ENV</code> (pointing at an unrelated project) was present;
               <code>uv run</code> ignores it, but unset it if tooling behaves oddly.</li>
           <li>STL emission can go through either <code>trimesh</code> or <code>numpy-stl</code>;
-              the triangulation/remeshing phase should pick one as canonical.</li>
+              the decision log names <code>trimesh</code> canonical.</li>
+        </ul>
+      </div>
+    </details>
+  </article>
+
+  <article class="phase">
+    <div class="head">
+      <span class="num">Phase 1</span>
+      <span class="title">Shape definition — sphere</span>
+      <span class="badge todo">Not started</span>
+    </div>
+    <div class="deliverable">
+      <h4>Deliverable</h4>
+      <ul>
+        <li>A <code>Surface</code> interface (parametric now, implicit later).</li>
+        <li>Cube-sphere parametrization of the sphere — 6 square charts, pole-free.</li>
+        <li>An <strong>inside/outside test</strong> for the shape (needed later to clip interior lattices).</li>
+        <li>A short comparison (cube-sphere vs lat/long vs icosphere) recording <em>why</em> cube-sphere is the right parametrization.</li>
+        <li>matplotlib visualization of the parametrization.</li>
+      </ul>
+    </div>
+    <details class="notes">
+      <summary>Implementation notes</summary>
+      <div class="body">
+        <ul>
+          <li>Cube-sphere: map each of 6 cube faces to a rectangle; normalize points on the cube to radius <code>r</code>. No degenerate poles, near-uniform density.</li>
+          <li>Each chart is a plain rectangle, so it composes with uniform grid sampling → triangles in later phases.</li>
+          <li>Inside/outside test for the sphere is trivial (<code>|p| ≤ r</code>), but expose it on the <code>Surface</code> interface so crystal lattices can be clipped to any shape later.</li>
+          <li>Visualization: matplotlib 3D line/scatter plot of chart grid lines (quick sanity check).</li>
+        </ul>
+      </div>
+    </details>
+  </article>
+
+  <article class="phase">
+    <div class="head">
+      <span class="num">Phase 2</span>
+      <span class="title">Surface-frame lattice → STL (walking skeleton)</span>
+      <span class="badge todo">Not started</span>
+    </div>
+    <div class="deliverable">
+      <h4>Deliverable</h4>
+      <ul>
+        <li>Triangulate the sphere surface from the Phase 1 parametrization; extract the 1-skeleton (edges → rods, vertices → nodes).</li>
+        <li>Thicken rods into cylinders (<code>r=1.2&nbsp;mm</code>) with node joints (<code>r=1.8&nbsp;mm</code>), unioned into one <strong>watertight</strong> mesh.</li>
+        <li>Emit a binary STL (~60&nbsp;mm) via <code>trimesh</code>.</li>
+      </ul>
+    </div>
+    <details class="notes">
+      <summary>Implementation notes</summary>
+      <div class="body">
+        <ul>
+          <li>This is the <strong>walking skeleton</strong>: proves the whole geometry pipeline end-to-end with a deliberately simple lattice (the surface frame only).</li>
+          <li>Rods: <code>trimesh.creation.cylinder</code> between two node points; joints: small spheres at nodes; boolean union into one mesh.</li>
+          <li>Validate with <code>trimesh</code>: <code>is_watertight</code> and <code>is_winding_consistent</code> before writing STL.</li>
+          <li>Interior lattice is <em>not</em> part of this phase — it arrives in Phase 4.</li>
+        </ul>
+      </div>
+    </details>
+  </article>
+
+  <article class="phase">
+    <div class="head">
+      <span class="num">Phase 3</span>
+      <span class="title">PrusaSlicer CLI setup + first slice</span>
+      <span class="badge todo">Not started</span>
+    </div>
+    <div class="deliverable">
+      <h4>Deliverable</h4>
+      <ul>
+        <li>Install/verify PrusaSlicer CLI and record its path (<code>prusa-slicer --version</code>).</li>
+        <li>A repeatable <code>slice</code> command that slices the Phase 2 STL with a zero-support config.</li>
+        <li>A pass/fail report: does PrusaSlicer generate any supports?</li>
+      </ul>
+    </div>
+    <details class="notes">
+      <summary>Implementation notes</summary>
+      <div class="body">
+        <ul>
+          <li>PrusaSlicer is not pip-installable — install via <code>apt</code>, AppImage, or flatpak, and record the exact method in this phase's notes.</li>
+          <li>Slice with supports <em>disabled</em>; the goal is to see whether the geometry itself requires supports, and capture any warnings/errors.</li>
+          <li>Expectation to watch: the sphere <em>surface frame</em> may still trigger supports near the bottom cap where rods run too horizontal — that's the signal Phase 5 must fix.</li>
+          <li>Store generated <code>.gcode</code> under a git-ignored path (see <code>.gitignore</code>).</li>
+        </ul>
+      </div>
+    </details>
+  </article>
+
+  <article class="phase">
+    <div class="head">
+      <span class="num">Phase 4</span>
+      <span class="title">Lattice prototype &amp; comparison</span>
+      <span class="badge todo">Not started</span>
+    </div>
+    <div class="deliverable">
+      <h4>Deliverable</h4>
+      <ul>
+        <li>Generate ≥3 lattice types for the sphere: surface frame, <strong>diamond</strong> (degree-4), <strong>honeycomb</strong> (degree-3), <strong>Voronoi</strong>, and the <strong>graphite/diamond "carbon"</strong> idea.</li>
+        <li>Render all side-by-side and pick the coolest (with rationale recorded).</li>
+      </ul>
+    </div>
+    <details class="notes">
+      <summary>Implementation notes</summary>
+      <div class="body">
+        <ul>
+          <li>Diamond lattice: tetrahedral coordination (~109.5°), degree-4 — matches the "degree-4 interior" hint.</li>
+          <li>Honeycomb: hexagonal, 3-regular — matches the "degree-3 surface" hint.</li>
+          <li>Voronoi/Delaunay: organic, random-looking, harder to control.</li>
+          <li>Interior lattices are clipped to the shape using the Phase 1 inside/outside test.</li>
+          <li>Compare on aesthetics AND structural printability (rod-length distribution, overhang angles).</li>
+        </ul>
+      </div>
+    </details>
+  </article>
+
+  <article class="phase">
+    <div class="head">
+      <span class="num">Phase 5</span>
+      <span class="title">Refine chosen lattice + printability pass</span>
+      <span class="badge todo">Not started</span>
+    </div>
+    <div class="deliverable">
+      <h4>Deliverable</h4>
+      <ul>
+        <li>Refine the chosen lattice (spacing, joint geometry, minimum feature size ≥ 0.4&nbsp;mm nozzle).</li>
+        <li>Verify no rod exceeds the configurable overhang angle; <strong>zero supports</strong> in PrusaSlicer.</li>
+        <li>Final STL + documented result.</li>
+      </ul>
+    </div>
+    <details class="notes">
+      <summary>Implementation notes</summary>
+      <div class="body">
+        <ul>
+          <li>Apply the overhang rule per rod: rod direction vs <code>+Z</code>; flag rods flatter than the configurable angle.</li>
+          <li>Max bridge length is configurable (bridging is the rod analogue of overhang).</li>
+          <li>Iterate lattice density/orientation until PrusaSlicer reports no supports.</li>
         </ul>
       </div>
     </details>
   </article>
 
   <div class="pending">
-    <strong>Phase 1+</strong> — to be defined. We are currently grilling the requirements to
-    break the pipeline (parametrize → triangulate → fix/orient → STL → printability graph →
-    PrusaSlicer verification) into concrete, deliverable phases.
+    <strong>Future phases (append later, not yet scoped):</strong> Klein bottle, torus,
+    apple (implicit / marching-cubes), orientation search over SO(3), bridging-length
+    modeling, material profiles (TPU), assembly/multi-part splitting.
   </div>
 
 </main>
 
 <footer>
-  Living document · append, don't rewrite · last updated at environment setup (Phase 0)
+  Living document · append, don't rewrite · last updated 2026-10-19 (reframe + phases 1–5 appended)
 </footer>
 </body>
 </html>
