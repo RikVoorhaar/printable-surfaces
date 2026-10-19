@@ -1,7 +1,7 @@
 [project]
 name = "printable-surfaces"
 version = "0.1.0"
-description = "Turn smooth surfaces into printable 3-D objects via parametrization, triangulation, and printability-aware meshing."
+description = "Turn shapes into printable rod-and-node lattices — cool geometric cages."
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
@@ -10,4 +10,16 @@ dependencies = [
     "numpy-stl>=4.1.1",
     "scipy>=1.18.1",
     "trimesh>=5.1.1",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/printable_surfaces"]
+
+[dependency-groups]
+dev = [
+    "pytest>=9.1.1",
 ]

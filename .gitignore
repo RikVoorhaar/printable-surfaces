@@ -10,6 +10,7 @@ build/
 *.gcode
 *.3mf
 !*.example.3mf
+output/
 
 # OS / editor
 .DS_Store

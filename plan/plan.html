@@ -210,26 +210,40 @@
     <div class="head">
       <span class="num">Phase 1</span>
       <span class="title">Shape definition — sphere</span>
-      <span class="badge todo">Not started</span>
+      <span class="badge done">✓ Done</span>
     </div>
     <div class="deliverable">
       <h4>Deliverable</h4>
       <ul>
         <li>A <code>Surface</code> interface (parametric now, implicit later).</li>
-        <li>Cube-sphere parametrization of the sphere — 6 square charts, pole-free.</li>
+        <li><strong>Equiangular (gnomonic) cube-sphere</strong> parametrization — 6 square charts, pole-free and near-uniform.</li>
         <li>An <strong>inside/outside test</strong> for the shape (needed later to clip interior lattices).</li>
-        <li>A short comparison (cube-sphere vs lat/long vs icosphere) recording <em>why</em> cube-sphere is the right parametrization.</li>
-        <li>matplotlib visualization of the parametrization.</li>
+        <li>A measured comparison (gnomonic vs naive cube-sphere vs lat/long vs icosphere) recording <em>why</em> gnomonic is right.</li>
+        <li>matplotlib visualization + a pytest suite locking the invariants.</li>
       </ul>
     </div>
     <details class="notes">
       <summary>Implementation notes</summary>
       <div class="body">
         <ul>
-          <li>Cube-sphere: map each of 6 cube faces to a rectangle; normalize points on the cube to radius <code>r</code>. No degenerate poles, near-uniform density.</li>
-          <li>Each chart is a plain rectangle, so it composes with uniform grid sampling → triangles in later phases.</li>
-          <li>Inside/outside test for the sphere is trivial (<code>|p| ≤ r</code>), but expose it on the <code>Surface</code> interface so crystal lattices can be clipped to any shape later.</li>
-          <li>Visualization: matplotlib 3D line/scatter plot of chart grid lines (quick sanity check).</li>
+          <li><strong>Chosen parametrization: equiangular/gnomonic cube-sphere.</strong> Map chart
+              coordinate through <code>tan(angle)</code> before normalizing (<code>tu = tan(u·π/4)</code>).
+              Measured triangle-area CV <strong>0.094</strong> (vs icosphere 0.086) — pole-free AND
+              near-uniform. The naive "normalize raw cube coordinate" variant has CV 0.377 (~2× corner
+              distortion) and was rejected; it's kept only in <code>parametrizations.naive_cube_sphere_grid</code>
+              for the comparison. Lat/long has 128 degenerate pole triangles.</li>
+          <li><strong>Bug caught &amp; fixed:</strong> face indices into concatenated chart points used the
+              chart count instead of the cumulative point count — produced huge spurious triangles. The
+              "no degenerate triangles" test now guards this.</li>
+          <li><strong>Package layout</strong> (new this phase): <code>src/printable_surfaces/</code> with
+              <code>surface.py</code> (<code>Surface</code>/<code>ParametricSurface</code>/<code>Chart</code>/<code>Sphere</code>),
+              <code>parametrizations.py</code> (grids + <code>area_stats</code>), <code>viz.py</code> (matplotlib),
+              <code>phase1.py</code> (runnable: <code>uv run python -m printable_surfaces.phase1</code>).
+              Added <code>hatchling</code> build backend + <code>pytest</code> (dev).</li>
+          <li><strong>For later phases:</strong> <code>Surface.inside(points)</code> is the predicate that
+              clips interior lattices; <code>Surface.bounding_box</code> is available for scaling to 60&nbsp;mm.
+              Radius is stored unitless (<code>1.0</code>); physical mm scaling happens at STL emission (Phase 2).</li>
+          <li>Figures land in <code>output/phase1/</code> (git-ignored).</li>
         </ul>
       </div>
     </details>
