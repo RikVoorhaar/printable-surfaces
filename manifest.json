@@ -55,19 +55,24 @@
           "label": "Interior (diamond) \u00b7 13% (380 rods)"
         },
         {
-          "path": "output/lattice/sphere_full_cage_13pct.stl",
-          "kind": "stl",
-          "label": "Full cage \u00b7 13% (288 surf + 380 int rods)"
-        },
-        {
           "path": "output/lattice/sphere_interior_diamond_21pct.stl",
           "kind": "stl",
           "label": "Interior (diamond) \u00b7 21% (672 rods)"
         },
         {
-          "path": "output/lattice/sphere_full_cage_21pct.stl",
+          "path": "output/lattice/sphere_unified_a34.stl",
           "kind": "stl",
-          "label": "Full cage \u00b7 21% (450 surf + 672 int rods)"
+          "label": "Unified cage \u00b7 a=34 (199 nodes / 542 rods)"
+        },
+        {
+          "path": "output/lattice/sphere_unified_a30.stl",
+          "kind": "stl",
+          "label": "Unified cage \u00b7 a=30 (283 nodes / 746 rods)"
+        },
+        {
+          "path": "output/lattice/sphere_unified_a26.stl",
+          "kind": "stl",
+          "label": "Unified cage \u00b7 a=26 (447 nodes / 1146 rods)"
         }
       ]
     },
@@ -77,24 +82,19 @@
       "description": "PrusaSlicer output & support check.",
       "artifacts": [
         {
-          "path": "output/slicer/sphere_full_cage_13pct.gcode",
+          "path": "output/slicer/sphere_unified_a34.gcode",
           "kind": "gcode",
-          "label": "Full cage 13% \u00b7 sliced OK \u00b7 warns: overhang, low bed adhesion, thin part, loose extrusions"
+          "label": "Unified a=34 \u00b7 sliced OK \u00b7 warns: overhang"
         },
         {
-          "path": "output/slicer/sphere_full_cage_13pct.txt",
-          "kind": "other",
-          "label": "Full cage 13% \u00b7 report"
-        },
-        {
-          "path": "output/slicer/sphere_full_cage_21pct.gcode",
+          "path": "output/slicer/sphere_unified_a30.gcode",
           "kind": "gcode",
-          "label": "Full cage 21% \u00b7 sliced OK \u00b7 warns: overhang, low bed adhesion, thin part, loose extrusions"
+          "label": "Unified a=30 \u00b7 sliced OK \u00b7 warns: overhang"
         },
         {
-          "path": "output/slicer/sphere_full_cage_21pct.txt",
-          "kind": "other",
-          "label": "Full cage 21% \u00b7 report"
+          "path": "output/slicer/sphere_unified_a26.gcode",
+          "kind": "gcode",
+          "label": "Unified a=26 \u00b7 sliced OK \u00b7 warns: overhang, adhesion"
         }
       ]
     }

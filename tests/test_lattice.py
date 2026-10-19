@@ -8,6 +8,7 @@ from printable_surfaces.lattice import (
     diamond_lattice,
     edges_from_faces,
     merge_vertices,
+    unified_cage,
 )
 
 
@@ -61,3 +62,18 @@ def test_diamond_lattice_nodes_within_sphere():
     assert len(nodes) > 0 and len(edges) > 0
     assert (np.linalg.norm(nodes, axis=1) <= 30.0 + 1e-6).all()
     assert edges.max() < len(nodes)
+
+
+def test_unified_cage_shares_boundary_nodes():
+    nodes, diamond_edges, surface_edges, bmask = unified_cage(radius=30.0, a=20.0)
+    b_idx = np.where(bmask)[0]
+    assert len(b_idx) > 0
+
+    def incident(edges, i):
+        return any(i == a or i == b for a, b in edges)
+
+    for i in b_idx:
+        # Every surface node must be the endpoint of both an interior (diamond) rod
+        # and a surface rod — i.e. interior and surface share nodes.
+        assert incident(diamond_edges, i), f"boundary node {i} missing interior rod"
+        assert incident(surface_edges, i), f"boundary node {i} missing surface rod"

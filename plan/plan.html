@@ -437,10 +437,38 @@
     </details>
   </article>
 
+  <article class="phase">
+    <div class="head">
+      <span class="num">Phase 8</span>
+      <span class="title">Unified cage — surface + interior share nodes</span>
+      <span class="badge done">✓ Done</span>
+    </div>
+    <div class="deliverable">
+      <h4>Deliverable</h4>
+      <ul>
+        <li>One coherent lattice: diamond interior + a surface frame derived from the diamond lattice's <em>boundary nodes</em> — so surface and interior <strong>share nodes by construction</strong>.</li>
+        <li>Three density versions (diamond cell <code>a=34/30/26&nbsp;mm</code>) centered on the preferred ~13% look.</li>
+        <li>All three sliced (PrusaSlicer) and registered on the dashboard.</li>
+      </ul>
+    </div>
+    <details class="notes">
+      <summary>Implementation notes</summary>
+      <div class="body">
+        <ul>
+          <li><strong>Corrects Phase 3's mistake:</strong> the surface frame and interior were designed independently, so their nodes didn't coincide. Now the surface frame is the convex-hull triangulation of the diamond lattice's boundary nodes (where its rods cross the sphere), so they share nodes by construction.</li>
+          <li><code>lattice.unified_cage(radius, a)</code> → <code>(nodes, diamond_edges, surface_edges, boundary_mask)</code>. Surface edges come from <code>scipy.spatial.ConvexHull</code> over the co-spherical boundary points.</li>
+          <li>Result (a=30): 283 nodes (124 surface) · 380 diamond + 366 surface = 746 rods. Surface node count now tracks the interior automatically.</li>
+          <li>A test asserts every boundary node is the endpoint of both an interior rod and a surface rod (the "shared nodes" invariant).</li>
+          <li>All three slice OK; a=34/30 warn <em>overhang</em>, a=26 warns <em>overhang + adhesion</em>. The overhang still needs addressing (Phase 5).</li>
+        </ul>
+      </div>
+    </details>
+  </article>
+
 </main>
 
 <footer>
-  Living document · append, don't rewrite · last updated 2026-10-19 (phases 3–4 swapped &amp; done: interior lattice + slicing)
+  Living document · append, don't rewrite · last updated 2026-10-19 (phase 8: unified cage, shared nodes)
 </footer>
 </body>
 </html>

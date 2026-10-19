@@ -160,3 +160,54 @@ def diamond_lattice(
     if not nodes:
         return np.zeros((0, 3)), np.zeros((0, 2), dtype=int)
     return np.asarray(nodes, dtype=float), np.asarray(edges, dtype=int)
+
+
+def boundary_mask(nodes: np.ndarray, radius: float, tol: float = 1e-3) -> np.ndarray:
+    """Boolean mask: True for nodes lying on (or within ``tol`` of) the sphere surface."""
+    return np.linalg.norm(np.asarray(nodes, dtype=float), axis=1) >= radius - tol
+
+
+def surface_edges(boundary_points: np.ndarray) -> np.ndarray:
+    """Triangulate co-spherical boundary points into surface edges via convex hull.
+
+    All points lie on the sphere, so the convex hull is the sphere's triangulation; its
+    edges become the surface frame's rods. Returns ``(E, 2)`` indices into ``boundary_points``.
+    """
+    from scipy.spatial import ConvexHull
+
+    if len(boundary_points) < 4:
+        return np.zeros((0, 2), dtype=int)
+    hull = ConvexHull(boundary_points)
+    seen: set[tuple[int, int]] = set()
+    out: list[tuple[int, int]] = []
+    for tri in hull.simplices:
+        for e in ((tri[0], tri[1]), (tri[1], tri[2]), (tri[2], tri[0])):
+            key = (min(e), max(e))
+            if key not in seen:
+                seen.add(key)
+                out.append(key)
+    return np.asarray(sorted(out), dtype=int)
+
+
+def unified_cage(
+    radius: float,
+    a: float,
+    center: tuple[float, float, float] = (0.0, 0.0, 0.0),
+) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    """One coherent lattice: diamond interior + a surface frame sharing its boundary nodes.
+
+    The diamond lattice is clipped to the sphere; the points where its rods meet the
+    surface become the surface frame's nodes, which are then triangulated (convex hull)
+    to close the shell. Interior and surface therefore **share nodes by construction**.
+
+    Returns ``(nodes, diamond_edges, surface_edges, boundary_mask)``.
+    """
+    nodes, diamond_edges = diamond_lattice(radius, a, center=center)
+    b = boundary_mask(nodes, radius)
+    b_idx = np.where(b)[0]
+    if len(b_idx) >= 4:
+        s_edges_local = surface_edges(nodes[b_idx])
+        surface_edges_global = b_idx[s_edges_local]
+    else:
+        surface_edges_global = np.zeros((0, 2), dtype=int)
+    return nodes, diamond_edges, surface_edges_global, b
