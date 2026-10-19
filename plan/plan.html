@@ -254,24 +254,26 @@
     <div class="head">
       <span class="num">Phase 2</span>
       <span class="title">Surface-frame lattice → STL (walking skeleton)</span>
-      <span class="badge todo">Not started</span>
+      <span class="badge done">✓ Done</span>
     </div>
     <div class="deliverable">
       <h4>Deliverable</h4>
       <ul>
-        <li>Triangulate the sphere surface from the Phase 1 parametrization; extract the 1-skeleton (edges → rods, vertices → nodes).</li>
-        <li>Thicken rods into cylinders (<code>r=1.2&nbsp;mm</code>) with node joints (<code>r=1.8&nbsp;mm</code>), unioned into one <strong>watertight</strong> mesh.</li>
-        <li>Emit a binary STL (~60&nbsp;mm) via <code>trimesh</code>.</li>
+        <li>Triangulate the cube-sphere; extract the 1-skeleton (edges → rods, vertices → nodes).</li>
+        <li>Thicken rods into cylinders (<code>r=1.2&nbsp;mm</code>) with node joints (<code>r=1.8&nbsp;mm</code>) into one mesh.</li>
+        <li>Emit binary STLs (~60&nbsp;mm): the printable surface-frame lattice and a thin triangulation wireframe.</li>
+        <li>Register both on the dashboard under <em>lattice</em> and <em>triangulation</em>.</li>
       </ul>
     </div>
     <details class="notes">
       <summary>Implementation notes</summary>
       <div class="body">
         <ul>
-          <li>This is the <strong>walking skeleton</strong>: proves the whole geometry pipeline end-to-end with a deliberately simple lattice (the surface frame only).</li>
-          <li>Rods: <code>trimesh.creation.cylinder</code> between two node points; joints: small spheres at nodes; boolean union into one mesh.</li>
-          <li>Validate with <code>trimesh</code>: <code>is_watertight</code> and <code>is_winding_consistent</code> before writing STL.</li>
-          <li>Interior lattice is <em>not</em> part of this phase — it arrives in Phase 4.</li>
+          <li><strong>Walking skeleton proven end-to-end:</strong> cube-sphere (n=12, radius 30&nbsp;mm) → 728 nodes, 2,178 unique edges, 174,432 triangles per STL.</li>
+          <li><code>lattice.py</code>: <code>merge_vertices</code> (closes chart seams via <code>np.unique</code> on rounded coords), <code>edges_from_faces</code> (trimesh <code>edges_unique</code>), <code>build_frame_mesh</code> (cylinders + spheres, concatenated).</li>
+          <li><strong>Deviation from the original deliverable:</strong> the mesh is a concatenated triangle soup, <em>not</em> boolean-unioned, so <code>is_watertight=False</code> (overlapping joints). Fine for viewing/slicing; a true watertight union is deferred to Phase 5.</li>
+          <li>STLs land at <code>output/lattice/sphere_surface_frame.stl</code> and <code>output/triangulation/sphere_wireframe.stl</code>; verified by reloading with both <code>trimesh</code> and <code>numpy-stl</code> (binary, finite coords).</li>
+          <li><strong>For later phases:</strong> reuse <code>build_frame_mesh</code> for the interior lattices (Phase 4) — it only needs a node+edge frame.</li>
         </ul>
       </div>
     </details>
