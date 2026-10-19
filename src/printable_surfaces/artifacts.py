@@ -56,3 +56,11 @@ def register(
     entry.update(kind=kind, label=label)
 
     Path(manifest_path).write_text(json.dumps(data, indent=2) + "\n")
+
+
+def remove_artifact(path: str, manifest_path: str | Path = "manifest.json") -> None:
+    """Remove any artifact entry matching ``path`` from the manifest."""
+    data = load(manifest_path)
+    for stage in data["stages"]:
+        stage["artifacts"] = [a for a in stage.get("artifacts", []) if a.get("path") != path]
+    Path(manifest_path).write_text(json.dumps(data, indent=2) + "\n")

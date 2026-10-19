@@ -23,9 +23,29 @@
       "description": "Triangle mesh of the surface.",
       "artifacts": [
         {
-          "path": "output/triangulation/sphere_wireframe.stl",
+          "path": "output/triangulation/sphere_wireframe_n05.stl",
           "kind": "stl",
-          "label": "Sphere triangulation \u2014 728 nodes"
+          "label": "Triangulation \u00b7 13% (98 nodes)"
+        },
+        {
+          "path": "output/triangulation/sphere_wireframe_n06.stl",
+          "kind": "stl",
+          "label": "Triangulation \u00b7 21% (152 nodes)"
+        },
+        {
+          "path": "output/triangulation/sphere_wireframe_n07.stl",
+          "kind": "stl",
+          "label": "Triangulation \u00b7 30% (218 nodes)"
+        },
+        {
+          "path": "output/triangulation/sphere_wireframe_n08.stl",
+          "kind": "stl",
+          "label": "Triangulation \u00b7 40% (296 nodes)"
+        },
+        {
+          "path": "output/triangulation/sphere_wireframe_n09.stl",
+          "kind": "stl",
+          "label": "Triangulation \u00b7 53% (386 nodes)"
         }
       ]
     },
@@ -35,9 +55,29 @@
       "description": "Rod + node cage (the printable object).",
       "artifacts": [
         {
-          "path": "output/lattice/sphere_surface_frame.stl",
+          "path": "output/lattice/sphere_surface_frame_n05.stl",
           "kind": "stl",
-          "label": "Sphere surface frame \u2014 2178 rods"
+          "label": "Surface frame \u00b7 13% (288 rods)"
+        },
+        {
+          "path": "output/lattice/sphere_surface_frame_n06.stl",
+          "kind": "stl",
+          "label": "Surface frame \u00b7 21% (450 rods)"
+        },
+        {
+          "path": "output/lattice/sphere_surface_frame_n07.stl",
+          "kind": "stl",
+          "label": "Surface frame \u00b7 30% (648 rods)"
+        },
+        {
+          "path": "output/lattice/sphere_surface_frame_n08.stl",
+          "kind": "stl",
+          "label": "Surface frame \u00b7 40% (882 rods)"
+        },
+        {
+          "path": "output/lattice/sphere_surface_frame_n09.stl",
+          "kind": "stl",
+          "label": "Surface frame \u00b7 53% (1152 rods)"
         }
       ]
     },

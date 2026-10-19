@@ -2,7 +2,7 @@
 
 import json
 
-from printable_surfaces.artifacts import register
+from printable_surfaces.artifacts import register, remove_artifact
 
 
 def test_register_creates_and_is_idempotent(tmp_path):
@@ -25,3 +25,14 @@ def test_register_rejects_unknown_stage(tmp_path):
 
     with pytest.raises(ValueError):
         register("nonsense", "output/x.stl", "stl", "X", manifest_path=str(tmp_path / "m.json"))
+
+
+def test_remove_artifact(tmp_path):
+    mf = tmp_path / "manifest.json"
+    register("lattice", "output/a.stl", "stl", "A", manifest_path=str(mf))
+    register("lattice", "output/b.stl", "stl", "B", manifest_path=str(mf))
+    remove_artifact("output/a.stl", manifest_path=str(mf))
+
+    data = json.loads(mf.read_text())
+    paths = [a["path"] for a in data["stages"][0]["artifacts"]]
+    assert paths == ["output/b.stl"]

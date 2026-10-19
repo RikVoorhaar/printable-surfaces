@@ -274,6 +274,7 @@
           <li><strong>Deviation from the original deliverable:</strong> the mesh is a concatenated triangle soup, <em>not</em> boolean-unioned, so <code>is_watertight=False</code> (overlapping joints). Fine for viewing/slicing; a true watertight union is deferred to Phase 5.</li>
           <li>STLs land at <code>output/lattice/sphere_surface_frame.stl</code> and <code>output/triangulation/sphere_wireframe.stl</code>; verified by reloading with both <code>trimesh</code> and <code>numpy-stl</code> (binary, finite coords).</li>
           <li><strong>For later phases:</strong> reuse <code>build_frame_mesh</code> for the interior lattices (Phase 4) — it only needs a node+edge frame.</li>
+          <li><strong>Density sweep (follow-up):</strong> the original n=12 was too dense, so Phase 2 now emits a sweep of 5 densities (~13%, 21%, 30%, 40%, 53% of the n=12 edge count), both as printable lattices and thin triangulation wireframes. Awaiting the user's pick of density before continuing.</li>
         </ul>
       </div>
     </details>
