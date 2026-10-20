@@ -216,7 +216,7 @@ function renderStages(stages) {
   stages.forEach(s => el.appendChild(stageCard(s)));
 }
 
-fetch('manifest.json')
+fetch('manifest.json', { cache: 'no-store' })
   .then(r => r.json())
   .then(data => {
     renderPipeline(data.stages);

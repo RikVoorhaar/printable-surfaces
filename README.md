@@ -22,7 +22,7 @@ don't rewrite old ones).
 - **Plan** — http://100.81.11.110:8000/plan/plan.html
 - **STL viewer** (in-browser, overhang-colored) — http://100.81.11.110:8000/web/viewer.html
 
-All served over Tailscale by `python3 -m http.server 8000` from the repo root.
-Artifacts are tracked in `manifest.json` and listed by stage (surface → triangulation →
-lattice → slicer) on the dashboard.
+All served over Tailscale by `python3 serve.py` from the repo root (it disables caching so
+new artifacts always show up). Artifacts are tracked in `manifest.json` and listed by stage
+(surface → triangulation → lattice → slicer) on the dashboard.
 
