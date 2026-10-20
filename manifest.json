@@ -113,6 +113,31 @@
           "path": "output/lattice/sphere_relaxed_L20_s1.stl",
           "kind": "stl",
           "label": "Relaxed \u00b7 L=20 \u00b7 seed 1 \u00b7 93 nodes / 325 rods"
+        },
+        {
+          "path": "output/lattice/sphere_coulomb_n120_k4.stl",
+          "kind": "stl",
+          "label": "Coulomb \u00b7 120 pts \u00b7 k=4 \u00b7 120 nodes / 271 rods"
+        },
+        {
+          "path": "output/lattice/sphere_coulomb_n160_k4.stl",
+          "kind": "stl",
+          "label": "Coulomb \u00b7 160 pts \u00b7 k=4 \u00b7 160 nodes / 362 rods"
+        },
+        {
+          "path": "output/lattice/sphere_coulomb_n200_k4.stl",
+          "kind": "stl",
+          "label": "Coulomb \u00b7 200 pts \u00b7 k=4 \u00b7 200 nodes / 463 rods"
+        },
+        {
+          "path": "output/lattice/sphere_coulomb_n160_k3.stl",
+          "kind": "stl",
+          "label": "Coulomb \u00b7 160 pts \u00b7 k=3 \u00b7 160 nodes / 282 rods"
+        },
+        {
+          "path": "output/lattice/sphere_coulomb_n160_k5.stl",
+          "kind": "stl",
+          "label": "Coulomb \u00b7 160 pts \u00b7 k=5 \u00b7 160 nodes / 448 rods"
         }
       ]
     },
@@ -175,6 +200,31 @@
           "path": "output/slicer/sphere_relaxed_L20_s1.gcode",
           "kind": "gcode",
           "label": "Relaxed \u00b7 L=20 \u00b7 seed 1 \u00b7 sliced OK"
+        },
+        {
+          "path": "output/slicer/sphere_coulomb_n120_k4.gcode",
+          "kind": "gcode",
+          "label": "Coulomb \u00b7 120 pts \u00b7 k=4 \u00b7 sliced OK"
+        },
+        {
+          "path": "output/slicer/sphere_coulomb_n160_k4.gcode",
+          "kind": "gcode",
+          "label": "Coulomb \u00b7 160 pts \u00b7 k=4 \u00b7 sliced OK"
+        },
+        {
+          "path": "output/slicer/sphere_coulomb_n200_k4.gcode",
+          "kind": "gcode",
+          "label": "Coulomb \u00b7 200 pts \u00b7 k=4 \u00b7 sliced OK"
+        },
+        {
+          "path": "output/slicer/sphere_coulomb_n160_k3.gcode",
+          "kind": "gcode",
+          "label": "Coulomb \u00b7 160 pts \u00b7 k=3 \u00b7 sliced OK"
+        },
+        {
+          "path": "output/slicer/sphere_coulomb_n160_k5.gcode",
+          "kind": "gcode",
+          "label": "Coulomb \u00b7 160 pts \u00b7 k=5 \u00b7 sliced OK"
         }
       ]
     }

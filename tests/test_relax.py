@@ -2,7 +2,7 @@
 
 import numpy as np
 
-from printable_surfaces.relax import knn_edges, relaxed_lattice, seed_vertices
+from printable_surfaces.relax import coulomb_lattice, knn_edges, relaxed_lattice, seed_vertices
 
 
 def test_relaxed_lattice_is_deterministic():
@@ -32,3 +32,16 @@ def test_knn_edges_within_bounds_and_symmetric():
     edges = knn_edges(pts, k=4)
     assert edges.max() < len(pts)
     assert (edges[:, 0] < edges[:, 1]).all()  # canonical order
+
+
+def test_coulomb_lattice_uniform_and_in_sphere():
+    from scipy.spatial import cKDTree
+
+    nodes, edges = coulomb_lattice(radius=40.0, n_points=80, k=4, seed=1, iterations=1200)
+    r = np.linalg.norm(nodes, axis=1)
+    assert r.max() <= 40.0 + 2.0  # soft edge, roughly within the ball
+    tree = cKDTree(nodes)
+    d, _ = tree.query(nodes, k=2)
+    # Nearest-neighbour spacing is fairly uniform.
+    assert d[:, 1].std() / d[:, 1].mean() < 0.2
+    assert edges.max() < len(nodes)

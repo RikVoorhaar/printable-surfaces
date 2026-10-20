@@ -543,10 +543,37 @@
     </p>
   </div>
 
+  <article class="phase">
+    <div class="head">
+      <span class="num">Phase 11</span>
+      <span class="title">Coulomb-gas lattice (Idea A + no interior/exterior split)</span>
+      <span class="badge done">✓ Done</span>
+    </div>
+    <div class="deliverable">
+      <h4>Deliverable</h4>
+      <ul>
+        <li>A uniform point cloud via <strong>Coulomb repulsion + a harmonic "gravity" trap</strong> (the confined Coulomb gas / jellium model) — no interior/exterior distinction, no degenerate collapse.</li>
+        <li>Wire the relaxed cloud with k-NN (k=3/4/5) into the lattice.</li>
+        <li>Five variants (120/160/200 points, k=3/4/5), all sliced.</li>
+      </ul>
+    </div>
+    <details class="notes">
+      <summary>Implementation notes</summary>
+      <div class="body">
+        <ul>
+          <li>Per the user's refinement: drop the interior/exterior split entirely. Forces = point-charge repulsion (<code>F ∝ 1/r²</code>) plus a trap toward the centre (<code>F = −k·r</code>). This is the confined Coulomb gas, which has a <em>provably uniform</em> density in a ball — a genuine energy minimum, no degeneracy.</li>
+          <li><code>k_grav</code> is set from the point count (<code>k_grav = N/R³</code>) so the equilibrium radius equals the target sphere radius.</li>
+          <li><code>relax.py</code>: <code>relax_coulomb</code> + <code>coulomb_lattice</code>. Rod lengths now very uniform (std ≈ 1.2 mm vs 3.5 mm in the fixed-topology spring version).</li>
+          <li>Variants: 120 pts/271 rods, 160/362, 200/463, and k=3/k=5 at 160 pts. All slice OK.</li>
+        </ul>
+      </div>
+    </details>
+  </article>
+
 </main>
 
 <footer>
-  Living document · append, don't rewrite · last updated 2026-10-20 (lattice ideas under discussion)
+  Living document · append, don't rewrite · last updated 2026-10-20 (phase 11: Coulomb-gas lattice)
 </footer>
 </body>
 </html>

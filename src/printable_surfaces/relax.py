@@ -144,3 +144,63 @@ def relaxed_lattice(
     edges = knn_edges(pts, k)
     pos = relax(pts, edges, radius, n_surface, target_length, iterations=iterations)
     return pos, edges
+
+
+def relax_coulomb(
+    points: np.ndarray,
+    radius: float,
+    iterations: int = 3000,
+    cooling: float = 0.995,
+    softening: float = 2.0,
+) -> np.ndarray:
+    """Coulomb repulsion + a harmonic trap to the center → uniform-density ball.
+
+    This is the confined Coulomb gas ("jellium") model: point charges repel each other
+    (1/r² force) while a "gravity" pulls them toward the origin (F = −k·r). The
+    equilibrium is a *uniform* density in a ball of radius ~``radius`` — with no
+    interior/exterior distinction, and no degenerate collapse to the surface or center.
+
+    ``k_grav`` is chosen from the point count so the equilibrium radius is ``radius``.
+    """
+    pos = np.array(points, dtype=float)
+    n = len(pos)
+    k_rep = 1.0
+    k_grav = k_rep * n / (radius ** 3)  # → equilibrium radius = radius
+    temperature = radius / 2.0
+
+    for _ in range(iterations):
+        delta = pos[:, None, :] - pos[None, :, :]
+        d2 = (delta ** 2).sum(-1) + softening ** 2
+        np.fill_diagonal(d2, np.inf)
+        force = k_rep * (delta / (d2 ** 1.5)[:, :, None]).sum(axis=1)
+        force -= k_grav * pos
+
+        dnorm = np.linalg.norm(force, axis=1, keepdims=True)
+        scale = np.minimum(1.0, temperature / np.maximum(dnorm, 1e-12))
+        pos += force * scale
+        temperature *= cooling
+
+    return pos
+
+
+def coulomb_lattice(
+    radius: float,
+    n_points: int,
+    k: int = 4,
+    iterations: int = 3000,
+    seed: int = 0,
+) -> tuple[np.ndarray, np.ndarray]:
+    """Relax a point cloud into a uniform ball (Coulomb gas), then wire it with k-NN.
+
+    No surface/interior distinction — the boundary is just where the cloud's outer points
+    land. Returns ``(nodes, edges)``.
+    """
+    rng = np.random.default_rng(seed)
+    pts = rng.normal(size=(n_points, 3))
+    pts = pts / np.linalg.norm(pts, axis=1, keepdims=True)
+    r = radius * 0.5 * np.cbrt(rng.uniform(0.0, 1.0, size=n_points))
+    pts *= r[:, None]
+
+    pos = relax_coulomb(pts, radius, iterations=iterations)
+    edges = knn_edges(pos, k)
+    return pos, edges
