@@ -519,10 +519,34 @@
     </details>
   </article>
 
+  <h2>Lattice generation — ideas under discussion (2026-10-20)</h2>
+  <div class="decisions">
+    <p style="margin-top:0;color:var(--muted);">
+      Phase 10's force-directed relax still isn't uniform enough on the interior. Root
+      cause: the graph topology is fixed up front, locking interior vertices into awkward
+      spots. Three candidate approaches (none implemented yet):
+    </p>
+    <ol>
+      <li><strong>Relax first, wire later</strong> — pure repulsion-only relaxation
+          (Lloyd's / CVT) to a uniform point distribution, <em>then</em> wire the graph.
+          Decouples positions from topology; gives a true energy minimum.</li>
+      <li><strong>Surface-first, grow inward</strong> — place the surface, attach one
+          interior vertex per surface vertex (inward), connect them, add further rings as
+          needed. Guarantees surface↔interior connectivity and degree (surface 3, interior 4).</li>
+      <li><strong>Evolutionary co-optimization</strong> — alternate position relaxation
+          with re-wiring (reconnect nearest neighbours with random degree 3/4/5) over several
+          rounds; topology co-evolves with positions.</li>
+    </ol>
+    <p style="margin-bottom:0;color:var(--muted);">
+      Also to fix regardless of approach: rebalance vertex counts toward more interior and
+      fewer surface (currently too many surface, too few interior).
+    </p>
+  </div>
+
 </main>
 
 <footer>
-  Living document · append, don't rewrite · last updated 2026-10-20 (phase 10: force-directed relaxed lattice)
+  Living document · append, don't rewrite · last updated 2026-10-20 (lattice ideas under discussion)
 </footer>
 </body>
 </html>
