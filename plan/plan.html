@@ -570,10 +570,35 @@
     </details>
   </article>
 
+  <article class="phase">
+    <div class="head">
+      <span class="num">Phase 12</span>
+      <span class="title">Variable-degree surface wiring</span>
+      <span class="badge done">✓ Done</span>
+    </div>
+    <div class="deliverable">
+      <h4>Deliverable</h4>
+      <ul>
+        <li>Same Coulomb-gas cloud, but wired with a degree profile: sparse interior (k=3/4), denser surface to fill voids.</li>
+        <li>Four variants (base 3/4 + surface 5/6/7), all sliced.</li>
+      </ul>
+    </div>
+    <details class="notes">
+      <summary>Implementation notes</summary>
+      <div class="body">
+        <ul>
+          <li>User feedback: the uniform k=4 surface looked rough (each outer point linked to only ~2–3 surface neighbours, leaving voids), but raising k globally over-densifies the interior.</li>
+          <li>First tried radius-dependent k-NN, but symmetrization inflated the interior degree to ~5.8. Switched to <code>wire_surface_reinforced</code>: base k-NN (k=3/4) plus extra surface↔surface links only within the outer band.</li>
+          <li>Result: interior degree ~4.5, surface degree ~6.2–7.7 (base 4 + surf 6 → 511 rods).</li>
+        </ul>
+      </div>
+    </details>
+  </article>
+
 </main>
 
 <footer>
-  Living document · append, don't rewrite · last updated 2026-10-20 (phase 11: Coulomb-gas lattice)
+  Living document · append, don't rewrite · last updated 2026-10-20 (phase 12: variable-degree surface wiring)
 </footer>
 </body>
 </html>

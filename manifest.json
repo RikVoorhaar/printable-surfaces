@@ -138,6 +138,26 @@
           "path": "output/lattice/sphere_coulomb_n160_k5.stl",
           "kind": "stl",
           "label": "Coulomb \u00b7 160 pts \u00b7 k=5 \u00b7 160 nodes / 448 rods"
+        },
+        {
+          "path": "output/lattice/sphere_coulomb_ki4_ks6.stl",
+          "kind": "stl",
+          "label": "Coulomb \u00b7 base 4 + surf 6 \u00b7 160 nodes / 511 rods"
+        },
+        {
+          "path": "output/lattice/sphere_coulomb_ki4_ks7.stl",
+          "kind": "stl",
+          "label": "Coulomb \u00b7 base 4 + surf 7 \u00b7 160 nodes / 567 rods"
+        },
+        {
+          "path": "output/lattice/sphere_coulomb_ki3_ks6.stl",
+          "kind": "stl",
+          "label": "Coulomb \u00b7 base 3 + surf 6 \u00b7 160 nodes / 469 rods"
+        },
+        {
+          "path": "output/lattice/sphere_coulomb_ki4_ks5.stl",
+          "kind": "stl",
+          "label": "Coulomb \u00b7 base 4 + surf 5 \u00b7 160 nodes / 463 rods"
         }
       ]
     },
@@ -225,6 +245,26 @@
           "path": "output/slicer/sphere_coulomb_n160_k5.gcode",
           "kind": "gcode",
           "label": "Coulomb \u00b7 160 pts \u00b7 k=5 \u00b7 sliced OK"
+        },
+        {
+          "path": "output/slicer/sphere_coulomb_ki4_ks6.gcode",
+          "kind": "gcode",
+          "label": "Coulomb \u00b7 base 4 + surf 6 \u00b7 sliced OK"
+        },
+        {
+          "path": "output/slicer/sphere_coulomb_ki4_ks7.gcode",
+          "kind": "gcode",
+          "label": "Coulomb \u00b7 base 4 + surf 7 \u00b7 sliced OK"
+        },
+        {
+          "path": "output/slicer/sphere_coulomb_ki3_ks6.gcode",
+          "kind": "gcode",
+          "label": "Coulomb \u00b7 base 3 + surf 6 \u00b7 sliced OK"
+        },
+        {
+          "path": "output/slicer/sphere_coulomb_ki4_ks5.gcode",
+          "kind": "gcode",
+          "label": "Coulomb \u00b7 base 4 + surf 5 \u00b7 sliced OK"
         }
       ]
     }

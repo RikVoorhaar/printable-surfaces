@@ -2,7 +2,7 @@
 
 import numpy as np
 
-from printable_surfaces.relax import coulomb_lattice, knn_edges, relaxed_lattice, seed_vertices
+from printable_surfaces.relax import coulomb_lattice, knn_edges, relaxed_lattice, seed_vertices, wire_surface_reinforced
 
 
 def test_relaxed_lattice_is_deterministic():
@@ -44,4 +44,17 @@ def test_coulomb_lattice_uniform_and_in_sphere():
     d, _ = tree.query(nodes, k=2)
     # Nearest-neighbour spacing is fairly uniform.
     assert d[:, 1].std() / d[:, 1].mean() < 0.2
+    assert edges.max() < len(nodes)
+
+
+def test_wire_surface_reinforced_densifies_surface():
+    from printable_surfaces.relax import coulomb_points
+
+    nodes = coulomb_points(radius=40.0, n_points=80, seed=1, iterations=1200)
+    edges = wire_surface_reinforced(nodes, 40.0, k_base=4, k_surface=6)
+    deg = np.zeros(len(nodes), dtype=int)
+    np.add.at(deg, edges[:, 0], 1)
+    np.add.at(deg, edges[:, 1], 1)
+    r = np.linalg.norm(nodes, axis=1)
+    assert deg[r >= 30.0].mean() > deg[r < 25.0].mean()  # surface denser than interior
     assert edges.max() < len(nodes)

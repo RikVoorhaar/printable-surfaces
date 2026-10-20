@@ -42,6 +42,80 @@ def knn_edges(points: np.ndarray, k: int = 4) -> np.ndarray:
     return np.asarray(out, dtype=int)
 
 
+def wire_variable_k(
+    points: np.ndarray,
+    radius: float,
+    k_interior: int = 4,
+    k_surface: int = 6,
+    surface_band: float | None = None,
+) -> np.ndarray:
+    """Wire with a radius-dependent degree: higher degree near the surface.
+
+    Points within ``surface_band`` of the boundary get ``k_surface`` neighbours (denser,
+    to fill surface voids); the rest get ``k_interior``. Default ``surface_band`` is ~1.2×
+    the mean nearest-neighbour distance.
+    """
+    n = len(points)
+    r = np.linalg.norm(points, axis=1)
+    if surface_band is None:
+        tree = cKDTree(points)
+        d, _ = tree.query(points, k=2)
+        surface_band = float(d[:, 1].mean()) * 1.2
+
+    boundary = r > radius - surface_band
+    k_per_point = np.where(boundary, k_surface, k_interior)
+    kmax = max(k_interior, k_surface)
+    tree = cKDTree(points)
+    _, idx = tree.query(points, k=kmax + 1)
+
+    seen: set[tuple[int, int]] = set()
+    out: list[tuple[int, int]] = []
+    for i in range(n):
+        for j in idx[i, 1 : int(k_per_point[i]) + 1]:
+            key = (min(i, j), max(i, j))
+            if key not in seen:
+                seen.add(key)
+                out.append(key)
+    return np.asarray(out, dtype=int)
+
+
+def wire_surface_reinforced(
+    points: np.ndarray,
+    radius: float,
+    k_base: int = 4,
+    k_surface: int = 6,
+    surface_band: float | None = None,
+) -> np.ndarray:
+    """Base k-NN wiring, plus extra surface↔surface links to fill surface voids.
+
+    The interior stays at ``k_base`` (sparse); points within ``surface_band`` of the
+    boundary additionally connect to their ``k_surface`` nearest *surface* neighbours,
+    densifying only the shell.
+    """
+    n = len(points)
+    r = np.linalg.norm(points, axis=1)
+    if surface_band is None:
+        tree = cKDTree(points)
+        d, _ = tree.query(points, k=2)
+        surface_band = float(d[:, 1].mean()) * 1.2
+
+    boundary = r > radius - surface_band
+    b_idx = np.where(boundary)[0]
+
+    edges: set[tuple[int, int]] = {tuple(e) for e in knn_edges(points, k_base)}
+
+    if len(b_idx) > k_surface:
+        surf_pts = points[b_idx]
+        tree = cKDTree(surf_pts)
+        _, idx = tree.query(surf_pts, k=k_surface + 1)
+        for i in range(len(b_idx)):
+            for j in idx[i, 1:]:
+                a, b = int(b_idx[i]), int(b_idx[j])
+                edges.add((min(a, b), max(a, b)))
+
+    return np.asarray(sorted(edges), dtype=int)
+
+
 def relax(
     nodes: np.ndarray,
     edges: np.ndarray,
@@ -183,6 +257,21 @@ def relax_coulomb(
     return pos
 
 
+def coulomb_points(
+    radius: float,
+    n_points: int,
+    iterations: int = 3000,
+    seed: int = 0,
+) -> np.ndarray:
+    """Relax a point cloud to a uniform ball (Coulomb gas); returns positions only."""
+    rng = np.random.default_rng(seed)
+    pts = rng.normal(size=(n_points, 3))
+    pts = pts / np.linalg.norm(pts, axis=1, keepdims=True)
+    r = radius * 0.5 * np.cbrt(rng.uniform(0.0, 1.0, size=n_points))
+    pts *= r[:, None]
+    return relax_coulomb(pts, radius, iterations=iterations)
+
+
 def coulomb_lattice(
     radius: float,
     n_points: int,
@@ -195,12 +284,6 @@ def coulomb_lattice(
     No surface/interior distinction — the boundary is just where the cloud's outer points
     land. Returns ``(nodes, edges)``.
     """
-    rng = np.random.default_rng(seed)
-    pts = rng.normal(size=(n_points, 3))
-    pts = pts / np.linalg.norm(pts, axis=1, keepdims=True)
-    r = radius * 0.5 * np.cbrt(rng.uniform(0.0, 1.0, size=n_points))
-    pts *= r[:, None]
-
-    pos = relax_coulomb(pts, radius, iterations=iterations)
+    pos = coulomb_points(radius, n_points, iterations=iterations, seed=seed)
     edges = knn_edges(pos, k)
     return pos, edges
