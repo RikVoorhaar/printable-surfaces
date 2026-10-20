@@ -3,11 +3,14 @@
 import numpy as np
 
 from printable_surfaces.lattice import (
+    boundary_mask,
     build_frame_mesh,
     clip_segment_to_sphere,
     diamond_lattice,
     edges_from_faces,
+    jittered_diamond,
     merge_vertices,
+    random_lattice,
     unified_cage,
 )
 
@@ -77,3 +80,23 @@ def test_unified_cage_shares_boundary_nodes():
         # and a surface rod — i.e. interior and surface share nodes.
         assert incident(diamond_edges, i), f"boundary node {i} missing interior rod"
         assert incident(surface_edges, i), f"boundary node {i} missing surface rod"
+
+
+def test_jittered_diamond_keeps_boundary_on_sphere():
+    nodes, edges = jittered_diamond(radius=30.0, a=20.0, jitter=6.0, seed=1)
+    b = boundary_mask(nodes, 30.0)
+    # boundary nodes stay exactly on the sphere (they are not jittered) ...
+    assert np.allclose(np.linalg.norm(nodes[b], axis=1), 30.0, atol=1e-3)
+    # ... while interior nodes are displaced but remain inside.
+    assert (np.linalg.norm(nodes[~b], axis=1) < 30.0).all()
+    assert len(edges) > 0
+
+
+def test_random_lattice_is_deterministic_and_in_sphere():
+    pts1, e1 = random_lattice(30.0, 40, 60, k=4, seed=7)
+    pts2, e2 = random_lattice(30.0, 40, 60, k=4, seed=7)
+    assert np.allclose(pts1, pts2)
+    assert np.array_equal(e1, e2)
+    assert (np.linalg.norm(pts1, axis=1) <= 30.0 + 1e-6).all()
+    assert e1.max() < len(pts1)
+    assert len(e1) > 0

@@ -189,25 +189,103 @@ def surface_edges(boundary_points: np.ndarray) -> np.ndarray:
     return np.asarray(sorted(out), dtype=int)
 
 
+def complete_surface(
+    radius: float,
+    nodes: np.ndarray,
+    edges: np.ndarray,
+) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    """Add a surface frame that shares nodes with an interior lattice.
+
+    Given interior ``nodes``/``edges`` (already clipped to the sphere, with boundary nodes
+    on the surface), triangulate the boundary nodes (convex hull) into surface edges.
+    Returns ``(nodes, edges, surface_edges, boundary_mask)``.
+    """
+    nodes = np.asarray(nodes, dtype=float)
+    b = boundary_mask(nodes, radius)
+    b_idx = np.where(b)[0]
+    if len(b_idx) >= 4:
+        surface_edges_global = b_idx[surface_edges(nodes[b_idx])]
+    else:
+        surface_edges_global = np.zeros((0, 2), dtype=int)
+    return nodes, np.asarray(edges, dtype=int), surface_edges_global, b
+
+
 def unified_cage(
     radius: float,
     a: float,
     center: tuple[float, float, float] = (0.0, 0.0, 0.0),
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
-    """One coherent lattice: diamond interior + a surface frame sharing its boundary nodes.
+    """Diamond interior + a surface frame sharing its boundary nodes (see :func:`complete_surface`)."""
+    nodes, edges = diamond_lattice(radius, a, center=center)
+    return complete_surface(radius, nodes, edges)
 
-    The diamond lattice is clipped to the sphere; the points where its rods meet the
-    surface become the surface frame's nodes, which are then triangulated (convex hull)
-    to close the shell. Interior and surface therefore **share nodes by construction**.
 
-    Returns ``(nodes, diamond_edges, surface_edges, boundary_mask)``.
+def jittered_diamond(
+    radius: float,
+    a: float,
+    jitter: float,
+    seed: int = 0,
+    center: tuple[float, float, float] = (0.0, 0.0, 0.0),
+) -> tuple[np.ndarray, np.ndarray]:
+    """A diamond lattice with interior atoms randomly displaced (breaks cubic regularity).
+
+    Boundary nodes stay on the sphere (so the surface frame still lines up); interior
+    atoms are jittered by up to ``jitter`` (clamped to stay inside). Keeps degree-4
+    topology but gives an organic, non-cubic look.
     """
-    nodes, diamond_edges = diamond_lattice(radius, a, center=center)
-    b = boundary_mask(nodes, radius)
-    b_idx = np.where(b)[0]
-    if len(b_idx) >= 4:
-        s_edges_local = surface_edges(nodes[b_idx])
-        surface_edges_global = b_idx[s_edges_local]
-    else:
-        surface_edges_global = np.zeros((0, 2), dtype=int)
-    return nodes, diamond_edges, surface_edges_global, b
+    nodes, edges = diamond_lattice(radius, a, center=center)
+    rng = np.random.default_rng(seed)
+    norms = np.linalg.norm(nodes - np.asarray(center), axis=1)
+    interior = norms < radius - 1e-3
+
+    # Random direction, random magnitude, clamped so jittered atoms stay inside.
+    directions = rng.normal(size=(len(nodes), 3))
+    directions /= np.linalg.norm(directions, axis=1, keepdims=True)
+    max_shift = np.minimum(jitter, np.maximum(0.0, 0.9 * (radius - norms)))
+    shifts = directions * (rng.uniform(0.0, 1.0, size=(len(nodes), 1)) * max_shift[:, None])
+    shifts[~interior] = 0.0
+    return nodes + shifts, edges
+
+
+def _sample_ball(rng: np.random.Generator, n: int, radius: float) -> np.ndarray:
+    """``n`` points uniformly distributed in a ball of radius ``radius`` (up to 98% of it)."""
+    directions = rng.normal(size=(n, 3))
+    directions /= np.linalg.norm(directions, axis=1, keepdims=True)
+    r = radius * 0.98 * np.cbrt(rng.uniform(0.0, 1.0, size=n))
+    return directions * r[:, None]
+
+
+def random_lattice(
+    radius: float,
+    n_surface: int,
+    n_interior: int,
+    k: int = 4,
+    seed: int = 0,
+) -> tuple[np.ndarray, np.ndarray]:
+    """An organic random lattice: a sparse k-nearest-neighbour web of scattered points.
+
+    Scatters points uniformly on the sphere surface (these become the shared boundary
+    nodes) and in the interior, then connects each point to its ``k`` nearest neighbours.
+    Degree stays near ``k``, so the result is sparse and non-cubic. Returns ``(nodes, edges)``.
+    """
+    from scipy.spatial import cKDTree
+
+    rng = np.random.default_rng(seed)
+
+    surf = rng.normal(size=(n_surface, 3))
+    surf = surf / np.linalg.norm(surf, axis=1, keepdims=True) * radius
+    intr = _sample_ball(rng, n_interior, radius)
+
+    pts = np.vstack([surf, intr])
+    tree = cKDTree(pts)
+    _, idx = tree.query(pts, k=k + 1)  # k+1: the closest neighbour is the point itself
+
+    seen: set[tuple[int, int]] = set()
+    out: list[tuple[int, int]] = []
+    for i in range(len(pts)):
+        for j in idx[i, 1:]:
+            key = (min(i, j), max(i, j))
+            if key not in seen:
+                seen.add(key)
+                out.append(key)
+    return pts, np.asarray(out, dtype=int)

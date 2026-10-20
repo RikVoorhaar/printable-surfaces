@@ -465,10 +465,37 @@
     </details>
   </article>
 
+  <article class="phase">
+    <div class="head">
+      <span class="num">Phase 9</span>
+      <span class="title">Interior lattice experiments (sparser + randomized)</span>
+      <span class="badge done">✓ Done</span>
+    </div>
+    <div class="deliverable">
+      <h4>Deliverable</h4>
+      <ul>
+        <li>Four sparse unified cages (surface + interior still share nodes), with different interior lattices: sparser diamond, jittered diamond, and two randomized k-nearest-neighbour webs.</li>
+        <li>All four sliced and registered on the dashboard.</li>
+      </ul>
+    </div>
+    <details class="notes">
+      <summary>Implementation notes</summary>
+      <div class="body">
+        <ul>
+          <li><strong>Interior was too dense</strong> (diamond bonds are fixed at ~0.43×cell, shorter than the surface rods). Loosened the interior: diamond cell <code>a=40</code>, and added non-cubic generators.</li>
+          <li>New generators in <code>lattice.py</code>: <code>jittered_diamond</code> (diamond with interior atoms randomly displaced, boundary stays on the sphere) and <code>random_lattice</code> (k-nearest-neighbour web of scattered surface + interior points).</li>
+          <li>Result (all ~sparse): diamond a=40 → 430 rods; jittered → 434; random k-NN #1 → 516; random k-NN #2 → 457. All fully connected (single component) and slice OK (still overhang warnings).</li>
+          <li>Refactored <code>complete_surface</code> so any interior generator plugs in and gets a shared-node surface frame for free.</li>
+          <li>The randomized versions use fixed seeds, so they're reproducible.</li>
+        </ul>
+      </div>
+    </details>
+  </article>
+
 </main>
 
 <footer>
-  Living document · append, don't rewrite · last updated 2026-10-19 (phase 8: unified cage, shared nodes)
+  Living document · append, don't rewrite · last updated 2026-10-20 (phase 9: interior lattice experiments)
 </footer>
 </body>
 </html>

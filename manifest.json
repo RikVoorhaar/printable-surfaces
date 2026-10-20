@@ -73,6 +73,26 @@
           "path": "output/lattice/sphere_unified_a26.stl",
           "kind": "stl",
           "label": "Unified cage \u00b7 a=26 (447 nodes / 1146 rods)"
+        },
+        {
+          "path": "output/lattice/sphere_diamond_sparse_a40.stl",
+          "kind": "stl",
+          "label": "Diamond \u00b7 sparse (a=40) \u00b7 155 nodes / 430 rods"
+        },
+        {
+          "path": "output/lattice/sphere_jittered_diamond.stl",
+          "kind": "stl",
+          "label": "Jittered diamond \u00b7 163 nodes / 434 rods"
+        },
+        {
+          "path": "output/lattice/sphere_random_knn_1.stl",
+          "kind": "stl",
+          "label": "Random \u00b7 k-NN #1 \u00b7 160 nodes / 516 rods"
+        },
+        {
+          "path": "output/lattice/sphere_random_knn_2.stl",
+          "kind": "stl",
+          "label": "Random \u00b7 k-NN #2 \u00b7 140 nodes / 457 rods"
         }
       ]
     },
@@ -95,6 +115,26 @@
           "path": "output/slicer/sphere_unified_a26.gcode",
           "kind": "gcode",
           "label": "Unified a=26 \u00b7 sliced OK \u00b7 warns: overhang, adhesion"
+        },
+        {
+          "path": "output/slicer/sphere_diamond_sparse_a40.gcode",
+          "kind": "gcode",
+          "label": "Diamond \u00b7 sparse (a=40) \u00b7 sliced OK"
+        },
+        {
+          "path": "output/slicer/sphere_jittered_diamond.gcode",
+          "kind": "gcode",
+          "label": "Jittered diamond \u00b7 sliced OK"
+        },
+        {
+          "path": "output/slicer/sphere_random_knn_1.gcode",
+          "kind": "gcode",
+          "label": "Random \u00b7 k-NN #1 \u00b7 sliced OK"
+        },
+        {
+          "path": "output/slicer/sphere_random_knn_2.gcode",
+          "kind": "gcode",
+          "label": "Random \u00b7 k-NN #2 \u00b7 sliced OK"
         }
       ]
     }
