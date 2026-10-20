@@ -93,6 +93,26 @@
           "path": "output/lattice/sphere_random_knn_2.stl",
           "kind": "stl",
           "label": "Random \u00b7 k-NN #2 \u00b7 140 nodes / 457 rods"
+        },
+        {
+          "path": "output/lattice/sphere_relaxed_L18_s1.stl",
+          "kind": "stl",
+          "label": "Relaxed \u00b7 L=18 \u00b7 seed 1 \u00b7 121 nodes / 419 rods"
+        },
+        {
+          "path": "output/lattice/sphere_relaxed_L18_s2.stl",
+          "kind": "stl",
+          "label": "Relaxed \u00b7 L=18 \u00b7 seed 2 \u00b7 121 nodes / 404 rods"
+        },
+        {
+          "path": "output/lattice/sphere_relaxed_L16_s1.stl",
+          "kind": "stl",
+          "label": "Relaxed \u00b7 L=16 \u00b7 seed 1 \u00b7 163 nodes / 553 rods"
+        },
+        {
+          "path": "output/lattice/sphere_relaxed_L20_s1.stl",
+          "kind": "stl",
+          "label": "Relaxed \u00b7 L=20 \u00b7 seed 1 \u00b7 93 nodes / 325 rods"
         }
       ]
     },
@@ -135,6 +155,26 @@
           "path": "output/slicer/sphere_random_knn_2.gcode",
           "kind": "gcode",
           "label": "Random \u00b7 k-NN #2 \u00b7 sliced OK"
+        },
+        {
+          "path": "output/slicer/sphere_relaxed_L18_s1.gcode",
+          "kind": "gcode",
+          "label": "Relaxed \u00b7 L=18 \u00b7 seed 1 \u00b7 sliced OK"
+        },
+        {
+          "path": "output/slicer/sphere_relaxed_L18_s2.gcode",
+          "kind": "gcode",
+          "label": "Relaxed \u00b7 L=18 \u00b7 seed 2 \u00b7 sliced OK"
+        },
+        {
+          "path": "output/slicer/sphere_relaxed_L16_s1.gcode",
+          "kind": "gcode",
+          "label": "Relaxed \u00b7 L=16 \u00b7 seed 1 \u00b7 sliced OK"
+        },
+        {
+          "path": "output/slicer/sphere_relaxed_L20_s1.gcode",
+          "kind": "gcode",
+          "label": "Relaxed \u00b7 L=20 \u00b7 seed 1 \u00b7 sliced OK"
         }
       ]
     }
