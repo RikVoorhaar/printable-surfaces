@@ -11,52 +11,39 @@
     --green: #34d399; --gray: #8b93a3;
   }
   * { box-sizing: border-box; }
-  body {
-    margin: 0; background: var(--bg); color: var(--text);
-    font: 15px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  }
+  body { margin: 0; background: var(--bg); color: var(--text);
+    font: 15px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
   header {
-    padding: 1.6rem 2rem 1.2rem; border-bottom: 1px solid var(--border);
+    padding: 1.4rem 2rem 1rem; border-bottom: 1px solid var(--border);
     background: linear-gradient(180deg, #131722, var(--bg));
     display: flex; align-items: baseline; justify-content: space-between; flex-wrap: wrap; gap: .5rem;
   }
-  header h1 { margin: 0; font-size: 1.4rem; letter-spacing: -.02em; }
+  header h1 { margin: 0; font-size: 1.3rem; letter-spacing: -.02em; }
   header a { color: var(--accent); text-decoration: none; font-size: .9rem; }
   header a:hover { text-decoration: underline; }
-  main { max-width: 72rem; margin: 0 auto; padding: 1.5rem 1.5rem 4rem; }
+  main { max-width: 76rem; margin: 0 auto; padding: 1.25rem 1.25rem 4rem; }
 
-  /* pipeline strip */
-  .pipeline {
-    display: flex; align-items: stretch; gap: 0; flex-wrap: wrap;
-    background: var(--panel); border: 1px solid var(--border); border-radius: 12px;
-    padding: .9rem 1rem; margin-bottom: 1.5rem;
+  details.folder {
+    background: var(--panel); border: 1px solid var(--border); border-radius: 10px;
+    margin-bottom: .7rem; overflow: hidden;
   }
-  .stage-chip {
-    flex: 1 1 0; min-width: 150px; text-align: center; padding: .4rem .3rem;
+  details.folder[open] { border-color: #3a4354; }
+  details.folder summary {
+    cursor: pointer; user-select: none; list-style: none;
+    display: flex; align-items: baseline; gap: .8rem; flex-wrap: wrap;
+    padding: .7rem .9rem; background: var(--panel-2);
   }
-  .stage-chip .n {
-    font-size: .7rem; text-transform: uppercase; letter-spacing: .07em; color: var(--muted);
-  }
-  .stage-chip .l { font-weight: 650; font-size: 1.05rem; }
-  .stage-chip .c { font-size: .8rem; color: var(--muted); }
-  .arrow {
-    align-self: center; color: var(--muted); font-size: 1.3rem; padding: 0 .35rem;
-    user-select: none; flex: 0 0 auto;
-  }
+  details.folder summary::-webkit-details-marker { display: none; }
+  details.folder summary::before { content: "▸ "; color: var(--accent); font-weight: 700; }
+  details.folder[open] summary::before { content: "▾ "; }
+  details.folder summary .fname { font-weight: 650; font-size: 1.02rem; }
+  details.folder summary .fcount { color: var(--muted); font-size: .8rem; font-variant-numeric: tabular-nums; }
 
-  /* stage cards */
-  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1rem; }
-  .card {
-    background: var(--panel); border: 1px solid var(--border); border-radius: 12px;
-    padding: 1rem 1.1rem;
-  }
-  .card h2 { margin: 0 0 .15rem; font-size: 1.05rem; }
-  .card .desc { color: var(--muted); font-size: .85rem; margin-bottom: .7rem; }
-  .card .count { color: var(--muted); font-size: .78rem; font-variant-numeric: tabular-nums; }
+  .artifacts { padding: .6rem .8rem .8rem; display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: .5rem; }
 
   .artifact {
     display: flex; align-items: center; gap: .6rem; padding: .45rem .5rem;
-    border: 1px solid var(--border); border-radius: 8px; margin-top: .45rem;
+    border: 1px solid var(--border); border-radius: 8px;
     background: var(--panel-2); cursor: pointer; transition: border-color .12s, background .12s;
   }
   .artifact:hover { border-color: var(--accent); background: #232936; }
@@ -64,43 +51,36 @@
   .artifact .thumb img { width: 100%; height: 100%; object-fit: cover; }
   .artifact .thumb .ico { font-size: 1.2rem; color: var(--accent); }
   .artifact .meta { flex: 1 1 auto; min-width: 0; }
-  .artifact .meta .label { font-weight: 600; font-size: .9rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .artifact .meta .path { font-family: ui-monospace, monospace; font-size: .72rem; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .artifact .tag { flex: 0 0 auto; font-size: .68rem; font-weight: 650; letter-spacing: .03em; padding: .1rem .45rem; border-radius: 999px; }
+  .artifact .meta .label { font-weight: 600; font-size: .88rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .artifact .meta .path { font-family: ui-monospace, monospace; font-size: .7rem; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .artifact .tag { flex: 0 0 auto; font-size: .66rem; font-weight: 650; letter-spacing: .03em; padding: .1rem .42rem; border-radius: 999px; }
   .tag.stl { background: rgba(110,168,254,.15); color: var(--accent); border: 1px solid rgba(110,168,254,.3); }
   .tag.image { background: rgba(52,211,153,.15); color: var(--green); border: 1px solid rgba(52,211,153,.3); }
-  .tag.other { background: rgba(139,147,163,.12); color: var(--gray); border: 1px solid rgba(139,147,163,.3); }
+  .tag.gcode, .tag.other { background: rgba(139,147,163,.12); color: var(--gray); border: 1px solid rgba(139,147,163,.3); }
 
-  .empty { color: var(--muted); font-size: .85rem; font-style: italic; padding: .4rem .5rem; }
-
-  /* modal */
   #modal { position: fixed; inset: 0; display: none; z-index: 50; }
   #modal.open { display: block; }
   #modal .backdrop { position: absolute; inset: 0; background: rgba(0,0,0,.72); }
-  #modal .box {
-    position: absolute; inset: 3% 3% 3% 3%; background: var(--panel);
-    border: 1px solid var(--border); border-radius: 12px; overflow: hidden;
-    display: flex; flex-direction: column;
-  }
+  #modal .box { position: absolute; inset: 3% 3% 3% 3%; background: var(--panel);
+    border: 1px solid var(--border); border-radius: 12px; overflow: hidden; display: flex; flex-direction: column; }
   #modal .bar { display: flex; align-items: center; justify-content: space-between; padding: .55rem .9rem; border-bottom: 1px solid var(--border); }
   #modal .bar .t { font-weight: 600; font-size: .95rem; }
   #modal .bar .x { background: none; border: 1px solid var(--border); color: var(--text); border-radius: 6px; width: 30px; height: 30px; cursor: pointer; font-size: 1.1rem; line-height: 1; }
   #modal .bar .x:hover { background: var(--panel-2); }
   #modal .content { flex: 1 1 auto; min-height: 0; background: #0b0d12; }
   #modal .content iframe { width: 100%; height: 100%; border: 0; display: block; }
-  #modal .content img { max-width: 100%; max-height: 100%; display: block; margin: 0 auto; object-fit: contain; }
   #modal .content .imgwrap { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; padding: 1rem; }
+  #modal .content img { max-width: 100%; max-height: 100%; display: block; margin: 0 auto; object-fit: contain; }
 </style>
 </head>
 <body>
 <header>
-  <h1>Printable Surfaces — Pipeline</h1>
+  <h1>Printable Surfaces</h1>
   <a href="/plan/plan.html" target="_blank">View the plan →</a>
 </header>
 
 <main>
-  <div class="pipeline" id="pipeline"></div>
-  <div class="grid" id="stages"></div>
+  <div id="folders"></div>
 </main>
 
 <div id="modal">
@@ -116,10 +96,10 @@
 
 <script>
 const KIND_META = {
-  stl:    { tag: 'STL',   tagCls: 'stl',   ico: '🧊' },
-  image:  { tag: 'IMG',   tagCls: 'image', ico: '🖼' },
-  gcode:  { tag: 'GCODE', tagCls: 'other', ico: '📄' },
-  other:  { tag: 'FILE',  tagCls: 'other', ico: '📄' },
+  stl:   { tag: 'STL',   tagCls: 'stl',   ico: '🧊' },
+  image: { tag: 'IMG',   tagCls: 'image',  ico: '🖼' },
+  gcode: { tag: 'GCODE', tagCls: 'gcode',  ico: '📄' },
+  other: { tag: 'FILE',  tagCls: 'other',  ico: '📄' },
 };
 
 function openModal(kind, path, label) {
@@ -127,10 +107,9 @@ function openModal(kind, path, label) {
   document.getElementById('modal-title').textContent = label;
   const content = document.getElementById('modal-content');
   if (kind === 'stl') {
-    const url = 'web/viewer.html?file=' + encodeURIComponent(path);
-    content.innerHTML = '<iframe src="' + url + '" allowfullscreen></iframe>';
+    content.innerHTML = '<iframe src="web/viewer.html?file=' + encodeURIComponent(path) + '" allowfullscreen></iframe>';
   } else if (kind === 'image') {
-    content.innerHTML = '<div class="imgwrap"><img src="' + encodeURI(path) + '" alt="' + label + '"></div>';
+    content.innerHTML = '<div class="imgwrap"><img src="' + encodeURI(path) + '" alt=""></div>';
   } else {
     content.innerHTML = '<div class="imgwrap"><a href="/' + encodeURI(path) + '" target="_blank">Open ' + path + '</a></div>';
   }
@@ -150,11 +129,8 @@ function artifactEl(a) {
 
   const thumb = document.createElement('div');
   thumb.className = 'thumb';
-  if (a.kind === 'image') {
-    thumb.innerHTML = '<img src="' + encodeURI(a.path) + '" loading="lazy" alt="">';
-  } else {
-    thumb.innerHTML = '<span class="ico">' + meta.ico + '</span>';
-  }
+  if (a.kind === 'image') thumb.innerHTML = '<img src="' + encodeURI(a.path) + '" loading="lazy" alt="">';
+  else thumb.innerHTML = '<span class="ico">' + meta.ico + '</span>';
 
   const metaDiv = document.createElement('div');
   metaDiv.className = 'meta';
@@ -168,63 +144,36 @@ function artifactEl(a) {
   return div;
 }
 
-function stageCard(stage) {
-  const card = document.createElement('div');
-  card.className = 'card';
-  card.id = 'stage-' + stage.id;
-  const arts = stage.artifacts || [];
-  card.innerHTML =
-    '<h2>' + stage.label + '</h2>' +
-    '<div class="desc">' + (stage.description || '') + '</div>' +
-    '<div class="count">' + arts.length + ' artifact' + (arts.length === 1 ? '' : 's') + '</div>';
-  if (arts.length === 0) {
-    const e = document.createElement('div');
-    e.className = 'empty';
-    e.textContent = 'Nothing here yet — artifacts appear as phases run.';
-    card.appendChild(e);
-  } else {
-    arts.forEach(a => card.appendChild(artifactEl(a)));
-  }
-  return card;
-}
-
-function renderPipeline(stages) {
-  const el = document.getElementById('pipeline');
+function renderFolders(folders) {
+  const el = document.getElementById('folders');
   el.innerHTML = '';
-  stages.forEach((s, i) => {
-    if (i > 0) {
-      const arr = document.createElement('span');
-      arr.className = 'arrow';
-      arr.textContent = '→';
-      el.appendChild(arr);
-    }
-    const chip = document.createElement('div');
-    chip.className = 'stage-chip';
-    chip.innerHTML =
-      '<div class="n">stage ' + (i + 1) + '</div>' +
-      '<div class="l">' + s.label + '</div>' +
-      '<div class="c">' + (s.artifacts || []).length + ' artifact' + ((s.artifacts || []).length === 1 ? '' : 's') + '</div>';
-    chip.onclick = () => document.getElementById('stage-' + s.id).scrollIntoView({ behavior: 'smooth', block: 'center' });
-    chip.style.cursor = 'pointer';
-    el.appendChild(chip);
+  folders.forEach((f, i) => {
+    const details = document.createElement('details');
+    details.className = 'folder';
+    if (i === 0) details.open = true;   // newest folder open by default
+
+    const nstl = f.artifacts.filter(a => a.kind === 'stl').length;
+    const summary = document.createElement('summary');
+    summary.innerHTML =
+      '<span class="fname">' + f.name + '</span>' +
+      '<span class="fcount">' + f.artifacts.length + ' artifacts · ' + nstl + ' STLs</span>';
+    details.appendChild(summary);
+
+    const body = document.createElement('div');
+    body.className = 'artifacts';
+    f.artifacts.forEach(a => body.appendChild(artifactEl(a)));
+    details.appendChild(body);
+
+    el.appendChild(details);
   });
-}
-
-function renderStages(stages) {
-  const el = document.getElementById('stages');
-  el.innerHTML = '';
-  stages.forEach(s => el.appendChild(stageCard(s)));
 }
 
 fetch('manifest.json', { cache: 'no-store' })
   .then(r => r.json())
-  .then(data => {
-    renderPipeline(data.stages);
-    renderStages(data.stages);
-  })
+  .then(data => renderFolders(data.folders || []))
   .catch(err => {
-    document.getElementById('stages').innerHTML =
-      '<div class="card"><div class="desc">Failed to load manifest.json: ' + err.message + '</div></div>';
+    document.getElementById('folders').innerHTML =
+      '<div class="folder"><div style="padding:.8rem;color:var(--muted)">Failed to load manifest.json: ' + err.message + '</div></div>';
   });
 </script>
 </body>

@@ -1,270 +1,325 @@
 {
-  "stages": [
+  "folders": [
     {
-      "id": "surface",
-      "label": "Surface",
-      "description": "Parametrization of the shape (cube-sphere).",
+      "name": "Coulomb \u00b7 surface wiring",
       "artifacts": [
-        {
-          "path": "output/phase1/cube_sphere.png",
-          "kind": "image",
-          "label": "Cube-sphere (gnomonic)"
-        },
-        {
-          "path": "output/phase1/latlong.png",
-          "kind": "image",
-          "label": "Lat/long (degenerate poles)"
-        }
-      ]
-    },
-    {
-      "id": "triangulation",
-      "label": "Triangulation",
-      "description": "Triangle mesh of the surface.",
-      "artifacts": [
-        {
-          "path": "output/triangulation/sphere_wireframe_n05.stl",
-          "kind": "stl",
-          "label": "Triangulation \u00b7 13% (98 nodes)"
-        },
-        {
-          "path": "output/triangulation/sphere_wireframe_n06.stl",
-          "kind": "stl",
-          "label": "Triangulation \u00b7 21% (152 nodes)"
-        }
-      ]
-    },
-    {
-      "id": "lattice",
-      "label": "Lattice",
-      "description": "Rod + node cage (the printable object).",
-      "artifacts": [
-        {
-          "path": "output/lattice/sphere_surface_frame_n05.stl",
-          "kind": "stl",
-          "label": "Surface frame \u00b7 13% (288 rods)"
-        },
-        {
-          "path": "output/lattice/sphere_surface_frame_n06.stl",
-          "kind": "stl",
-          "label": "Surface frame \u00b7 21% (450 rods)"
-        },
-        {
-          "path": "output/lattice/sphere_interior_diamond_13pct.stl",
-          "kind": "stl",
-          "label": "Interior (diamond) \u00b7 13% (380 rods)"
-        },
-        {
-          "path": "output/lattice/sphere_interior_diamond_21pct.stl",
-          "kind": "stl",
-          "label": "Interior (diamond) \u00b7 21% (672 rods)"
-        },
-        {
-          "path": "output/lattice/sphere_unified_a34.stl",
-          "kind": "stl",
-          "label": "Unified cage \u00b7 a=34 (199 nodes / 542 rods)"
-        },
-        {
-          "path": "output/lattice/sphere_unified_a30.stl",
-          "kind": "stl",
-          "label": "Unified cage \u00b7 a=30 (283 nodes / 746 rods)"
-        },
-        {
-          "path": "output/lattice/sphere_unified_a26.stl",
-          "kind": "stl",
-          "label": "Unified cage \u00b7 a=26 (447 nodes / 1146 rods)"
-        },
-        {
-          "path": "output/lattice/sphere_diamond_sparse_a40.stl",
-          "kind": "stl",
-          "label": "Diamond \u00b7 sparse (a=40) \u00b7 155 nodes / 430 rods"
-        },
-        {
-          "path": "output/lattice/sphere_jittered_diamond.stl",
-          "kind": "stl",
-          "label": "Jittered diamond \u00b7 163 nodes / 434 rods"
-        },
-        {
-          "path": "output/lattice/sphere_random_knn_1.stl",
-          "kind": "stl",
-          "label": "Random \u00b7 k-NN #1 \u00b7 160 nodes / 516 rods"
-        },
-        {
-          "path": "output/lattice/sphere_random_knn_2.stl",
-          "kind": "stl",
-          "label": "Random \u00b7 k-NN #2 \u00b7 140 nodes / 457 rods"
-        },
-        {
-          "path": "output/lattice/sphere_relaxed_L18_s1.stl",
-          "kind": "stl",
-          "label": "Relaxed \u00b7 L=18 \u00b7 seed 1 \u00b7 121 nodes / 419 rods"
-        },
-        {
-          "path": "output/lattice/sphere_relaxed_L18_s2.stl",
-          "kind": "stl",
-          "label": "Relaxed \u00b7 L=18 \u00b7 seed 2 \u00b7 121 nodes / 404 rods"
-        },
-        {
-          "path": "output/lattice/sphere_relaxed_L16_s1.stl",
-          "kind": "stl",
-          "label": "Relaxed \u00b7 L=16 \u00b7 seed 1 \u00b7 163 nodes / 553 rods"
-        },
-        {
-          "path": "output/lattice/sphere_relaxed_L20_s1.stl",
-          "kind": "stl",
-          "label": "Relaxed \u00b7 L=20 \u00b7 seed 1 \u00b7 93 nodes / 325 rods"
-        },
-        {
-          "path": "output/lattice/sphere_coulomb_n120_k4.stl",
-          "kind": "stl",
-          "label": "Coulomb \u00b7 120 pts \u00b7 k=4 \u00b7 120 nodes / 271 rods"
-        },
-        {
-          "path": "output/lattice/sphere_coulomb_n160_k4.stl",
-          "kind": "stl",
-          "label": "Coulomb \u00b7 160 pts \u00b7 k=4 \u00b7 160 nodes / 362 rods"
-        },
-        {
-          "path": "output/lattice/sphere_coulomb_n200_k4.stl",
-          "kind": "stl",
-          "label": "Coulomb \u00b7 200 pts \u00b7 k=4 \u00b7 200 nodes / 463 rods"
-        },
-        {
-          "path": "output/lattice/sphere_coulomb_n160_k3.stl",
-          "kind": "stl",
-          "label": "Coulomb \u00b7 160 pts \u00b7 k=3 \u00b7 160 nodes / 282 rods"
-        },
-        {
-          "path": "output/lattice/sphere_coulomb_n160_k5.stl",
-          "kind": "stl",
-          "label": "Coulomb \u00b7 160 pts \u00b7 k=5 \u00b7 160 nodes / 448 rods"
-        },
         {
           "path": "output/lattice/sphere_coulomb_ki4_ks6.stl",
           "kind": "stl",
-          "label": "Coulomb \u00b7 base 4 + surf 6 \u00b7 160 nodes / 511 rods"
+          "label": "Coulomb \u00b7 base 4 + surf 6 \u00b7 160 nodes / 511 rods",
+          "stage": "lattice"
         },
         {
           "path": "output/lattice/sphere_coulomb_ki4_ks7.stl",
           "kind": "stl",
-          "label": "Coulomb \u00b7 base 4 + surf 7 \u00b7 160 nodes / 567 rods"
+          "label": "Coulomb \u00b7 base 4 + surf 7 \u00b7 160 nodes / 567 rods",
+          "stage": "lattice"
         },
         {
           "path": "output/lattice/sphere_coulomb_ki3_ks6.stl",
           "kind": "stl",
-          "label": "Coulomb \u00b7 base 3 + surf 6 \u00b7 160 nodes / 469 rods"
+          "label": "Coulomb \u00b7 base 3 + surf 6 \u00b7 160 nodes / 469 rods",
+          "stage": "lattice"
         },
         {
           "path": "output/lattice/sphere_coulomb_ki4_ks5.stl",
           "kind": "stl",
-          "label": "Coulomb \u00b7 base 4 + surf 5 \u00b7 160 nodes / 463 rods"
-        }
-      ]
-    },
-    {
-      "id": "slicer",
-      "label": "Slicer",
-      "description": "PrusaSlicer output & support check.",
-      "artifacts": [
-        {
-          "path": "output/slicer/sphere_unified_a34.gcode",
-          "kind": "gcode",
-          "label": "Unified a=34 \u00b7 sliced OK \u00b7 warns: overhang"
-        },
-        {
-          "path": "output/slicer/sphere_unified_a30.gcode",
-          "kind": "gcode",
-          "label": "Unified a=30 \u00b7 sliced OK \u00b7 warns: overhang"
-        },
-        {
-          "path": "output/slicer/sphere_unified_a26.gcode",
-          "kind": "gcode",
-          "label": "Unified a=26 \u00b7 sliced OK \u00b7 warns: overhang, adhesion"
-        },
-        {
-          "path": "output/slicer/sphere_diamond_sparse_a40.gcode",
-          "kind": "gcode",
-          "label": "Diamond \u00b7 sparse (a=40) \u00b7 sliced OK"
-        },
-        {
-          "path": "output/slicer/sphere_jittered_diamond.gcode",
-          "kind": "gcode",
-          "label": "Jittered diamond \u00b7 sliced OK"
-        },
-        {
-          "path": "output/slicer/sphere_random_knn_1.gcode",
-          "kind": "gcode",
-          "label": "Random \u00b7 k-NN #1 \u00b7 sliced OK"
-        },
-        {
-          "path": "output/slicer/sphere_random_knn_2.gcode",
-          "kind": "gcode",
-          "label": "Random \u00b7 k-NN #2 \u00b7 sliced OK"
-        },
-        {
-          "path": "output/slicer/sphere_relaxed_L18_s1.gcode",
-          "kind": "gcode",
-          "label": "Relaxed \u00b7 L=18 \u00b7 seed 1 \u00b7 sliced OK"
-        },
-        {
-          "path": "output/slicer/sphere_relaxed_L18_s2.gcode",
-          "kind": "gcode",
-          "label": "Relaxed \u00b7 L=18 \u00b7 seed 2 \u00b7 sliced OK"
-        },
-        {
-          "path": "output/slicer/sphere_relaxed_L16_s1.gcode",
-          "kind": "gcode",
-          "label": "Relaxed \u00b7 L=16 \u00b7 seed 1 \u00b7 sliced OK"
-        },
-        {
-          "path": "output/slicer/sphere_relaxed_L20_s1.gcode",
-          "kind": "gcode",
-          "label": "Relaxed \u00b7 L=20 \u00b7 seed 1 \u00b7 sliced OK"
-        },
-        {
-          "path": "output/slicer/sphere_coulomb_n120_k4.gcode",
-          "kind": "gcode",
-          "label": "Coulomb \u00b7 120 pts \u00b7 k=4 \u00b7 sliced OK"
-        },
-        {
-          "path": "output/slicer/sphere_coulomb_n160_k4.gcode",
-          "kind": "gcode",
-          "label": "Coulomb \u00b7 160 pts \u00b7 k=4 \u00b7 sliced OK"
-        },
-        {
-          "path": "output/slicer/sphere_coulomb_n200_k4.gcode",
-          "kind": "gcode",
-          "label": "Coulomb \u00b7 200 pts \u00b7 k=4 \u00b7 sliced OK"
-        },
-        {
-          "path": "output/slicer/sphere_coulomb_n160_k3.gcode",
-          "kind": "gcode",
-          "label": "Coulomb \u00b7 160 pts \u00b7 k=3 \u00b7 sliced OK"
-        },
-        {
-          "path": "output/slicer/sphere_coulomb_n160_k5.gcode",
-          "kind": "gcode",
-          "label": "Coulomb \u00b7 160 pts \u00b7 k=5 \u00b7 sliced OK"
+          "label": "Coulomb \u00b7 base 4 + surf 5 \u00b7 160 nodes / 463 rods",
+          "stage": "lattice"
         },
         {
           "path": "output/slicer/sphere_coulomb_ki4_ks6.gcode",
           "kind": "gcode",
-          "label": "Coulomb \u00b7 base 4 + surf 6 \u00b7 sliced OK"
+          "label": "Coulomb \u00b7 base 4 + surf 6 \u00b7 sliced OK",
+          "stage": "slicer"
         },
         {
           "path": "output/slicer/sphere_coulomb_ki4_ks7.gcode",
           "kind": "gcode",
-          "label": "Coulomb \u00b7 base 4 + surf 7 \u00b7 sliced OK"
+          "label": "Coulomb \u00b7 base 4 + surf 7 \u00b7 sliced OK",
+          "stage": "slicer"
         },
         {
           "path": "output/slicer/sphere_coulomb_ki3_ks6.gcode",
           "kind": "gcode",
-          "label": "Coulomb \u00b7 base 3 + surf 6 \u00b7 sliced OK"
+          "label": "Coulomb \u00b7 base 3 + surf 6 \u00b7 sliced OK",
+          "stage": "slicer"
         },
         {
           "path": "output/slicer/sphere_coulomb_ki4_ks5.gcode",
           "kind": "gcode",
-          "label": "Coulomb \u00b7 base 4 + surf 5 \u00b7 sliced OK"
+          "label": "Coulomb \u00b7 base 4 + surf 5 \u00b7 sliced OK",
+          "stage": "slicer"
+        }
+      ]
+    },
+    {
+      "name": "Coulomb \u00b7 k-NN",
+      "artifacts": [
+        {
+          "path": "output/lattice/sphere_coulomb_n120_k4.stl",
+          "kind": "stl",
+          "label": "Coulomb \u00b7 120 pts \u00b7 k=4 \u00b7 120 nodes / 271 rods",
+          "stage": "lattice"
+        },
+        {
+          "path": "output/lattice/sphere_coulomb_n160_k4.stl",
+          "kind": "stl",
+          "label": "Coulomb \u00b7 160 pts \u00b7 k=4 \u00b7 160 nodes / 362 rods",
+          "stage": "lattice"
+        },
+        {
+          "path": "output/lattice/sphere_coulomb_n200_k4.stl",
+          "kind": "stl",
+          "label": "Coulomb \u00b7 200 pts \u00b7 k=4 \u00b7 200 nodes / 463 rods",
+          "stage": "lattice"
+        },
+        {
+          "path": "output/lattice/sphere_coulomb_n160_k3.stl",
+          "kind": "stl",
+          "label": "Coulomb \u00b7 160 pts \u00b7 k=3 \u00b7 160 nodes / 282 rods",
+          "stage": "lattice"
+        },
+        {
+          "path": "output/lattice/sphere_coulomb_n160_k5.stl",
+          "kind": "stl",
+          "label": "Coulomb \u00b7 160 pts \u00b7 k=5 \u00b7 160 nodes / 448 rods",
+          "stage": "lattice"
+        },
+        {
+          "path": "output/slicer/sphere_coulomb_n120_k4.gcode",
+          "kind": "gcode",
+          "label": "Coulomb \u00b7 120 pts \u00b7 k=4 \u00b7 sliced OK",
+          "stage": "slicer"
+        },
+        {
+          "path": "output/slicer/sphere_coulomb_n160_k4.gcode",
+          "kind": "gcode",
+          "label": "Coulomb \u00b7 160 pts \u00b7 k=4 \u00b7 sliced OK",
+          "stage": "slicer"
+        },
+        {
+          "path": "output/slicer/sphere_coulomb_n200_k4.gcode",
+          "kind": "gcode",
+          "label": "Coulomb \u00b7 200 pts \u00b7 k=4 \u00b7 sliced OK",
+          "stage": "slicer"
+        },
+        {
+          "path": "output/slicer/sphere_coulomb_n160_k3.gcode",
+          "kind": "gcode",
+          "label": "Coulomb \u00b7 160 pts \u00b7 k=3 \u00b7 sliced OK",
+          "stage": "slicer"
+        },
+        {
+          "path": "output/slicer/sphere_coulomb_n160_k5.gcode",
+          "kind": "gcode",
+          "label": "Coulomb \u00b7 160 pts \u00b7 k=5 \u00b7 sliced OK",
+          "stage": "slicer"
+        }
+      ]
+    },
+    {
+      "name": "Spring-relaxed (old)",
+      "artifacts": [
+        {
+          "path": "output/slicer/sphere_relaxed_L18_s1.gcode",
+          "kind": "gcode",
+          "label": "Relaxed \u00b7 L=18 \u00b7 seed 1 \u00b7 sliced OK",
+          "stage": "slicer"
+        },
+        {
+          "path": "output/slicer/sphere_relaxed_L18_s2.gcode",
+          "kind": "gcode",
+          "label": "Relaxed \u00b7 L=18 \u00b7 seed 2 \u00b7 sliced OK",
+          "stage": "slicer"
+        },
+        {
+          "path": "output/slicer/sphere_relaxed_L16_s1.gcode",
+          "kind": "gcode",
+          "label": "Relaxed \u00b7 L=16 \u00b7 seed 1 \u00b7 sliced OK",
+          "stage": "slicer"
+        },
+        {
+          "path": "output/slicer/sphere_relaxed_L20_s1.gcode",
+          "kind": "gcode",
+          "label": "Relaxed \u00b7 L=20 \u00b7 seed 1 \u00b7 sliced OK",
+          "stage": "slicer"
+        },
+        {
+          "path": "output/lattice/sphere_relaxed_L18_s1.stl",
+          "kind": "stl",
+          "label": "Relaxed \u00b7 L=18 \u00b7 seed 1 \u00b7 121 nodes / 419 rods",
+          "stage": "lattice"
+        },
+        {
+          "path": "output/lattice/sphere_relaxed_L18_s2.stl",
+          "kind": "stl",
+          "label": "Relaxed \u00b7 L=18 \u00b7 seed 2 \u00b7 121 nodes / 404 rods",
+          "stage": "lattice"
+        },
+        {
+          "path": "output/lattice/sphere_relaxed_L16_s1.stl",
+          "kind": "stl",
+          "label": "Relaxed \u00b7 L=16 \u00b7 seed 1 \u00b7 163 nodes / 553 rods",
+          "stage": "lattice"
+        },
+        {
+          "path": "output/lattice/sphere_relaxed_L20_s1.stl",
+          "kind": "stl",
+          "label": "Relaxed \u00b7 L=20 \u00b7 seed 1 \u00b7 93 nodes / 325 rods",
+          "stage": "lattice"
+        }
+      ]
+    },
+    {
+      "name": "Interior lattice experiments",
+      "artifacts": [
+        {
+          "path": "output/lattice/sphere_diamond_sparse_a40.stl",
+          "kind": "stl",
+          "label": "Diamond \u00b7 sparse (a=40) \u00b7 155 nodes / 430 rods",
+          "stage": "lattice"
+        },
+        {
+          "path": "output/lattice/sphere_jittered_diamond.stl",
+          "kind": "stl",
+          "label": "Jittered diamond \u00b7 163 nodes / 434 rods",
+          "stage": "lattice"
+        },
+        {
+          "path": "output/lattice/sphere_random_knn_1.stl",
+          "kind": "stl",
+          "label": "Random \u00b7 k-NN #1 \u00b7 160 nodes / 516 rods",
+          "stage": "lattice"
+        },
+        {
+          "path": "output/lattice/sphere_random_knn_2.stl",
+          "kind": "stl",
+          "label": "Random \u00b7 k-NN #2 \u00b7 140 nodes / 457 rods",
+          "stage": "lattice"
+        },
+        {
+          "path": "output/slicer/sphere_diamond_sparse_a40.gcode",
+          "kind": "gcode",
+          "label": "Diamond \u00b7 sparse (a=40) \u00b7 sliced OK",
+          "stage": "slicer"
+        },
+        {
+          "path": "output/slicer/sphere_jittered_diamond.gcode",
+          "kind": "gcode",
+          "label": "Jittered diamond \u00b7 sliced OK",
+          "stage": "slicer"
+        },
+        {
+          "path": "output/slicer/sphere_random_knn_1.gcode",
+          "kind": "gcode",
+          "label": "Random \u00b7 k-NN #1 \u00b7 sliced OK",
+          "stage": "slicer"
+        },
+        {
+          "path": "output/slicer/sphere_random_knn_2.gcode",
+          "kind": "gcode",
+          "label": "Random \u00b7 k-NN #2 \u00b7 sliced OK",
+          "stage": "slicer"
+        }
+      ]
+    },
+    {
+      "name": "Unified cages",
+      "artifacts": [
+        {
+          "path": "output/lattice/sphere_unified_a34.stl",
+          "kind": "stl",
+          "label": "Unified cage \u00b7 a=34 (199 nodes / 542 rods)",
+          "stage": "lattice"
+        },
+        {
+          "path": "output/lattice/sphere_unified_a30.stl",
+          "kind": "stl",
+          "label": "Unified cage \u00b7 a=30 (283 nodes / 746 rods)",
+          "stage": "lattice"
+        },
+        {
+          "path": "output/lattice/sphere_unified_a26.stl",
+          "kind": "stl",
+          "label": "Unified cage \u00b7 a=26 (447 nodes / 1146 rods)",
+          "stage": "lattice"
+        },
+        {
+          "path": "output/slicer/sphere_unified_a34.gcode",
+          "kind": "gcode",
+          "label": "Unified a=34 \u00b7 sliced OK \u00b7 warns: overhang",
+          "stage": "slicer"
+        },
+        {
+          "path": "output/slicer/sphere_unified_a30.gcode",
+          "kind": "gcode",
+          "label": "Unified a=30 \u00b7 sliced OK \u00b7 warns: overhang",
+          "stage": "slicer"
+        },
+        {
+          "path": "output/slicer/sphere_unified_a26.gcode",
+          "kind": "gcode",
+          "label": "Unified a=26 \u00b7 sliced OK \u00b7 warns: overhang, adhesion",
+          "stage": "slicer"
+        }
+      ]
+    },
+    {
+      "name": "Surface frames & interiors",
+      "artifacts": [
+        {
+          "path": "output/triangulation/sphere_wireframe_n05.stl",
+          "kind": "stl",
+          "label": "Triangulation \u00b7 13% (98 nodes)",
+          "stage": "triangulation"
+        },
+        {
+          "path": "output/triangulation/sphere_wireframe_n06.stl",
+          "kind": "stl",
+          "label": "Triangulation \u00b7 21% (152 nodes)",
+          "stage": "triangulation"
+        },
+        {
+          "path": "output/lattice/sphere_surface_frame_n05.stl",
+          "kind": "stl",
+          "label": "Surface frame \u00b7 13% (288 rods)",
+          "stage": "lattice"
+        },
+        {
+          "path": "output/lattice/sphere_surface_frame_n06.stl",
+          "kind": "stl",
+          "label": "Surface frame \u00b7 21% (450 rods)",
+          "stage": "lattice"
+        },
+        {
+          "path": "output/lattice/sphere_interior_diamond_13pct.stl",
+          "kind": "stl",
+          "label": "Interior (diamond) \u00b7 13% (380 rods)",
+          "stage": "lattice"
+        },
+        {
+          "path": "output/lattice/sphere_interior_diamond_21pct.stl",
+          "kind": "stl",
+          "label": "Interior (diamond) \u00b7 21% (672 rods)",
+          "stage": "lattice"
+        }
+      ]
+    },
+    {
+      "name": "Surface parametrization",
+      "artifacts": [
+        {
+          "path": "output/phase1/cube_sphere.png",
+          "kind": "image",
+          "label": "Cube-sphere (gnomonic)",
+          "stage": "surface"
+        },
+        {
+          "path": "output/phase1/latlong.png",
+          "kind": "image",
+          "label": "Lat/long (degenerate poles)",
+          "stage": "surface"
         }
       ]
     }
