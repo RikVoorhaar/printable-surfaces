@@ -3,6 +3,7 @@
 import numpy as np
 
 from printable_surfaces.lattice import (
+    _rod_color,
     boundary_mask,
     build_frame_mesh,
     clip_segment_to_sphere,
@@ -50,9 +51,13 @@ def test_build_frame_mesh_color_by_direction():
     assert vc is not None
     assert vc.shape == (len(mesh.vertices), 4)
     colors = {tuple(c) for c in vc[:, :3]}
-    # green (steep) and orange (horizontal) must both be present
-    assert (76, 184, 106) in colors
-    assert (232, 138, 46) in colors
+    # vertical rod -> green, horizontal rod -> orange, joints -> grey
+    assert (40, 180, 90) in colors      # vertical (green end of the scale)
+    assert (232, 138, 46) in colors     # horizontal bridge (orange)
+    assert (154, 163, 178) in colors    # joint (grey)
+    # continuous scale: a 45° rod gives the yellow threshold colour, not an endpoint
+    c45 = tuple(int(x) for x in _rod_color(np.array([1.0, 0.0, 1.0]))[:3])
+    assert c45[0] > 200 and c45[1] > 180 and c45[2] < 80  # yellow-ish
 
 
 def test_clip_segment_inside_returns_full_segment():

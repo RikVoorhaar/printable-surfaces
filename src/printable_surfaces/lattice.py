@@ -34,9 +34,10 @@ def edges_from_faces(vertices: np.ndarray, faces: np.ndarray) -> np.ndarray:
 
 
 def _rod_color(d: np.ndarray) -> np.ndarray:
-    """RGBA (uint8) colour for a rod, by its angle from horizontal.
+    """RGBA (uint8) colour for a rod, on a continuous scale by angle from horizontal.
 
-    green = steep (≥45°, printable) · orange = horizontal (bridge) · red = shallow.
+    Horizontal (bridge) is orange; otherwise a continuous red → yellow → green ramp as the
+    rod goes from shallow (0°) through the 45° printability threshold to vertical (90°).
     """
     length = float(np.linalg.norm(d))
     if length < 1e-9:
@@ -44,9 +45,17 @@ def _rod_color(d: np.ndarray) -> np.ndarray:
     s = abs(float(d[2])) / length  # sin(elevation): 0 = horizontal, 1 = vertical
     if s < 0.05:
         return np.array([232, 138, 46, 255], dtype=np.uint8)   # horizontal bridge
+
+    red = np.array([220.0, 50.0, 50.0])      # very shallow (worst)
+    yellow = np.array([245.0, 210.0, 40.0])  # at the 45° threshold
+    green = np.array([40.0, 180.0, 90.0])    # vertical (best)
     if s < 0.7071:
-        return np.array([224, 90, 90, 255], dtype=np.uint8)    # shallow (unprintable)
-    return np.array([76, 184, 106, 255], dtype=np.uint8)       # steep (printable)
+        t = (s - 0.05) / (0.7071 - 0.05)     # red -> yellow
+        c = red + (yellow - red) * t
+    else:
+        t = (s - 0.7071) / (1.0 - 0.7071)    # yellow -> green
+        c = yellow + (green - yellow) * t
+    return np.array([int(round(c[0])), int(round(c[1])), int(round(c[2])), 255], dtype=np.uint8)
 
 
 def build_frame_mesh(
