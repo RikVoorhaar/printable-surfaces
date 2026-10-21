@@ -593,32 +593,30 @@
         </ul>
       </div>
     </details>
-  <h2>Printability constraint — discussion (2026-10-20)</h2>
+  <h2>Pivot: Platonic solids, optionally stretched (2026-10-21)</h2>
   <div class="decisions">
     <p style="margin-top:0;color:var(--muted);">
-      Measured on the best lattice (base 4 + surf 6, 511 rods): only <strong>28.6%</strong> of
-      rods are steep enough to be self-supporting, <strong>0</strong> are valid bridges, and
-      <strong>71.4%</strong> are unprintable (shallow, not a bridge). Structural conclusion:
-      printability is a <em>directional</em>, <em>edge-based</em> constraint, while the Coulomb
-      gas is <em>isotropic</em> and <em>vertex-based</em> — a fundamental mismatch.
+      Spheres are the wrong shape (reachability is the hard part). New target: a Platonic
+      solid (optionally vertically stretched into a convex polytope with the same
+      combinatorics), per the Perplexity report <code>docs/…/Support-Free Rod Lattices for the Platonic Solids…md</code>.
     </p>
     <p style="color:var(--muted);">
-      Rod rule (PLA): a rod is printable iff it is within 45° of vertical (self-supporting),
-      OR ~horizontal and ≤ 10 mm (a bridge). This effectively demands a lattice with a
-      vertical grain (columns + steep diagonals + short horizontal ties).
+      Key theorem ("edges suffice"): if every edge is steep (≥45°) or a bridged horizontal
+      (≤10 mm), then every face is printable and every point is reachable. So the problem
+      reduces to a finite frame. Recipe: orient → stretch → fix solid vertices + edge
+      subdivisions → seed + Coulomb-relax face/interior points with the frame fixed.
     </p>
     <p style="margin-bottom:0;color:var(--muted);">
-      Candidate paths (not yet chosen): (1) directional wiring — keep the uniform cloud,
-      wire only printable rods; (2) anisotropic relaxation — bias the cloud to be columnar;
-      (3) co-optimize — energy = repulsion + spring + soft printability penalty on rod angle,
-      with periodic re-wiring.
+      Report's cleanest result: cube (body-diagonal vertical) ×1.69 → rhombohedron, no
+      bridges, 12 edges at 50°. Tetrahedron needs no stretch. Flag: single-point base needs
+      stabilizer struts or a small flat cut.
     </p>
   </div>
 
 </main>
 
 <footer>
-  Living document · append, don't rewrite · last updated 2026-10-20 (printability discussion)
+  Living document · append, don't rewrite · last updated 2026-10-21 (pivot to Platonic solids)
 </footer>
 </body>
 </html>
