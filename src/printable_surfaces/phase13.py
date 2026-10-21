@@ -14,7 +14,7 @@ import os
 import numpy as np
 from scipy.spatial import cKDTree
 
-from .artifacts import register
+from .artifacts import register, remove_artifact
 from .lattice import build_frame_mesh
 from .platonic import cube_rhombohedron, cube_rotation, face_parallelogram, face_planes
 from .slicer import slice_stl
@@ -144,25 +144,32 @@ def build_and_register(name: str, stretch: float) -> None:
     all_pts = relax(all_pts, n_frame, all_ids, face_paras, normals, centers, SPACING)
     all_edges = wire(all_pts, chain, n_frame, k=4)
 
-    mesh = build_frame_mesh(all_pts, all_edges, rod_radius=ROD_MM, joint_radius=JOINT_MM)
-    path = f"output/lattice/rhombohedron_{name}.stl"
-    os.makedirs(os.path.dirname(path), exist_ok=True)
-    mesh.export(path)
-    register("lattice", path, "stl", f"Rhombohedron · stretch ×{stretch:.2f} · {len(all_pts)} nodes / {len(all_edges)} rods", folder="Cube · rhombohedron")
+    mesh = build_frame_mesh(all_pts, all_edges, rod_radius=ROD_MM, joint_radius=JOINT_MM, color_by_direction=True)
+    stl_path = f"output/lattice/rhombohedron_{name}.stl"
+    ply_path = f"output/lattice/rhombohedron_{name}.ply"
+    os.makedirs(os.path.dirname(stl_path), exist_ok=True)
+    mesh.export(stl_path)   # STL (colours ignored), for slicing
+    mesh.export(ply_path)   # PLY (rod-direction colours), for the viewer
 
-    gcode = f"output/slicer/rhombohedron_{name}.gcode"
+    label = f"Rhombohedron · stretch ×{stretch:.2f} · {len(all_pts)} nodes / {len(all_edges)} rods"
+    register("lattice", ply_path, "ply", label, folder="Cube · rhombohedron")
+
+    ok = False
     try:
-        proc = slice_stl(path, gcode)
-        ok = proc.returncode == 0 and os.path.exists(gcode) and os.path.getsize(gcode) > 0
+        proc = slice_stl(stl_path, f"output/slicer/rhombohedron_{name}.gcode")
+        ok = proc.returncode == 0 and os.path.exists(f"output/slicer/rhombohedron_{name}.gcode")
     except FileNotFoundError:
-        ok = False
-    if ok:
-        register("slicer", gcode, "gcode", f"Rhombohedron ×{stretch:.2f} · sliced OK", folder="Cube · rhombohedron")
+        pass
 
-    print(f"stretch ×{stretch:.2f}: {len(all_pts)} nodes ({n_frame} frame)  {len(all_edges)} rods  -> {'sliced OK' if ok else 'FAILED'}")
+    print(f"stretch ×{stretch:.2f}: {len(all_pts)} nodes ({n_frame} frame)  {len(all_edges)} rods  -> {'sliced OK' if ok else 'slice n/a'}")
 
 
 def main() -> None:
+    for old in ("rhombohedron_cube_s140.stl", "rhombohedron_cube_s169.stl", "rhombohedron_cube_s190.stl",
+                "rhombohedron_cube_s140.ply", "rhombohedron_cube_s169.ply", "rhombohedron_cube_s190.ply"):
+        remove_artifact(f"output/lattice/{old}")
+        if os.path.exists(f"output/lattice/{old}"):
+            os.remove(f"output/lattice/{old}")
     for name, stretch in VARIANTS:
         build_and_register(name, stretch)
 

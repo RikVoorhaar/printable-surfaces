@@ -33,6 +33,22 @@ def edges_from_faces(vertices: np.ndarray, faces: np.ndarray) -> np.ndarray:
     return np.asarray(mesh.edges_unique, dtype=int)
 
 
+def _rod_color(d: np.ndarray) -> np.ndarray:
+    """RGBA (uint8) colour for a rod, by its angle from horizontal.
+
+    green = steep (≥45°, printable) · orange = horizontal (bridge) · red = shallow.
+    """
+    length = float(np.linalg.norm(d))
+    if length < 1e-9:
+        return np.array([154, 163, 178, 255], dtype=np.uint8)  # joint grey
+    s = abs(float(d[2])) / length  # sin(elevation): 0 = horizontal, 1 = vertical
+    if s < 0.05:
+        return np.array([232, 138, 46, 255], dtype=np.uint8)   # horizontal bridge
+    if s < 0.7071:
+        return np.array([224, 90, 90, 255], dtype=np.uint8)    # shallow (unprintable)
+    return np.array([76, 184, 106, 255], dtype=np.uint8)       # steep (printable)
+
+
 def build_frame_mesh(
     nodes: np.ndarray,
     edges: np.ndarray,
@@ -40,23 +56,36 @@ def build_frame_mesh(
     joint_radius: float,
     rod_sections: int = 12,
     joint_count: tuple[int, int] = (6, 6),
+    color_by_direction: bool = False,
 ) -> trimesh.Trimesh:
     """Thicken a node+edge frame into a single mesh.
 
     Rods become cylinders, nodes become spheres, and the parts are concatenated into one
     triangle soup. (This is intentionally *not* boolean-unioned; overlapping joints are
     fine for viewing and slicing, and a true watertight union is a later refinement.)
+
+    If ``color_by_direction`` is True, rods are vertex-coloured by their angle from
+    horizontal (green=steep, orange=horizontal, red=shallow) and joints grey — bake this
+    into a PLY export for the viewer.
     """
+    joint_color = np.array([154, 163, 178, 255], dtype=np.uint8)
+
+    def _paint(mesh: trimesh.Trimesh, color: np.ndarray) -> trimesh.Trimesh:
+        if color_by_direction:
+            mesh.visual.vertex_colors = np.tile(color, (len(mesh.vertices), 1))
+        return mesh
+
     parts: list[trimesh.Trimesh] = []
     for a, b in edges:
         seg = np.asarray([nodes[a], nodes[b]], dtype=float)
         if np.linalg.norm(seg[1] - seg[0]) < 1e-9:
             continue  # skip degenerate (zero-length) edges
-        parts.append(trimesh.creation.cylinder(radius=rod_radius, segment=seg, sections=rod_sections))
+        cyl = trimesh.creation.cylinder(radius=rod_radius, segment=seg, sections=rod_sections)
+        parts.append(_paint(cyl, _rod_color(seg[1] - seg[0])))
     for p in np.asarray(nodes, dtype=float):
         s = trimesh.creation.uv_sphere(radius=joint_radius, count=joint_count)
         s.apply_translation(p)
-        parts.append(s)
+        parts.append(_paint(s, joint_color))
     return trimesh.util.concatenate(parts)
 
 

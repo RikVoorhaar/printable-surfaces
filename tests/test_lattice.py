@@ -41,6 +41,20 @@ def test_build_frame_mesh_is_finite_and_nonempty():
     assert np.isfinite(mesh.vertices).all()
 
 
+def test_build_frame_mesh_color_by_direction():
+    # horizontal rod (should be orange) + vertical rod (should be green) + joints (grey)
+    nodes = np.array([[0.0, 0.0, 0.0], [10.0, 0.0, 0.0], [0.0, 0.0, 10.0]])
+    edges = np.array([[0, 1], [0, 2]])
+    mesh = build_frame_mesh(nodes, edges, rod_radius=1.0, joint_radius=1.5, color_by_direction=True)
+    vc = mesh.visual.vertex_colors
+    assert vc is not None
+    assert vc.shape == (len(mesh.vertices), 4)
+    colors = {tuple(c) for c in vc[:, :3]}
+    # green (steep) and orange (horizontal) must both be present
+    assert (76, 184, 106) in colors
+    assert (232, 138, 46) in colors
+
+
 def test_clip_segment_inside_returns_full_segment():
     c = np.array([0.0, 0.0, 0.0])
     q0, q1 = clip_segment_to_sphere(np.array([-5.0, 0.0, 0.0]), np.array([5.0, 0.0, 0.0]), c, 10.0)

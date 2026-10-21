@@ -4,40 +4,22 @@
       "name": "Cube \u00b7 rhombohedron",
       "artifacts": [
         {
-          "path": "output/lattice/rhombohedron_cube_s140.stl",
-          "kind": "stl",
+          "path": "output/lattice/rhombohedron_cube_s140.ply",
+          "kind": "ply",
           "label": "Rhombohedron \u00b7 stretch \u00d71.40 \u00b7 212 nodes / 493 rods",
           "stage": "lattice"
         },
         {
-          "path": "output/slicer/rhombohedron_cube_s140.gcode",
-          "kind": "gcode",
-          "label": "Rhombohedron \u00d71.40 \u00b7 sliced OK",
-          "stage": "slicer"
-        },
-        {
-          "path": "output/lattice/rhombohedron_cube_s169.stl",
-          "kind": "stl",
+          "path": "output/lattice/rhombohedron_cube_s169.ply",
+          "kind": "ply",
           "label": "Rhombohedron \u00b7 stretch \u00d71.69 \u00b7 224 nodes / 504 rods",
           "stage": "lattice"
         },
         {
-          "path": "output/slicer/rhombohedron_cube_s169.gcode",
-          "kind": "gcode",
-          "label": "Rhombohedron \u00d71.69 \u00b7 sliced OK",
-          "stage": "slicer"
-        },
-        {
-          "path": "output/lattice/rhombohedron_cube_s190.stl",
-          "kind": "stl",
+          "path": "output/lattice/rhombohedron_cube_s190.ply",
+          "kind": "ply",
           "label": "Rhombohedron \u00b7 stretch \u00d71.90 \u00b7 224 nodes / 513 rods",
           "stage": "lattice"
-        },
-        {
-          "path": "output/slicer/rhombohedron_cube_s190.gcode",
-          "kind": "gcode",
-          "label": "Rhombohedron \u00d71.90 \u00b7 sliced OK",
-          "stage": "slicer"
         }
       ]
     },
@@ -67,30 +49,6 @@
           "kind": "stl",
           "label": "Coulomb \u00b7 base 4 + surf 5 \u00b7 160 nodes / 463 rods",
           "stage": "lattice"
-        },
-        {
-          "path": "output/slicer/sphere_coulomb_ki4_ks6.gcode",
-          "kind": "gcode",
-          "label": "Coulomb \u00b7 base 4 + surf 6 \u00b7 sliced OK",
-          "stage": "slicer"
-        },
-        {
-          "path": "output/slicer/sphere_coulomb_ki4_ks7.gcode",
-          "kind": "gcode",
-          "label": "Coulomb \u00b7 base 4 + surf 7 \u00b7 sliced OK",
-          "stage": "slicer"
-        },
-        {
-          "path": "output/slicer/sphere_coulomb_ki3_ks6.gcode",
-          "kind": "gcode",
-          "label": "Coulomb \u00b7 base 3 + surf 6 \u00b7 sliced OK",
-          "stage": "slicer"
-        },
-        {
-          "path": "output/slicer/sphere_coulomb_ki4_ks5.gcode",
-          "kind": "gcode",
-          "label": "Coulomb \u00b7 base 4 + surf 5 \u00b7 sliced OK",
-          "stage": "slicer"
         }
       ]
     },
@@ -126,66 +84,12 @@
           "kind": "stl",
           "label": "Coulomb \u00b7 160 pts \u00b7 k=5 \u00b7 160 nodes / 448 rods",
           "stage": "lattice"
-        },
-        {
-          "path": "output/slicer/sphere_coulomb_n120_k4.gcode",
-          "kind": "gcode",
-          "label": "Coulomb \u00b7 120 pts \u00b7 k=4 \u00b7 sliced OK",
-          "stage": "slicer"
-        },
-        {
-          "path": "output/slicer/sphere_coulomb_n160_k4.gcode",
-          "kind": "gcode",
-          "label": "Coulomb \u00b7 160 pts \u00b7 k=4 \u00b7 sliced OK",
-          "stage": "slicer"
-        },
-        {
-          "path": "output/slicer/sphere_coulomb_n200_k4.gcode",
-          "kind": "gcode",
-          "label": "Coulomb \u00b7 200 pts \u00b7 k=4 \u00b7 sliced OK",
-          "stage": "slicer"
-        },
-        {
-          "path": "output/slicer/sphere_coulomb_n160_k3.gcode",
-          "kind": "gcode",
-          "label": "Coulomb \u00b7 160 pts \u00b7 k=3 \u00b7 sliced OK",
-          "stage": "slicer"
-        },
-        {
-          "path": "output/slicer/sphere_coulomb_n160_k5.gcode",
-          "kind": "gcode",
-          "label": "Coulomb \u00b7 160 pts \u00b7 k=5 \u00b7 sliced OK",
-          "stage": "slicer"
         }
       ]
     },
     {
       "name": "Spring-relaxed (old)",
       "artifacts": [
-        {
-          "path": "output/slicer/sphere_relaxed_L18_s1.gcode",
-          "kind": "gcode",
-          "label": "Relaxed \u00b7 L=18 \u00b7 seed 1 \u00b7 sliced OK",
-          "stage": "slicer"
-        },
-        {
-          "path": "output/slicer/sphere_relaxed_L18_s2.gcode",
-          "kind": "gcode",
-          "label": "Relaxed \u00b7 L=18 \u00b7 seed 2 \u00b7 sliced OK",
-          "stage": "slicer"
-        },
-        {
-          "path": "output/slicer/sphere_relaxed_L16_s1.gcode",
-          "kind": "gcode",
-          "label": "Relaxed \u00b7 L=16 \u00b7 seed 1 \u00b7 sliced OK",
-          "stage": "slicer"
-        },
-        {
-          "path": "output/slicer/sphere_relaxed_L20_s1.gcode",
-          "kind": "gcode",
-          "label": "Relaxed \u00b7 L=20 \u00b7 seed 1 \u00b7 sliced OK",
-          "stage": "slicer"
-        },
         {
           "path": "output/lattice/sphere_relaxed_L18_s1.stl",
           "kind": "stl",
@@ -238,30 +142,6 @@
           "kind": "stl",
           "label": "Random \u00b7 k-NN #2 \u00b7 140 nodes / 457 rods",
           "stage": "lattice"
-        },
-        {
-          "path": "output/slicer/sphere_diamond_sparse_a40.gcode",
-          "kind": "gcode",
-          "label": "Diamond \u00b7 sparse (a=40) \u00b7 sliced OK",
-          "stage": "slicer"
-        },
-        {
-          "path": "output/slicer/sphere_jittered_diamond.gcode",
-          "kind": "gcode",
-          "label": "Jittered diamond \u00b7 sliced OK",
-          "stage": "slicer"
-        },
-        {
-          "path": "output/slicer/sphere_random_knn_1.gcode",
-          "kind": "gcode",
-          "label": "Random \u00b7 k-NN #1 \u00b7 sliced OK",
-          "stage": "slicer"
-        },
-        {
-          "path": "output/slicer/sphere_random_knn_2.gcode",
-          "kind": "gcode",
-          "label": "Random \u00b7 k-NN #2 \u00b7 sliced OK",
-          "stage": "slicer"
         }
       ]
     },
@@ -285,24 +165,6 @@
           "kind": "stl",
           "label": "Unified cage \u00b7 a=26 (447 nodes / 1146 rods)",
           "stage": "lattice"
-        },
-        {
-          "path": "output/slicer/sphere_unified_a34.gcode",
-          "kind": "gcode",
-          "label": "Unified a=34 \u00b7 sliced OK \u00b7 warns: overhang",
-          "stage": "slicer"
-        },
-        {
-          "path": "output/slicer/sphere_unified_a30.gcode",
-          "kind": "gcode",
-          "label": "Unified a=30 \u00b7 sliced OK \u00b7 warns: overhang",
-          "stage": "slicer"
-        },
-        {
-          "path": "output/slicer/sphere_unified_a26.gcode",
-          "kind": "gcode",
-          "label": "Unified a=26 \u00b7 sliced OK \u00b7 warns: overhang, adhesion",
-          "stage": "slicer"
         }
       ]
     },
