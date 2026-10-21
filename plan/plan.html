@@ -613,10 +613,37 @@
     </p>
   </div>
 
+  <article class="phase">
+    <div class="head">
+      <span class="num">Phase 13</span>
+      <span class="title">Cube → rhombohedron lattice (fixed frame + Coulomb fill)</span>
+      <span class="badge done">✓ Done</span>
+    </div>
+    <div class="deliverable">
+      <h4>Deliverable</h4>
+      <ul>
+        <li><code>platonic.py</code>: cube → rhombohedron (body-diagonal vertical + z-stretch), with edges/faces.</li>
+        <li>Fixed frame (vertices + per-edge subdivisions) + Coulomb-relaxed face &amp; interior points.</li>
+        <li>Three stretch variants (×1.40 / ×1.69 / ×1.90), all sliced.</li>
+      </ul>
+    </div>
+    <details class="notes">
+      <summary>Implementation notes</summary>
+      <div class="body">
+        <ul>
+          <li>Edge elevation: ×1.40 → 44.7° (just under 45°, unprintable), ×1.69 → 50.1° (target), ×1.90 → 53.3°. Confirms the report's numbers.</li>
+          <li>Frame = vertices + subdivisions along each edge (fixed); face points seeded on rhombi, interior points seeded in the cube → mapped; both Coulomb-relaxed with the frame held fixed.</li>
+          <li><strong>Bug found &amp; fixed:</strong> face points were only projected onto their face plane, so they drifted off the rhombus and leaked outside (bbox blew up to 133 mm). Fixed by clamping face points to their parallelogram (s,t ∈ [0,1]).</li>
+          <li>Wiring: frame chains + k-NN (k=4) for face/interior points. ~220 nodes, ~500 rods per variant.</li>
+        </ul>
+      </div>
+    </details>
+  </article>
+
 </main>
 
 <footer>
-  Living document · append, don't rewrite · last updated 2026-10-21 (pivot to Platonic solids)
+  Living document · append, don't rewrite · last updated 2026-10-21 (phase 13: cube → rhombohedron lattice)
 </footer>
 </body>
 </html>

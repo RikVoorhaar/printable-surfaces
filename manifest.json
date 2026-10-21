@@ -1,6 +1,47 @@
 {
   "folders": [
     {
+      "name": "Cube \u00b7 rhombohedron",
+      "artifacts": [
+        {
+          "path": "output/lattice/rhombohedron_cube_s140.stl",
+          "kind": "stl",
+          "label": "Rhombohedron \u00b7 stretch \u00d71.40 \u00b7 212 nodes / 493 rods",
+          "stage": "lattice"
+        },
+        {
+          "path": "output/slicer/rhombohedron_cube_s140.gcode",
+          "kind": "gcode",
+          "label": "Rhombohedron \u00d71.40 \u00b7 sliced OK",
+          "stage": "slicer"
+        },
+        {
+          "path": "output/lattice/rhombohedron_cube_s169.stl",
+          "kind": "stl",
+          "label": "Rhombohedron \u00b7 stretch \u00d71.69 \u00b7 224 nodes / 504 rods",
+          "stage": "lattice"
+        },
+        {
+          "path": "output/slicer/rhombohedron_cube_s169.gcode",
+          "kind": "gcode",
+          "label": "Rhombohedron \u00d71.69 \u00b7 sliced OK",
+          "stage": "slicer"
+        },
+        {
+          "path": "output/lattice/rhombohedron_cube_s190.stl",
+          "kind": "stl",
+          "label": "Rhombohedron \u00b7 stretch \u00d71.90 \u00b7 224 nodes / 513 rods",
+          "stage": "lattice"
+        },
+        {
+          "path": "output/slicer/rhombohedron_cube_s190.gcode",
+          "kind": "gcode",
+          "label": "Rhombohedron \u00d71.90 \u00b7 sliced OK",
+          "stage": "slicer"
+        }
+      ]
+    },
+    {
       "name": "Coulomb \u00b7 surface wiring",
       "artifacts": [
         {
