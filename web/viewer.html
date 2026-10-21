@@ -85,8 +85,8 @@ scene.add(dirLight);
 
 let grid = null, axes = null, mesh = null, startMarker = null;
 
-const plainMat = new THREE.MeshStandardMaterial({ color: 0x9fb4d0, metalness: 0.15, roughness: 0.45, flatShading: true });
-const colorMat = new THREE.MeshStandardMaterial({ vertexColors: true, metalness: 0.05, roughness: 0.6, flatShading: true });
+const plainMat = new THREE.MeshStandardMaterial({ color: 0x9fb4d0, metalness: 0.15, roughness: 0.45, flatShading: true, side: THREE.DoubleSide });
+const colorMat = new THREE.MeshBasicMaterial({ vertexColors: true, side: THREE.DoubleSide });
 
 const stlLoader = new STLLoader();
 const plyLoader = new PLYLoader();
