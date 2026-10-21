@@ -20,6 +20,12 @@
           "kind": "ply",
           "label": "Rhombohedron \u00b7 stretch \u00d71.90 \u00b7 224 nodes / 513 rods",
           "stage": "lattice"
+        },
+        {
+          "path": "output/lattice/rhombohedron_printable.ply",
+          "kind": "ply",
+          "label": "Rhombohedron \u00b7 printable \u00b7 271 nodes / 381 rods / 0 unprintable",
+          "stage": "lattice"
         }
       ]
     },
