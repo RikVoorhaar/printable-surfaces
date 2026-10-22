@@ -66,17 +66,33 @@ def segment_segment_dist(p1, p2, p3, p4):
 
 
 # ------------------------------------------------------------------------- relaxation
-def _support_forces(pos, free):
-    """Force on each free node toward its 2 best steep parents below it (spring, rest 15 mm)."""
+def _support_forces(pos, free, face_ids, d_down):
+    """Force on each free node toward its 2 best parents.
+
+    Interior nodes use the global steep cone (within 48° of vertical). Face nodes also
+    accept *downhill* same-face parents (the in-face rule: a rod within ±36° of the face's
+    downhill direction is printable even where the global cone is empty).
+    """
     n = len(pos)
     d = pos[None, :, :] - pos[:, None, :]           # d[i,j] = pos[j] - pos[i]
     dist = np.linalg.norm(d, axis=-1)
     np.fill_diagonal(dist, np.inf)
     dz = d[:, :, 2]
-    sin_elev = -dz / np.maximum(dist, 1e-9)         # for below (dz<0), -dz = drop
+    sin_elev = -dz / np.maximum(dist, 1e-9)
     valid = (dz < 0) & (sin_elev >= SIN48) & (dist >= L_MIN) & (dist <= L_MAX)
+
+    # in-face downhill parents for face nodes
+    in_face = np.zeros(n, dtype=bool)
+    for fi in np.unique(face_ids[face_ids >= 0]):
+        dd = d_down[fi]
+        same = face_ids == fi
+        m = same
+        cosang = (d / np.maximum(dist, 1e-9)[:, :, None]) @ dd   # (n,) per row? no: (n,n)
+        downhill = (cosang >= np.cos(np.radians(36.0))) & (dist >= L_MIN) & (dist <= L_MAX)
+        valid[m] |= (downhill & same[None, :])[m]
+
     score = np.where(valid, np.abs(dist - L_TARGET), np.inf)
-    top = np.argpartition(score, 1, axis=1)[:, :2]  # 2 best parents
+    top = np.argpartition(score, 1, axis=1)[:, :2]
 
     F = np.zeros_like(pos)
     ar = np.arange(n)
@@ -103,6 +119,15 @@ def relax_printable(
     temp = 15.0
     margin = 0.4 * spacing
 
+    # downhill direction (steepest descent) for each face
+    z = np.array([0.0, 0.0, 1.0])
+    d_down = []
+    for n_ in normals:
+        dd = n_[2] * n_ - z
+        dd = dd / np.linalg.norm(dd)
+        d_down.append(dd)
+    d_down = np.asarray(d_down)
+
     for it in range(iters):
         # finite-range repulsion
         delta = pos[:, None, :] - pos[None, :, :]
@@ -114,7 +139,7 @@ def relax_printable(
         # support term (switches on after 1/3, ramps up)
         if it >= iters // 3:
             ramp = min(1.0, (it - iters // 3) / max(1, iters // 3))
-            F = F + ramp * lam * _support_forces(pos, free)
+            F = F + ramp * lam * _support_forces(pos, free, face_ids, d_down)
 
         F[fixed] = 0.0
 
