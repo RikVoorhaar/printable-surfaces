@@ -102,14 +102,16 @@ def _support_forces(pos, free, face_ids, d_down):
         ok = dp < np.inf
         dp_safe = np.where(ok, dp, L_TARGET)
         u = d[ar, p] / np.maximum(dp_safe, 1e-9)[:, None]
-        F += np.where(ok[:, None], (dp_safe - L_TARGET)[:, None] * u, 0.0)
+        f = np.where(ok[:, None], (dp_safe - L_TARGET)[:, None] * u, 0.0)
+        F += f                       # force on the child (toward parent)
+        np.add.at(F, p, -f)          # equal-and-opposite force on the parent
     F[~free] = 0.0
     return F
 
 
 def relax_printable(
     pos, fixed, face_ids, face_paras, normals, centers,
-    spacing, iters=900, lam=2.0, cooling=0.995, anisotropy=0.7,
+    spacing, iters=900, lam=2.0, cooling=0.995, anisotropy=0.7, center_strength=0.0,
 ):
     """Repulsion + ramped support term; face nodes stay in-face, interior nodes stay inside."""
     n = len(pos)
@@ -151,6 +153,10 @@ def relax_printable(
         if it >= iters // 3:
             ramp = min(1.0, (it - iters // 3) / max(1, iters // 3))
             F = F + ramp * lam * _support_forces(pos, free, face_ids, d_down)
+
+        # centering force: keep nodes distributed throughout the shape (offset the
+        # support term's downward pull), toward the centroid (origin for a centered shape)
+        F = F - center_strength * pos
 
         F[fixed] = 0.0
 
@@ -341,7 +347,7 @@ def repair(all_pts, all_ids, fixed, face_paras, normals, centers, n_frame, frame
 def printable_lattice(
     vertices, edges, faces,
     spacing=12.0, n_face=10, n_interior=150, seed=1,
-    iters=900, lam=2.0, anisotropy=0.7,
+    iters=900, lam=2.0, anisotropy=0.7, center_strength=0.0,
 ):
     """Generate a support-free lattice inside a convex polytope. Returns (nodes, rods)."""
     from .platonic import face_parallelogram, face_planes, inside_mask
@@ -390,7 +396,8 @@ def printable_lattice(
     face_paras = [face_parallelogram(vertices, f) for f in faces]
 
     all_pts = relax_printable(all_pts, fixed, all_ids, face_paras, normals, centers,
-                              spacing, iters=iters, lam=lam, anisotropy=anisotropy)
+                              spacing, iters=iters, lam=lam, anisotropy=anisotropy,
+                              center_strength=center_strength)
 
     # repair is currently a no-op; the post-MIP fix below handles unsupported nodes
     # all_pts, all_ids, fixed = repair(all_pts, all_ids, fixed, face_paras, normals, centers,
