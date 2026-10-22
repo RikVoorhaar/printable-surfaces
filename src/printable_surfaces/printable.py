@@ -19,7 +19,8 @@ SIN48 = np.sin(np.radians(48.0))   # steep rod threshold (45° + 3° margin)
 SIN5 = np.sin(np.radians(5.0))     # "horizontal" tolerance for bridges
 L_MIN, L_MAX, L_TARGET = 8.0, 22.0, 15.0
 BRIDGE_MAX = 10.0
-CLEARANCE = 2.6
+CLEARANCE = 2.6   # rod-rod axis-to-axis minimum (gap of 1.4 mm between 1.2 mm rods)
+NODE_CLEARANCE = 2.0  # rod-axis-to-node-center minimum (0.6 rod + 0.9 node + 0.5 gap)
 DEG_MIN, DEG_MAX = 3, 6
 
 ALPHA_DEG = 48.0      # steep rod threshold in degrees
@@ -353,7 +354,7 @@ def candidate_rods(pos, n_frame, frame_chain, face_ids, normals, centers, cleara
             for k in range(n):
                 if k == i or k == j:
                     continue
-                if point_segment_dist(pos[k], pos[i], pos[j]) < clearance:
+                if point_segment_dist(pos[k], pos[i], pos[j]) < NODE_CLEARANCE:
                     clear = False
                     break
             if not clear:
@@ -537,6 +538,137 @@ def repair(all_pts, all_ids, fixed, face_paras, normals, centers, n_frame, frame
     return all_pts, all_ids, fixed
 
 
+def _constructive_face(start_positions, corner, e1, e2, n_target, r, spacing, rng):
+    """Bottom-up sampler for an overhanging face (Section 6.1): each new node gets ≥2
+    in-face parents among already-placed nodes, keeping min distance ≥ r."""
+    placed = [np.asarray(p, dtype=float) for p in start_positions]
+    inset = 0.35 * spacing
+    e1n = float(np.linalg.norm(e1)); e2n = float(np.linalg.norm(e2))
+    eps1 = inset / e1n if e1n > 0 else 0.0
+    eps2 = inset / e2n if e2n > 0 else 0.0
+    result = []
+    for _ in range(n_target):
+        best = None
+        best_score = np.inf
+        for _t in range(400):
+            u = rng.uniform(eps1, 1.0 - eps1)
+            w = rng.uniform(eps2, 1.0 - eps2)
+            p = corner + u * e1 + w * e2
+            parents = 0
+            mind = np.inf
+            for q in placed:
+                dq = p - q
+                Lq = float(np.linalg.norm(dq))
+                if Lq < mind:
+                    mind = Lq
+                dz = p[2] - q[2]
+                if dz > 0 and L_MIN <= Lq <= L_MAX and dz / Lq >= SIN48:
+                    parents += 1
+            if parents >= 2 and mind >= r:
+                score = p[2] - 0.5 * mind
+                if score < best_score:
+                    best_score = score
+                    best = p
+        if best is None:
+            break
+        placed.append(best)
+        result.append(best)
+    return result
+
+
+def _repair(pos, fixed, face_ids, face_paras, normals, centers, n_frame, frame_on_face,
+            chain, spacing, seed=None):
+    """Section 8 repair: move unsupported nodes (by MIP slack) and re-solve, then a
+    clearance-aware fallback rod for the last holdouts."""
+    allowed, _, _, _, _ = _allowed_parents(face_ids, normals, centers, n_frame, frame_on_face)
+    margin = 0.4 * spacing
+    rng = np.random.default_rng(seed if seed is not None else 0)
+
+    for _round in range(3):
+        cand = candidate_rods(pos, n_frame, chain, face_ids, normals, centers)
+        _, slack = select_rods(pos, cand, chain, face_ids, normals, centers, n_frame)
+        bad = np.where(((slack['s1'] > 0.5) | (slack['s2'] > 0.5)) & ~fixed)[0]
+        if len(bad) == 0:
+            break
+        bad = bad[np.argsort(pos[bad, 2])]
+        moved = False
+        for i in bad:
+            best, best_cnt = None, -1
+            for _t in range(400):
+                trial = _project((pos[i] + rng.uniform(-1.0, 1.0, 3) * 0.6 * spacing)[None, :],
+                                 np.array([False]), face_ids[i:i + 1], face_paras,
+                                 normals, centers, margin)[0]
+                dd = np.linalg.norm(pos - trial, axis=1); dd[i] = np.inf
+                if dd.min() < 0.65 * spacing:
+                    continue
+                trial_pos = pos.copy(); trial_pos[i] = trial
+                cnt = _count_parents(trial_pos, i, allowed[i])
+                if cnt > best_cnt:
+                    best_cnt = cnt
+                    best = trial
+            if best is not None and best_cnt >= 1:
+                pos[i] = best
+                moved = True
+        if not moved:
+            break
+
+    cand = candidate_rods(pos, n_frame, chain, face_ids, normals, centers)
+    selected, slack = select_rods(pos, cand, chain, face_ids, normals, centers, n_frame)
+
+    # delete interior nodes with no downward rod (Section 8: "delete any I node with s1 > 0")
+    bad_i = np.where((slack['s1'] > 0.5) & (face_ids < 0) & ~fixed)[0]
+    if len(bad_i):
+        keep = np.ones(len(pos), dtype=bool)
+        keep[bad_i] = False
+        pos = pos[keep]
+        face_ids = face_ids[keep]
+        fixed = fixed[keep]
+        cand = candidate_rods(pos, n_frame, chain, face_ids, normals, centers)
+        selected, slack = select_rods(pos, cand, chain, face_ids, normals, centers, n_frame)
+
+    rods = [(min(a, b), max(a, b)) for a, b in chain] + [tuple(map(int, e)) for e in selected]
+
+    # clearance-aware fallback for any remaining unsupported free node
+    deg = np.zeros(len(pos), dtype=int)
+    for a, b in rods:
+        deg[a] += 1; deg[b] += 1
+    for nd in range(len(pos)):
+        if fixed[nd]:
+            continue
+        if any((a == nd and pos[b, 2] < pos[nd, 2]) or (b == nd and pos[a, 2] < pos[nd, 2]) for a, b in rods):
+            continue
+        best, best_d = None, np.inf
+        for p in range(len(pos)):
+            if p == nd or not (pos[p, 2] < pos[nd, 2]):
+                continue
+            dd = float(np.linalg.norm(pos[p] - pos[nd]))
+            if not (L_MIN <= dd <= L_MAX and (pos[nd, 2] - pos[p, 2]) / dd >= SIN48):
+                continue
+            if deg[nd] >= DEG_MAX or deg[p] >= DEG_MAX:
+                continue
+            ok = True
+            for a, b in rods:
+                if a == nd or b == nd or a == p or b == p:
+                    continue
+                if segment_segment_dist(pos[nd], pos[p], pos[a], pos[b]) < CLEARANCE:
+                    ok = False; break
+            if not ok:
+                continue
+            for k in range(len(pos)):
+                if k == nd or k == p:
+                    continue
+                if point_segment_dist(pos[k], pos[nd], pos[p]) < NODE_CLEARANCE:
+                    ok = False; break
+            if ok and dd < best_d:
+                best = p; best_d = dd
+        if best is not None:
+            rods.append((min(nd, best), max(nd, best)))
+            deg[nd] += 1; deg[best] += 1
+
+    rods = np.unique(np.sort(np.asarray(rods, dtype=int), axis=1), axis=0)
+    return pos, rods
+
+
 def printable_lattice(
     vertices, edges, faces,
     spacing=12.0, n_face=10, n_interior=150, seed=1,
@@ -562,15 +694,31 @@ def printable_lattice(
     frame_pts = np.asarray(frame_pts, dtype=float)
     chain = np.asarray(chain, dtype=int)
     n_frame = len(frame_pts)
+    frame_on_face = _frame_on_faces(frame_pts, normals, centers)
 
     rng = np.random.default_rng(seed)
+
+    # overhanging faces get a constructive bottom-up start (Section 6.1)
+    overhang_face = np.array([normals[fi, 2] < 0.0 for fi in range(len(normals))])
+    r_construct = 0.73 * spacing
 
     # face points
     face_pts, face_ids = [], []
     for fi, face in enumerate(faces):
         corner, e1, e2 = face_parallelogram(vertices, face)
-        u = rng.uniform(0, 1, n_face); w = rng.uniform(0, 1, n_face)
-        face_pts.append(corner + u[:, None] * e1 + w[:, None] * e2)
+        if overhang_face[fi]:
+            start = frame_pts[frame_on_face[:, fi]]
+            pts = _constructive_face(start, corner, e1, e2, n_face, r_construct, spacing, rng)
+            pts_arr = np.asarray(pts, dtype=float).reshape(-1, 3)
+            if len(pts) < n_face:
+                n_extra = n_face - len(pts)
+                u = rng.uniform(0, 1, n_extra); w = rng.uniform(0, 1, n_extra)
+                extra = corner + u[:, None] * e1 + w[:, None] * e2
+                pts_arr = np.vstack([pts_arr, extra])
+        else:
+            u = rng.uniform(0, 1, n_face); w = rng.uniform(0, 1, n_face)
+            pts_arr = corner + u[:, None] * e1 + w[:, None] * e2
+        face_pts.append(pts_arr)
         face_ids += [fi] * n_face
     face_pts = np.vstack(face_pts)
     face_ids = np.asarray(face_ids, dtype=int)
@@ -588,7 +736,6 @@ def printable_lattice(
     fixed = np.zeros(len(all_pts), dtype=bool); fixed[:n_frame] = True
     face_paras = [face_parallelogram(vertices, f) for f in faces]
 
-    frame_on_face = _frame_on_faces(all_pts[:n_frame], normals, centers)
     all_pts = relax_printable(all_pts, fixed, all_ids, face_paras, normals, centers,
                               n_frame, frame_on_face, spacing, iters=iters, lam=lam,
                               kappa=kappa, seed=seed)
@@ -597,29 +744,6 @@ def printable_lattice(
     # all_pts, all_ids, fixed = repair(all_pts, all_ids, fixed, face_paras, normals, centers,
     #                                  n_frame, chain)
 
-    free_indices = np.where(~fixed)[0]
-    cand = candidate_rods(all_pts, n_frame, chain, all_ids, normals, centers)
-    selected, slack = select_rods(all_pts, cand, chain, all_ids, normals, centers, n_frame)
-
-    rods = list(chain) + [tuple(e) for e in selected]
-    rods = list({(min(a, b), max(a, b)) for a, b in rods})
-
-    # post-fix: give any still-unsupported free node a steep rod to its nearest node below
-    for nd in free_indices:
-        if any((a == nd and all_pts[b, 2] < all_pts[nd, 2]) or (b == nd and all_pts[a, 2] < all_pts[nd, 2]) for a, b in rods):
-            continue
-        best = None
-        best_d = np.inf
-        for p in range(len(all_pts)):
-            if p == nd or not (all_pts[p, 2] < all_pts[nd, 2]):
-                continue
-            dd = np.linalg.norm(all_pts[p] - all_pts[nd])
-            if L_MIN <= dd <= L_MAX and abs(all_pts[nd, 2] - all_pts[p, 2]) / dd >= SIN48:
-                if dd < best_d:
-                    best = p
-                    best_d = dd
-        if best is not None:
-            rods.append((min(nd, best), max(nd, best)))
-
-    rods = np.unique(np.sort(np.asarray(rods, dtype=int), axis=1), axis=0)
+    all_pts, rods = _repair(all_pts, fixed, all_ids, face_paras, normals, centers,
+                            n_frame, frame_on_face, chain, spacing, seed=seed)
     return all_pts, rods
