@@ -198,18 +198,22 @@ def _count_parents(pos, i, allowed_row):
 
 
 def _project(pos, fixed, face_ids, face_paras, normals, centers, margin):
-    """Project nodes back onto their class region (face plane / interior inset)."""
+    """Project nodes back onto their class region (face plane inset 0.35h / interior inset)."""
     pos = pos.copy()
     is_interior = (~fixed) & (face_ids < 0)
+    inset = 0.875 * margin  # 0.35 h (margin is 0.4 h)
     for fi in np.unique(face_ids[face_ids >= 0]):
         m = face_ids == fi
         corner, e1, e2 = face_paras[fi]
+        e1n = float(np.linalg.norm(e1)); e2n = float(np.linalg.norm(e2))
+        eps1 = inset / e1n if e1n > 0 else 0.0
+        eps2 = inset / e2n if e2n > 0 else 0.0
         g11, g12, g22 = e1 @ e1, e1 @ e2, e2 @ e2
         det = g11 * g22 - g12 * g12
         q = pos[m] - corner
         r1, r2 = q @ e1, q @ e2
-        s = np.clip((g22 * r1 - g12 * r2) / det, 0.0, 1.0)
-        t = np.clip((g11 * r2 - g12 * r1) / det, 0.0, 1.0)
+        s = np.clip((g22 * r1 - g12 * r2) / det, eps1, 1.0 - eps1)
+        t = np.clip((g11 * r2 - g12 * r1) / det, eps2, 1.0 - eps2)
         pos[m] = corner + s[:, None] * e1 + t[:, None] * e2
     for n_, c_ in zip(normals, centers):
         proj = (pos - c_) @ n_
@@ -615,7 +619,8 @@ def _repair(pos, fixed, face_ids, face_paras, normals, centers, n_frame, frame_o
     cand = candidate_rods(pos, n_frame, chain, face_ids, normals, centers)
     selected, slack = select_rods(pos, cand, chain, face_ids, normals, centers, n_frame)
 
-    # delete interior nodes with no downward rod (Section 8: "delete any I node with s1 > 0")
+    # delete interior nodes with no downward rod (Section 8: "delete any I node with s1 > 0"),
+    # then re-solve once
     bad_i = np.where((slack['s1'] > 0.5) & (face_ids < 0) & ~fixed)[0]
     if len(bad_i):
         keep = np.ones(len(pos), dtype=bool)
@@ -623,9 +628,9 @@ def _repair(pos, fixed, face_ids, face_paras, normals, centers, n_frame, frame_o
         pos = pos[keep]
         face_ids = face_ids[keep]
         fixed = fixed[keep]
-        cand = candidate_rods(pos, n_frame, chain, face_ids, normals, centers)
-        selected, slack = select_rods(pos, cand, chain, face_ids, normals, centers, n_frame)
 
+    cand = candidate_rods(pos, n_frame, chain, face_ids, normals, centers)
+    selected, _ = select_rods(pos, cand, chain, face_ids, normals, centers, n_frame)
     rods = [(min(a, b), max(a, b)) for a, b in chain] + [tuple(map(int, e)) for e in selected]
 
     # clearance-aware fallback for any remaining unsupported free node
@@ -716,7 +721,10 @@ def printable_lattice(
                 extra = corner + u[:, None] * e1 + w[:, None] * e2
                 pts_arr = np.vstack([pts_arr, extra])
         else:
-            u = rng.uniform(0, 1, n_face); w = rng.uniform(0, 1, n_face)
+            e1n = float(np.linalg.norm(e1)); e2n = float(np.linalg.norm(e2))
+            eps1 = (0.35 * spacing) / e1n if e1n > 0 else 0.0
+            eps2 = (0.35 * spacing) / e2n if e2n > 0 else 0.0
+            u = rng.uniform(eps1, 1 - eps1, n_face); w = rng.uniform(eps2, 1 - eps2, n_face)
             pts_arr = corner + u[:, None] * e1 + w[:, None] * e2
         face_pts.append(pts_arr)
         face_ids += [fi] * n_face
