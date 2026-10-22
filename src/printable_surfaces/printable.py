@@ -221,7 +221,7 @@ def _project(pos, fixed, face_ids, face_paras, normals, centers, margin):
 
 def relax_printable(
     pos, fixed, face_ids, face_paras, normals, centers, n_frame, frame_on_face,
-    spacing, iters=900, lam=1.0, kappa=1.25, seed=None,
+    spacing, iters=900, lam=1.0, kappa=1.25, seed=None, anchor_scale=1.0,
 ):
     """Sliding-class relaxation (Sections 5–6): quadratic repulsion (+ κ anisotropy on I
     pairs), ψ support, anchor, and a hard final phase that locks in ≥2 parents."""
@@ -260,7 +260,7 @@ def relax_printable(
         # support + anchor
         if it >= iters // 3:
             F += _support_forces(pos, allowed, is_frame, lam_t)
-            F += _anchor_forces(pos, allowed, overhang, is_frame, is_face, is_interior, normals, face_ids, lam_t)
+            F += anchor_scale * _anchor_forces(pos, allowed, overhang, is_frame, is_face, is_interior, normals, face_ids, lam_t)
 
         F[fixed] = 0.0
 
@@ -672,7 +672,7 @@ def _repair(pos, fixed, face_ids, face_paras, normals, centers, n_frame, frame_o
 def printable_lattice(
     vertices, edges, faces,
     spacing=12.0, n_face=10, n_interior=150, seed=1,
-    iters=900, lam=1.0, kappa=1.25,
+    iters=900, lam=1.0, kappa=1.25, anchor_scale=1.0,
 ):
     """Generate a support-free lattice inside a convex polytope. Returns (nodes, rods)."""
     from .platonic import face_parallelogram, face_planes, inside_mask
@@ -738,7 +738,7 @@ def printable_lattice(
 
     all_pts = relax_printable(all_pts, fixed, all_ids, face_paras, normals, centers,
                               n_frame, frame_on_face, spacing, iters=iters, lam=lam,
-                              kappa=kappa, seed=seed)
+                              kappa=kappa, seed=seed, anchor_scale=anchor_scale)
 
     # repair is currently a no-op; the post-MIP fix below handles unsupported nodes
     # all_pts, all_ids, fixed = repair(all_pts, all_ids, fixed, face_paras, normals, centers,
