@@ -109,7 +109,7 @@ def _support_forces(pos, free, face_ids, d_down):
 
 def relax_printable(
     pos, fixed, face_ids, face_paras, normals, centers,
-    spacing, iters=900, lam=2.0, cooling=0.995,
+    spacing, iters=900, lam=2.0, cooling=0.995, anisotropy=0.7,
 ):
     """Repulsion + ramped support term; face nodes stay in-face, interior nodes stay inside."""
     n = len(pos)
@@ -128,13 +128,24 @@ def relax_printable(
         d_down.append(dd)
     d_down = np.asarray(d_down)
 
+    # per-node downhill direction (0 for interior nodes)
+    dd_per_node = np.zeros((len(pos), 3))
+    for fi in range(len(d_down)):
+        dd_per_node[face_ids == fi] = d_down[fi]
+
     for it in range(iters):
         # finite-range repulsion
         delta = pos[:, None, :] - pos[None, :, :]
         dd = np.linalg.norm(delta, axis=-1)
         np.fill_diagonal(dd, np.inf)
         u = delta / np.maximum(dd, 1e-6)[:, :, None]
-        F = (u * np.where(dd < cutoff, cutoff - dd, 0.0)[:, :, None]).sum(axis=1)
+        rep = np.where(dd < cutoff, cutoff - dd, 0.0)
+        # anisotropic: weaken repulsion along the downhill direction for same-face pairs
+        is_face = face_ids >= 0
+        same_face = is_face[:, None] & (face_ids[None, :] == face_ids[:, None])
+        cos = (u * dd_per_node[:, None, :]).sum(axis=-1)
+        rep = rep * np.where(same_face, 1.0 - anisotropy * cos * cos, 1.0)
+        F = (u * rep[:, :, None]).sum(axis=1)
 
         # support term (switches on after 1/3, ramps up)
         if it >= iters // 3:
@@ -330,7 +341,7 @@ def repair(all_pts, all_ids, fixed, face_paras, normals, centers, n_frame, frame
 def printable_lattice(
     vertices, edges, faces,
     spacing=12.0, n_face=10, n_interior=150, seed=1,
-    iters=900, lam=2.0,
+    iters=900, lam=2.0, anisotropy=0.7,
 ):
     """Generate a support-free lattice inside a convex polytope. Returns (nodes, rods)."""
     from .platonic import face_parallelogram, face_planes, inside_mask
@@ -379,7 +390,7 @@ def printable_lattice(
     face_paras = [face_parallelogram(vertices, f) for f in faces]
 
     all_pts = relax_printable(all_pts, fixed, all_ids, face_paras, normals, centers,
-                              spacing, iters=iters, lam=lam)
+                              spacing, iters=iters, lam=lam, anisotropy=anisotropy)
 
     # repair is currently a no-op; the post-MIP fix below handles unsupported nodes
     # all_pts, all_ids, fixed = repair(all_pts, all_ids, fixed, face_paras, normals, centers,
