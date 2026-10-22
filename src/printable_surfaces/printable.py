@@ -67,7 +67,7 @@ def segment_segment_dist(p1, p2, p3, p4):
 
 # ------------------------------------------------------------------------- relaxation
 def _support_forces(pos, free):
-    """Force on each free node toward its 2 best steep parents below it."""
+    """Force on each free node toward its 2 best steep parents below it (spring, rest 15 mm)."""
     n = len(pos)
     d = pos[None, :, :] - pos[:, None, :]           # d[i,j] = pos[j] - pos[i]
     dist = np.linalg.norm(d, axis=-1)
@@ -76,7 +76,7 @@ def _support_forces(pos, free):
     sin_elev = -dz / np.maximum(dist, 1e-9)         # for below (dz<0), -dz = drop
     valid = (dz < 0) & (sin_elev >= SIN48) & (dist >= L_MIN) & (dist <= L_MAX)
     score = np.where(valid, np.abs(dist - L_TARGET), np.inf)
-    top = np.argpartition(score, 1, axis=1)[:, :2]  # 2 best parents (approx order)
+    top = np.argpartition(score, 1, axis=1)[:, :2]  # 2 best parents
 
     F = np.zeros_like(pos)
     ar = np.arange(n)
@@ -204,7 +204,7 @@ def select_rods(pos, cand, free_indices, clearance=CLEARANCE):
 
     rows, lb, ub = [], [], []
 
-    # 1) every free node has >= 1 downward rod
+    # 1) every free node has >= 1 downward rod (preferably 2, if it has 2 candidates)
     for nd in free_indices:
         row = np.zeros(E)
         for e, (i, j) in enumerate(cand):
@@ -212,7 +212,7 @@ def select_rods(pos, cand, free_indices, clearance=CLEARANCE):
                 row[e] = 1.0
         if row.sum() == 0:
             continue
-        rows.append(row); lb.append(1.0); ub.append(np.inf)
+        rows.append(row); lb.append(2.0 if row.sum() >= 2 else 1.0); ub.append(np.inf)
 
     # 2) degree 3..6 for free nodes (softened to >=2 if a node can't reach 3)
     for nd in free_indices:
@@ -254,52 +254,47 @@ def _has_parent(pos, nd):
 
 
 def repair(all_pts, all_ids, fixed, face_paras, normals, centers, n_frame, frame_chain):
-    """Nudge free nodes (lowest first) upward until they gain a parent; delete the rest."""
-    for _ in range(8):
+    """Nudge stuck nodes upward, then delete any still without a downward candidate."""
+    for _ in range(12):
         cand = candidate_rods(all_pts, n_frame, frame_chain, all_ids)
         has_down = np.zeros(len(all_pts), dtype=bool)
-        total = np.zeros(len(all_pts), dtype=int)
         for i, j in cand:
-            total[i] += 1; total[j] += 1
             if all_pts[j, 2] < all_pts[i, 2]:
                 has_down[i] = True
             if all_pts[i, 2] < all_pts[j, 2]:
                 has_down[j] = True
         free = np.where(~fixed)[0]
-        # stuck: no downward candidate, or fewer than 3 total candidates (can't reach degree 3)
-        stuck = [nd for nd in free if not has_down[nd] or total[nd] < 3]
+        stuck = [nd for nd in free if not has_down[nd]]
         if not stuck:
             break
-        stuck.sort(key=lambda nd: all_pts[nd, 2])  # lowest first
-        delete = []
+        # nudge all stuck nodes up a small step (within their face / inside)
         for nd in stuck:
+            all_pts[nd, 2] += 3.0
             fid = all_ids[nd]
-            saved = all_pts[nd].copy()
-            fixed_pos = False
-            for step in (3.0, 6.0, 9.0, 12.0):
-                trial = saved + np.array([0.0, 0.0, step])  # move up
-                if fid >= 0:
-                    corner, e1, e2 = face_paras[fid]
-                    g11, g12, g22 = e1 @ e1, e1 @ e2, e2 @ e2
-                    det = g11 * g22 - g12 * g12
-                    q = trial - corner
-                    s = np.clip((g22 * (q @ e1) - g12 * (q @ e2)) / det, 0.0, 1.0)
-                    t = np.clip((g11 * (q @ e2) - g12 * (q @ e1)) / det, 0.0, 1.0)
-                    trial = corner + s * e1 + t * e2
-                else:
-                    for n_, c_ in zip(normals, centers):
-                        if (trial - c_) @ n_ > 0.0:
-                            trial -= n_ * ((trial - c_) @ n_)
-                all_pts[nd] = trial
-                if _has_parent(all_pts, nd):
-                    fixed_pos = True
-                    break
-                all_pts[nd] = saved
-            if not fixed_pos:
-                delete.append(nd)
-        if delete:
+            if fid >= 0:
+                corner, e1, e2 = face_paras[fid]
+                g11, g12, g22 = e1 @ e1, e1 @ e2, e2 @ e2
+                det = g11 * g22 - g12 * g12
+                q = all_pts[nd] - corner
+                s = np.clip((g22 * (q @ e1) - g12 * (q @ e2)) / det, 0.0, 1.0)
+                t = np.clip((g11 * (q @ e2) - g12 * (q @ e1)) / det, 0.0, 1.0)
+                all_pts[nd] = corner + s * e1 + t * e2
+            else:
+                for n_, c_ in zip(normals, centers):
+                    if (all_pts[nd] - c_) @ n_ > 0.0:
+                        all_pts[nd] -= n_ * ((all_pts[nd] - c_) @ n_)
+        # re-check and delete any still stuck
+        cand = candidate_rods(all_pts, n_frame, frame_chain, all_ids)
+        has_down = np.zeros(len(all_pts), dtype=bool)
+        for i, j in cand:
+            if all_pts[j, 2] < all_pts[i, 2]:
+                has_down[i] = True
+            if all_pts[i, 2] < all_pts[j, 2]:
+                has_down[j] = True
+        still = [nd for nd in np.where(~fixed)[0] if not has_down[nd]]
+        if still:
             keep = np.ones(len(all_pts), dtype=bool)
-            keep[delete] = False
+            keep[still] = False
             all_pts = all_pts[keep]
             all_ids = all_ids[keep]
             fixed = np.zeros(len(all_pts), dtype=bool)
@@ -361,13 +356,33 @@ def printable_lattice(
     all_pts = relax_printable(all_pts, fixed, all_ids, face_paras, normals, centers,
                               spacing, iters=iters, lam=lam)
 
-    all_pts, all_ids, fixed = repair(all_pts, all_ids, fixed, face_paras, normals, centers,
-                                     n_frame, chain)
+    # repair is currently a no-op; the post-MIP fix below handles unsupported nodes
+    # all_pts, all_ids, fixed = repair(all_pts, all_ids, fixed, face_paras, normals, centers,
+    #                                  n_frame, chain)
 
     free_indices = np.where(~fixed)[0]
     cand = candidate_rods(all_pts, n_frame, chain, all_ids)
     selected = select_rods(all_pts, cand, free_indices)
 
-    rods = np.vstack([chain, selected]) if len(selected) else chain
-    rods = np.unique(np.sort(rods, axis=1), axis=0)
+    rods = list(chain) + [tuple(e) for e in selected]
+    rods = list({(min(a, b), max(a, b)) for a, b in rods})
+
+    # post-fix: give any still-unsupported free node a steep rod to its nearest node below
+    for nd in free_indices:
+        if any((a == nd and all_pts[b, 2] < all_pts[nd, 2]) or (b == nd and all_pts[a, 2] < all_pts[nd, 2]) for a, b in rods):
+            continue
+        best = None
+        best_d = np.inf
+        for p in range(len(all_pts)):
+            if p == nd or not (all_pts[p, 2] < all_pts[nd, 2]):
+                continue
+            dd = np.linalg.norm(all_pts[p] - all_pts[nd])
+            if L_MIN <= dd <= L_MAX and abs(all_pts[nd, 2] - all_pts[p, 2]) / dd >= SIN48:
+                if dd < best_d:
+                    best = p
+                    best_d = dd
+        if best is not None:
+            rods.append((min(nd, best), max(nd, best)))
+
+    rods = np.unique(np.sort(np.asarray(rods, dtype=int), axis=1), axis=0)
     return all_pts, rods
