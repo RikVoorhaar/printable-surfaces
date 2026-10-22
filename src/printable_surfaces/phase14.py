@@ -23,7 +23,7 @@ JOINT_MM = 1.8
 def main() -> None:
     verts, edges, faces = cube_rhombohedron(50.0, 1.69)
     nodes, rods = printable_lattice(verts, edges, faces, spacing=12.0, n_face=10, n_interior=150,
-                                    seed=1, iters=900, lam=6.0)
+                                    seed=1, iters=900, lam=1.0)
 
     d = nodes[rods[:, 1]] - nodes[rods[:, 0]]
     L = np.linalg.norm(d, axis=1)
