@@ -225,7 +225,8 @@ def _project(pos, fixed, face_ids, face_paras, normals, centers, margin):
 
 def relax_printable(
     pos, fixed, face_ids, face_paras, normals, centers, n_frame, frame_on_face,
-    spacing, iters=900, lam=1.0, kappa=1.25, seed=None, anchor_scale=1.0,
+    spacing, iters=900, lam=1.0, kappa=1.25, seed=None, anchor_scale=1.0, r_c_factor=1.25,
+    same_face_boost=1.0, rep_power=2.0,
 ):
     """Sliding-class relaxation (Sections 5–6): quadratic repulsion (+ κ anisotropy on I
     pairs), ψ support, anchor, and a hard final phase that locks in ≥2 parents."""
@@ -233,7 +234,7 @@ def relax_printable(
     free = ~fixed
     is_face = face_ids >= 0
     is_interior = free & ~is_face
-    r_c = 1.25 * spacing
+    r_c = r_c_factor * spacing
     step_clip = 0.08 * spacing
     jitter0 = 0.03 * spacing
     margin = 0.4 * spacing
@@ -255,11 +256,16 @@ def relax_printable(
         dz = delta[:, :, 2]
         d_eff = np.where(mix, np.sqrt(delta[:, :, 0] ** 2 + delta[:, :, 1] ** 2 + (dz / kappa) ** 2), dd)
         r = np.clip(r_c - d_eff, 0.0, None)
+        # boost same-face repulsion so face nodes spread uniformly across their face
+        same_face_pair = is_face[:, None] & (face_ids[None, :] == face_ids[:, None])
+        r = r * np.where(same_face_pair, same_face_boost, 1.0)
+        # force magnitude = rep_power * r^(rep_power-1)  (potential is r^rep_power)
+        mag = rep_power * np.power(np.maximum(r, 0.0), rep_power - 1.0)
         denom = np.maximum(d_eff, 1e-9)
         F = np.zeros_like(pos)
-        F[:, 0] += (2.0 * r * delta[:, :, 0] / denom).sum(axis=1)
-        F[:, 1] += (2.0 * r * delta[:, :, 1] / denom).sum(axis=1)
-        F[:, 2] += (2.0 * r * np.where(mix, dz / kappa ** 2, dz) / denom).sum(axis=1)
+        F[:, 0] += (mag * delta[:, :, 0] / denom).sum(axis=1)
+        F[:, 1] += (mag * delta[:, :, 1] / denom).sum(axis=1)
+        F[:, 2] += (mag * np.where(mix, dz / kappa ** 2, dz) / denom).sum(axis=1)
 
         # support + anchor
         if it >= iters // 3:
@@ -701,10 +707,52 @@ def _repair(pos, fixed, face_ids, face_paras, normals, centers, n_frame, frame_o
     return pos, rods
 
 
+def _spread_faces(pos, fixed, face_ids, face_paras, normals, centers, n_frame, frame_on_face,
+                  spacing, iters=300, seed=None):
+    """2-D Coulomb spreading of face nodes across their own face (organic-uniform), keeping the
+    0.35h inset. Runs after the 3-D relaxation so the interior is untouched."""
+    rng = np.random.default_rng(seed if seed is not None else 0)
+    is_face = face_ids >= 0
+    r_c = 1.25 * spacing
+    margin = 0.4 * spacing
+    step_clip = 0.08 * spacing
+    jitter0 = 0.02 * spacing
+    faces_present = np.unique(face_ids[face_ids >= 0])
+    for it in range(iters):
+        F = np.zeros_like(pos)
+        for fi in faces_present:
+            m = face_ids == fi
+            sub = pos[m]
+            delta = sub[:, None, :] - sub[None, :, :]
+            dd = np.linalg.norm(delta, axis=-1)
+            np.fill_diagonal(dd, np.inf)
+            r = np.clip(r_c - dd, 0.0, None)
+            u = delta / np.maximum(dd, 1e-9)[:, :, None]
+            F[m] += (2.0 * r[..., None] * u).sum(axis=1)
+            # repulsion from the frame nodes on this face's boundary
+            fr = np.where(frame_on_face[:, fi])[0]
+            if len(fr) == 0:
+                continue
+            delta = pos[m][:, None, :] - pos[fr][None, :, :]
+            dd = np.linalg.norm(delta, axis=-1)
+            r = np.clip(r_c - dd, 0.0, None)
+            u = delta / np.maximum(dd, 1e-9)[:, :, None]
+            F[m] += (2.0 * r[..., None] * u).sum(axis=1)
+        step = 0.5 * F
+        dn = np.linalg.norm(step, axis=1, keepdims=True)
+        step = step * np.minimum(1.0, step_clip / np.maximum(dn, 1e-12))
+        step = step + jitter0 * (1.0 - it / iters) * rng.standard_normal(pos.shape)
+        step[~is_face] = 0.0
+        pos = pos + step
+        pos = _project(pos, fixed, face_ids, face_paras, normals, centers, margin)
+    return pos
+
+
 def printable_lattice(
     vertices, edges, faces,
     spacing=12.0, n_face=10, n_interior=150, seed=1,
-    iters=900, lam=1.0, kappa=1.25, anchor_scale=1.0,
+    iters=900, lam=1.0, kappa=1.25, anchor_scale=1.0, r_c_factor=1.25, same_face_boost=1.0,
+    rep_power=2.0, face_spread_iters=0,
 ):
     """Generate a support-free lattice inside a convex polytope. Returns (nodes, rods)."""
     from .platonic import face_parallelogram, face_planes, inside_mask
@@ -769,7 +817,14 @@ def printable_lattice(
 
     all_pts = relax_printable(all_pts, fixed, all_ids, face_paras, normals, centers,
                               n_frame, frame_on_face, spacing, iters=iters, lam=lam,
-                              kappa=kappa, seed=seed, anchor_scale=anchor_scale)
+                              kappa=kappa, seed=seed, anchor_scale=anchor_scale,
+                              r_c_factor=r_c_factor, same_face_boost=same_face_boost,
+                              rep_power=rep_power)
+
+    if face_spread_iters > 0:
+        all_pts = _spread_faces(all_pts, fixed, all_ids, face_paras, normals, centers,
+                                n_frame, frame_on_face, spacing, iters=face_spread_iters,
+                                seed=seed)
 
     # repair is currently a no-op; the post-MIP fix below handles unsupported nodes
     # all_pts, all_ids, fixed = repair(all_pts, all_ids, fixed, face_paras, normals, centers,
