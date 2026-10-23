@@ -6,7 +6,7 @@
         {
           "path": "output/lattice/rhombohedron_printable.ply",
           "kind": "ply",
-          "label": "Rhombohedron \u00b7 printable \u00b7 262 nodes / 621 rods / 0 unprintable",
+          "label": "Rhombohedron \u00b7 printable \u00b7 305 nodes / 801 rods / 0 unprintable",
           "stage": "lattice"
         }
       ]

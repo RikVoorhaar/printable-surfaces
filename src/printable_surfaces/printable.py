@@ -17,7 +17,7 @@ from scipy.spatial import cKDTree
 
 SIN48 = np.sin(np.radians(48.0))   # steep rod threshold (45° + 3° margin)
 SIN5 = np.sin(np.radians(5.0))     # "horizontal" tolerance for bridges
-L_MIN, L_MAX, L_TARGET = 8.0, 22.0, 15.0
+L_MIN, L_MAX, L_TARGET = 8.0, 28.0, 15.0
 BRIDGE_MAX = 10.0
 CLEARANCE = 2.6   # rod-rod axis-to-axis minimum (gap of 1.4 mm between 1.2 mm rods)
 NODE_CLEARANCE = 2.0  # rod-axis-to-node-center minimum (0.6 rod + 0.9 node + 0.5 gap)
