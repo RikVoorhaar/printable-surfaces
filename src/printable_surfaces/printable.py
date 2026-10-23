@@ -364,6 +364,8 @@ def candidate_rods(pos, n_frame, frame_chain, face_ids, normals, centers, cleara
             if not clear:
                 continue
             for (a, b) in frame_chain:
+                if a == i or a == j or b == i or b == j:
+                    continue  # shares an endpoint: not a clearance conflict
                 if segment_segment_dist(pos[i], pos[j], pos[a], pos[b]) < clearance:
                     clear = False
                     break
@@ -378,13 +380,24 @@ def select_rods(pos, cand, frame_chain, face_ids, normals, centers, n_frame, cle
 
     Cost carries a per-rod reward β so rods are added until degree/clearance stop them;
     every lower bound has a slack so the LP is never infeasible; rod-rod clearance pairs
-    that *share a node* are skipped (they are not conflicts)."""
+    that *share a node* are skipped (they are not conflicts). The sf/sa constraints make
+    the face lattice visible (≥2 in-face parents per F node, ≥1 interior parent per F↑)."""
     E = len(cand)
     n = len(pos)
+    empty = {"s1": np.zeros(n), "s2": np.zeros(n), "sd": np.zeros(n), "sf": np.zeros(n), "sa": np.zeros(n)}
     if E == 0:
-        return np.zeros((0, 2), dtype=int), {"s1": np.zeros(n), "s2": np.zeros(n), "sd": np.zeros(n)}
+        return np.zeros((0, 2), dtype=int), empty
 
-    _, is_face, _, _ = _node_classes(n, n_frame, face_ids, normals)
+    is_frame = np.zeros(n, dtype=bool); is_frame[:n_frame] = True
+    is_face = face_ids >= 0
+    is_interior = ~is_frame & ~is_face
+    overhang = np.zeros(n, dtype=bool)
+    for i in np.where(is_face)[0]:
+        overhang[i] = normals[face_ids[i], 2] < 0.0
+    up_nonvertical = np.zeros(n, dtype=bool)
+    for i in np.where(is_face & ~overhang)[0]:
+        up_nonvertical[i] = abs(normals[face_ids[i], 2]) < 0.99
+    frame_on_face = _frame_on_faces(pos[:n_frame], normals, centers)
 
     # rod properties
     Lc = np.linalg.norm(pos[cand[:, 1]] - pos[cand[:, 0]], axis=1)
@@ -394,18 +407,22 @@ def select_rods(pos, cand, frame_chain, face_ids, normals, centers, n_frame, cle
     same_face = np.zeros(E, dtype=bool)
     for e, (i, j) in enumerate(cand):
         fi, fj = face_ids[i], face_ids[j]
-        same_face[e] = (fi >= 0 and fi == fj) or (fi >= 0 and j < n_frame) or (fj >= 0 and i < n_frame)
+        same_face[e] = ((fi >= 0 and fi == fj)
+                        or (fi >= 0 and j < n_frame and frame_on_face[j, fi])
+                        or (fj >= 0 and i < n_frame and frame_on_face[i, fj]))
 
     cost = ((Lc - H) / H) ** 2 - BETA + 0.3 * np.exp(-(theta_deg - ALPHA_DEG) / 4.0) - GAMMA * same_face
 
-    # slack blocks: s1 (≥1 down), s2 (≥2 down), sd (degree ≥ 3) per node
-    nslack = 3 * n
+    # 5 slack blocks: s1 (≥1 down), s2 (≥2 down), sd (degree≥3), sf (≥2 in-face), sa (≥1 to-I)
+    nslack = 5 * n
     total = E + nslack
     C = np.zeros(total)
     C[:E] = cost
-    C[E:E + n] = 1000.0      # s1
+    C[E:E + n] = 1000.0        # s1
     C[E + n:E + 2 * n] = 8.0   # s2
-    C[E + 2 * n:E + 3 * n] = 5.0  # sd
+    C[E + 2 * n:E + 3 * n] = 5.0   # sd
+    C[E + 3 * n:E + 4 * n] = 50.0  # sf
+    C[E + 4 * n:E + 5 * n] = 20.0  # sa
     integrality = np.zeros(total)
     integrality[:E] = 1
 
@@ -415,42 +432,54 @@ def select_rods(pos, cand, frame_chain, face_ids, normals, centers, n_frame, cle
         frame_deg[a] += 1
         frame_deg[b] += 1
 
-    # per-candidate "downward" / "incident" masks, precomputed as sparse rows
+    # per-candidate masks
     down_mask = np.zeros((n, E), dtype=bool)
     inc_mask = np.zeros((n, E), dtype=bool)
+    inface_down = np.zeros((n, E), dtype=bool)
+    toI_down = np.zeros((n, E), dtype=bool)
     for e, (i, j) in enumerate(cand):
         if pos[j, 2] < pos[i, 2]:
             down_mask[i, e] = True
+            if is_face[i]:
+                if (face_ids[j] == face_ids[i]) or (j < n_frame and frame_on_face[j, face_ids[i]]):
+                    inface_down[i, e] = True
+                if is_interior[j]:
+                    toI_down[i, e] = True
         if pos[i, 2] < pos[j, 2]:
             down_mask[j, e] = True
+            if is_face[j]:
+                if (face_ids[i] == face_ids[j]) or (i < n_frame and frame_on_face[i, face_ids[j]]):
+                    inface_down[j, e] = True
+                if is_interior[i]:
+                    toI_down[j, e] = True
         inc_mask[i, e] = inc_mask[j, e] = True
 
     rows, lb, ub = [], [], []
 
-    def add_down(nd, slack_off, rhs):
+    def add(nd, slack_off, mask, rhs):
         row = np.zeros(total)
-        row[:E] = down_mask[nd]
+        row[:E] = mask[nd]
         row[E + slack_off + nd] = 1.0
         rows.append(row); lb.append(rhs); ub.append(np.inf)
 
-    def add_deg(nd, rhs_soft=None):
-        # soft lower bound on selected degree (slack sd)
-        if rhs_soft is not None:
+    for nd in range(n):
+        if not is_frame[nd]:
+            add(nd, 0, down_mask, 1.0)      # s1: ≥ 1 downward rod
+            add(nd, n, down_mask, 2.0)      # s2: ≥ 2 downward rods
+        if is_face[nd]:
+            add(nd, 3 * n, inface_down, 2.0)  # sf: ≥ 2 in-face rods
+        if up_nonvertical[nd]:
+            add(nd, 4 * n, toI_down, 1.0)   # sa: ≥ 1 rod to interior
+        need = max(0.0, DEG_MIN - frame_deg[nd])
+        if need > 0:
             row = np.zeros(total)
             row[:E] = inc_mask[nd]
             row[E + 2 * n + nd] = 1.0
-            rows.append(row); lb.append(rhs_soft); ub.append(np.inf)
-        # hard upper bound
+            rows.append(row); lb.append(need); ub.append(np.inf)
         if frame_deg[nd] < DEG_MAX:
             row = np.zeros(total)
             row[:E] = inc_mask[nd]
             rows.append(row); lb.append(-np.inf); ub.append(float(DEG_MAX - frame_deg[nd]))
-
-    for nd in range(n):
-        if not _node_is_frame(nd, n_frame):
-            add_down(nd, 0, 1.0)     # s1: ≥ 1 downward rod
-            add_down(nd, n, 2.0)     # s2: ≥ 2 downward rods
-        add_deg(nd, max(0.0, DEG_MIN - frame_deg[nd]))
 
     # rod-rod clearance: pairs that do NOT share a node and whose axes are < clearance apart
     mids = (pos[cand[:, 0]] + pos[cand[:, 1]]) / 2.0
@@ -470,12 +499,10 @@ def select_rods(pos, cand, frame_chain, face_ids, normals, centers, n_frame, cle
     lb_hi = np.full(total, np.inf); lb_hi[:E] = 1.0
     res = milp(c=C, constraints=[LinearConstraint(A, np.asarray(lb), np.asarray(ub))],
                integrality=integrality, bounds=Bounds(lb_lo, lb_hi))
-    if res.success:
-        x = res.x
-    else:
-        x = np.zeros(total)
+    x = res.x if res.success else np.zeros(total)
     y = np.round(x[:E]).astype(int)
-    slack = {"s1": x[E:E + n], "s2": x[E + n:E + 2 * n], "sd": x[E + 2 * n:E + 3 * n]}
+    slack = {"s1": x[E:E + n], "s2": x[E + n:E + 2 * n], "sd": x[E + 2 * n:E + 3 * n],
+             "sf": x[E + 3 * n:E + 4 * n], "sa": x[E + 4 * n:E + 5 * n]}
     return cand[y == 1], slack
 
 
@@ -703,29 +730,25 @@ def printable_lattice(
 
     rng = np.random.default_rng(seed)
 
-    # overhanging faces get a constructive bottom-up start (Section 6.1)
-    overhang_face = np.array([normals[fi, 2] < 0.0 for fi in range(len(normals))])
+    # every face gets a constructive bottom-up start (Section 6.1) so the face lattice
+    # has ~2 in-face parents per node by construction
     r_construct = 0.73 * spacing
 
     # face points
     face_pts, face_ids = [], []
     for fi, face in enumerate(faces):
         corner, e1, e2 = face_parallelogram(vertices, face)
-        if overhang_face[fi]:
-            start = frame_pts[frame_on_face[:, fi]]
-            pts = _constructive_face(start, corner, e1, e2, n_face, r_construct, spacing, rng)
-            pts_arr = np.asarray(pts, dtype=float).reshape(-1, 3)
-            if len(pts) < n_face:
-                n_extra = n_face - len(pts)
-                u = rng.uniform(0, 1, n_extra); w = rng.uniform(0, 1, n_extra)
-                extra = corner + u[:, None] * e1 + w[:, None] * e2
-                pts_arr = np.vstack([pts_arr, extra])
-        else:
+        start = frame_pts[frame_on_face[:, fi]]
+        pts = _constructive_face(start, corner, e1, e2, n_face, r_construct, spacing, rng)
+        pts_arr = np.asarray(pts, dtype=float).reshape(-1, 3)
+        if len(pts) < n_face:
+            n_extra = n_face - len(pts)
             e1n = float(np.linalg.norm(e1)); e2n = float(np.linalg.norm(e2))
             eps1 = (0.35 * spacing) / e1n if e1n > 0 else 0.0
             eps2 = (0.35 * spacing) / e2n if e2n > 0 else 0.0
-            u = rng.uniform(eps1, 1 - eps1, n_face); w = rng.uniform(eps2, 1 - eps2, n_face)
-            pts_arr = corner + u[:, None] * e1 + w[:, None] * e2
+            u = rng.uniform(eps1, 1 - eps1, n_extra); w = rng.uniform(eps2, 1 - eps2, n_extra)
+            extra = corner + u[:, None] * e1 + w[:, None] * e2
+            pts_arr = np.vstack([pts_arr, extra])
         face_pts.append(pts_arr)
         face_ids += [fi] * n_face
     face_pts = np.vstack(face_pts)

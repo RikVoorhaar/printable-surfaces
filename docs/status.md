@@ -12,12 +12,13 @@ The sliding-class relaxation method (`docs/sliding-class-relaxation-method.md`):
 
 1. **Node classes** V/E/F↓/F↑/I with restricted parent sets (Section 4); face nodes inset 0.35h
    from edges, interior inset 0.4h from faces.
-2. **Relaxation** (Sections 5–6): quadratic repulsion `(r_c−d)²` with κ vertical anisotropy on
-   I-pairs, ψ-based symmetric support `(sinα·L−Δz)₊² + (L−Lmax)₊² + (Lmin−L)₊²`, anchor term
-   (F↑→I), and a hard final phase that forbids dropping a node below 2 parents.
-3. **Constructive start** (Section 6.1) for F↓ faces: bottom-up sampler.
-4. **MIP** (Section 7): β=0.6 per-rod reward, slacks on every lower bound, rod-rod clearance as
-   pairwise exclusions (skipping shared-node pairs — fixes the old 3398 spurious conflicts).
+2. **Relaxation** (Sections 5–6): quadratic repulsion `(r_c−d)²` with κ vertical anisotropy,
+   ψ-based symmetric support, anchor term, and a hard final phase forbidding a move that drops a
+   node below 2 parents.
+3. **Constructive start** (Section 6.1) for every face: bottom-up sampler, each node placed where
+   ≥2 in-face parents already exist.
+4. **MIP** (Section 7): β=0.6 per-rod reward; slacks s1/s2/sd/sf/sa on every lower bound; rod-rod
+   clearance as pairwise exclusions (skipping shared-node pairs).
 5. **Repair** (Section 8): slack-driven moves, single-pass I-node deletion, clearance-aware
    fallback rod.
 
@@ -27,21 +28,19 @@ The sliding-class relaxation method (`docs/sliding-class-relaxation-method.md`):
 |---|---|---|
 | Unprintable rods | **0** | 0 |
 | Rod-rod clearance violations | **0** | 0 |
-| Mean degree | ~3.85 | 4.7 |
-| Nodes with no downward rod | 2–3 (interior hubs) | ~0 |
+| Mean degree (overall) | ~4.65 | 4.7 |
+| Frame / face / interior degree | 4.2 / 4.2 / 5.4 | — |
+| Unsupported free nodes | **0** (bottom vertex sits on raft) | ~0 |
 | Slices (PrusaSlicer) | OK | OK |
 
-## Remaining gaps
+## Key bug fixed this session
 
-- **Degree ~3.85 vs 4.7**: each free node has only ~2.4 allowed steep parents → ~3.9 incident
-  candidates after clearance. The β reward works, but there aren't enough printable candidates.
-  Root cause: the 48° steep cone + 8–22 mm length window limits neighbours; κ trades steep share
-  against vertical spacing.
-- **2–3 unsupported interior nodes**: hubs that support a cluster above but have no steep parent
-  below (their only parent was deleted). Single-pass deletion leaves a few; iterating cascades.
+`candidate_rods` deleted every face→frame rod: the frame-clearance check tested candidate rods
+against frame rods **sharing an endpoint** (distance 0), which is exactly what the method warns
+against ("a frame rod it does *not* share an endpoint with"). Fixing it raised frame degree
+2.3 → 4.2 and face degree 3.5 → 4.2 — the "faces not connected to the edges" problem.
 
 ## Next steps
 
-1. Raise steep-neighbour count (stronger vertical packing, or a smaller α margin), then re-check
-   degree and unsupported together.
-2. Then run tetrahedron/octahedron/icosahedron/dodecahedron through the pipeline.
+1. Run tetrahedron / octahedron / icosahedron / dodecahedron through the pipeline.
+2. Optional: flatten the rod-elevation histogram (rods cluster just above 48°).
