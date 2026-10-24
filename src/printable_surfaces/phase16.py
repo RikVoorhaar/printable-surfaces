@@ -1,7 +1,9 @@
-"""Phase 16 — version matrix: all five Platonic solids, sparse + slim + scaled.
+"""Phase 16b — minimal-stretch versions of all five Platonic solids.
 
-Generates the support-free lattice for each of the five (stretched) Platonic solids, then
-exports the chosen "T4×S2" version (Ø1.2 rod, 0.8 scale, sparse base) plus a material table.
+Each solid is oriented with its *least-stretch* axis vertical (face-down where that's easier,
+vertex-down where face-down would need more stretch), with explicit horizontal-face handling
+(bottom face on the plate; top face left open). Emits the slim T4×S2 version (Ø1.2 rod, 0.8
+scale) plus a material table, into a *new* folder (the earlier versions are untouched).
 
 Run: uv run python -m printable_surfaces.phase16
 """
@@ -14,23 +16,23 @@ import numpy as np
 
 from .artifacts import register
 from .lattice import build_frame_mesh
-from .platonic import cube_rhombohedron, dodecahedron, icosahedron, octahedron, tetrahedron
+from .platonic import cube_face_down, dodecahedron, icosahedron, octahedron_face_down, tetrahedron
 from .printable import printable_lattice
 
-PLA_DENSITY = 1.24  # g/cm^3 (PrusaSlicer nominal PLA; Wikipedia lists 1.21–1.43)
+PLA_DENSITY = 1.24  # g/cm^3 (PrusaSlicer nominal PLA)
 
-# chosen "slim + smaller" version: rod radius 0.6 (Ø1.2), joint 0.9 (Ø1.8), scale 0.8
-ROD_R = 0.6
-JOINT_R = 0.9
-SCALE = 0.8
+ROD_R = 0.6       # Ø1.2 rod (T4)
+JOINT_R = 0.9     # Ø1.8 joint
+SCALE = 0.8       # S2
 
-# (name, geometry, lattice params) — sparse base (spacing 17, ~25% fewer rods than the dense cut)
+# (name, geometry, lattice params) — spacing scaled to each solid's size (small solids get
+# shorter rods so their interior isn't empty; the big stretched ones stay sparse).
 SOLIDS = [
-    ("cube",        cube_rhombohedron(50.0, 1.69), dict(spacing=17, n_face=36, n_interior=80)),
-    ("tetrahedron", tetrahedron(50.0),             dict(spacing=17, n_face=12, n_interior=40)),
-    ("octahedron",  octahedron(50.0),              dict(spacing=17, n_face=15, n_interior=60)),
-    ("icosahedron", icosahedron(50.0),             dict(spacing=17, n_face=12, n_interior=60)),
-    ("dodecahedron", dodecahedron(50.0),           dict(spacing=17, n_face=10, n_interior=70)),
+    ("cube",        cube_face_down(50.0),     dict(spacing=14, n_face=16, n_interior=60)),
+    ("tetrahedron", tetrahedron(50.0),        dict(spacing=12, n_face=18, n_interior=60)),
+    ("octahedron",  octahedron_face_down(50.0), dict(spacing=14, n_face=14, n_interior=60)),
+    ("icosahedron", icosahedron(50.0),        dict(spacing=17, n_face=12, n_interior=60)),
+    ("dodecahedron", dodecahedron(50.0),      dict(spacing=17, n_face=12, n_interior=70)),
 ]
 
 
@@ -42,8 +44,9 @@ def material_volume_mm3(nodes, rods, rod_r, joint_r):
 
 
 def main() -> None:
-    out_dir = "output/lattice/solids"
+    out_dir = "output/lattice/minstretch"
     os.makedirs(out_dir, exist_ok=True)
+    folder = "Platonic solids · min-stretch"
 
     print("| Solid | W×D×H (mm) | nodes | rods | cm³ | PLA (g) |")
     print("|---|---|---|---|---|---|")
@@ -61,7 +64,7 @@ def main() -> None:
         mesh.export(stl)
         register("lattice", stl, "stl",
                  f"{name} T4×S2 · rod Ø1.2 · {w:.0f}×{h:.0f} mm · {grams:.1f} g",
-                 folder="Platonic solids · T4×S2")
+                 folder=folder)
 
     for name, dims, nn, nr, vol, grams in rows:
         print(f"| {name} | {dims} | {nn} | {nr} | {vol:.2f} | {grams:.1f} |")

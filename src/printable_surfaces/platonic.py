@@ -139,6 +139,59 @@ def dodecahedron(circumradius: float = 50.0):
     return v, edges, faces
 
 
+def _face_down(vertices: np.ndarray, target_elev: float = 50.0):
+    """Orient a convex polytope face-down (one face on the build plate), stretching Z just
+    enough that every non-horizontal edge reaches ``target_elev``.
+
+    Horizontal edges stay horizontal: those on the bottom face lie on the raft (exempt),
+    those on the top face become bridges. Returns ``(verts, edges, faces)``.
+    """
+    verts = np.asarray(vertices, dtype=float)
+    edges, faces = _convex_faces(verts)
+    p = verts[faces[0]]
+    n = np.cross(p[1] - p[0], p[2] - p[0])
+    n = n / np.linalg.norm(n)
+    if n @ (p[0] - verts.mean(axis=0)) < 0.0:
+        n = -n
+    rot = Rotation.align_vectors([[0.0, 0.0, -1.0]], [n])[0].as_matrix()
+    v = verts @ rot.T
+    L = np.linalg.norm(v[edges[:, 1]] - v[edges[:, 0]], axis=1)
+    dz = np.abs(v[edges[:, 1], 2] - v[edges[:, 0], 2])
+    elev = np.degrees(np.arcsin(dz / L))
+    side = elev >= 5.0
+    if side.any():
+        mine = float(elev[side].min())
+        if mine < target_elev:
+            s = np.tan(np.radians(target_elev)) / np.tan(np.radians(mine))
+            v[:, 2] *= s
+    return v, edges, faces
+
+
+def cube_face_down(circumradius: float = 50.0):
+    """Plain cube with one square face on the build plate (side faces vertical, no stretch)."""
+    half = circumradius / np.sqrt(3.0)
+    v = np.array([[x, y, z] for x in (-half, half) for y in (-half, half) for z in (-half, half)], dtype=float)
+    return _face_down(v)
+
+
+def octahedron_face_down(circumradius: float = 50.0):
+    """Regular octahedron face-down (no stretch — side edges already 54.7°)."""
+    v = np.array([[1, 0, 0], [-1, 0, 0], [0, 1, 0], [0, -1, 0], [0, 0, 1], [0, 0, -1]], dtype=float)
+    v *= circumradius
+    return _face_down(v)
+
+
+def icosahedron_face_down(circumradius: float = 50.0):
+    """Regular icosahedron face-down (stretched ~×3.12 so the shallowest side edges hit 50°)."""
+    v = np.array([
+        [0, 1, PHI], [0, -1, PHI], [0, 1, -PHI], [0, -1, -PHI],
+        [1, PHI, 0], [1, -PHI, 0], [-1, PHI, 0], [-1, -PHI, 0],
+        [PHI, 0, 1], [PHI, 0, -1], [-PHI, 0, 1], [-PHI, 0, -1],
+    ], dtype=float)
+    v *= circumradius / np.sqrt(1.0 + PHI * PHI)
+    return _face_down(v)
+
+
 def cube_rotation() -> np.ndarray:
     """3×3 rotation mapping the body diagonal (1,1,1) onto +Z."""
     return Rotation.align_vectors([[0.0, 0.0, 1.0]], [[1.0, 1.0, 1.0] / np.sqrt(3.0)])[0].as_matrix()

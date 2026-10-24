@@ -852,7 +852,13 @@ def printable_lattice(
 
     normals, centers = face_planes(vertices, faces)
 
-    # frame: subdivide each edge; horizontal edges become ≤10 mm bridge spans
+    # classify faces: horizontal (bottom on plate / top ceiling) vs side (steep)
+    horizontal_face = np.abs(normals[:, 2]) > 0.99
+    bottom_face = horizontal_face & (normals[:, 2] < 0.0)   # on the build plate
+    top_face = horizontal_face & (normals[:, 2] > 0.0)      # horizontal ceiling (left open)
+    zmin = float(vertices[:, 2].min())
+
+    # frame: subdivide each edge; horizontal edges become ≤10 mm bridge spans (unless on raft)
     frame_pts = [v for v in vertices]
     chain = []
     bridge_nodes = []
@@ -862,15 +868,18 @@ def printable_lattice(
         L = float(np.linalg.norm(d))
         sin_elev = abs(d[2]) / L if L > 1e-9 else 0.0
         horizontal = sin_elev < SIN5
-        if horizontal:
-            nseg = max(1, int(np.ceil(L / BRIDGE_MAX)))
+        on_raft = horizontal and vertices[i, 2] <= zmin + 1e-6 and vertices[j, 2] <= zmin + 1e-6
+        if horizontal and not on_raft:
+            nseg = max(1, int(np.ceil(L / BRIDGE_MAX)))   # bridges in the air
         else:
+            # steep edge, OR a horizontal edge on the raft: subdivide at ~spacing so its
+            # intermediate nodes can serve as parents for the face nodes above it.
             nseg = max(1, int(round(L / spacing)))
         prev = i
         for k in range(1, nseg):
             frame_pts.append(vertices[i] + (k / nseg) * d)
             chain.append((prev, idx))
-            if horizontal:
+            if horizontal and not on_raft:
                 bridge_nodes.append(idx)
             prev = idx
             idx += 1
@@ -897,6 +906,8 @@ def printable_lattice(
 
     face_pts, face_ids = [], []
     for fi, face in enumerate(faces):
+        if bottom_face[fi] or top_face[fi]:
+            continue  # bottom face is on the plate; top face is a horizontal ceiling left open
         geom = face_geoms[fi]
         start = frame_pts[frame_on_face[:, fi]]
         pts = _constructive_face(start, geom, n_face, r_construct, rng)
@@ -910,11 +921,15 @@ def printable_lattice(
             pts_arr = np.vstack([pts_arr, np.asarray(extra)])
         face_pts.append(pts_arr)
         face_ids += [fi] * n_face
-    face_pts = np.vstack(face_pts)
+    if face_pts:
+        face_pts = np.vstack(face_pts)
+    else:
+        face_pts = np.zeros((0, 3))
     face_ids = np.asarray(face_ids, dtype=int)
 
-    # interior points (rejection sampling in the bounding box)
+    # interior points (rejection sampling in the bounding box), kept ≥ L_MIN above the raft
     lo = vertices.min(axis=0); hi = vertices.max(axis=0)
+    lo[2] += L_MIN  # bottom margin: nodes too close to the plate can't find a parent
     interior = []
     while len(interior) < n_interior:
         batch = rng.uniform(lo, hi, size=(n_interior * 4, 3))

@@ -4,51 +4,54 @@
 Rods 1.2 mm, nodes 1.8 mm (chosen "slim" Ø), build direction +Z.
 
 **Printability rule:** rod printable iff within 48° of vertical (α=48°), or a horizontal bridge
-≤10 mm.
+≤10 mm; rods lying on the build plate are exempt.
 
-## Solids
+## Solids (minimal-stretch orientation)
 
-All five Platonic solids, oriented + stretched so their frame edges are printable (per
-`docs/Support-Free Rod Lattices for the Platonic Solids…`):
+Each solid is oriented with its **least-stretch** axis vertical: face-down where that's easier,
+vertex-down where face-down would need more stretch.
 
-| Solid | Orientation | Deformation | Horizontal edges |
+| Solid | Orientation | Stretch | Horizontal faces |
 |---|---|---|---|
-| cube | vertex down (body diagonal vertical) | ×1.69 | none |
-| tetrahedron | face down | none | base (raft) |
-| octahedron | vertex down | ×1.19 | 4 belt, 70.7 mm |
-| icosahedron | vertex down | tip-lift ×1.51 | 10 (two pentagon rings) |
-| dodecahedron | face down | ×1.93 (relaxed) | 5 top pentagon |
+| cube | face down | none | bottom (plate) + top (open) |
+| tetrahedron | face down | none | bottom (plate) |
+| octahedron | face down | none | bottom + top |
+| icosahedron | vertex down | tip-lift | 2 pentagon rings (bridged) |
+| dodecahedron | face down | ×1.93 | bottom + top |
 
-Geometry in `platonic.py`; lattice in `printable.py` (generalized: polygon faces, horizontal
-edges → ≤10 mm bridges + steep posts, stranded-node cleanup).
+**Horizontal-face exceptions** (in `printable.py`): the bottom face is on the plate (its edges
+subdivide at ~spacing to provide parents, no posts); the top face is a horizontal ceiling left
+open (no face nodes, its edges become ≤10 mm bridges + posts).
 
-## Chosen version — T4×S2 (Ø1.2 rod, 0.8 scale, spacing 17)
+## Chosen version — T4×S2 (Ø1.2 rod, 0.8 scale)
 
 | Solid | W×D×H (mm) | nodes | rods | PLA (g) |
 |---|---|---|---|---|
-| cube | 73×73×135 | 337 | 851 | 15.2 |
-| tetrahedron | 63×63×53 | 86 | 180 | 2.9 |
-| octahedron | 80×80×95 | 245 | 612 | 10.3 |
-| icosahedron | 68×72×121 | 380 | 823 | 13.5 |
-| dodecahedron | 79×75×123 | 280 | 645 | 13.3 |
+| cube | 46×46×46 | 174 | 438 | 7.7 |
+| tetrahedron | 63×63×53 | 107 | 226 | 3.4 |
+| octahedron | 63×63×46 | 197 | 490 | 8.0 |
+| icosahedron | 68×72×121 | 380 | 810 | 13.5 |
+| dodecahedron | 79×75×123 | 280 | 632 | 13.0 |
 
-All 0 unprintable rods. STLs in `output/lattice/solids/`, registered on the dashboard under
-`Platonic solids · T4×S2`.
+All 0 unprintable. STLs in `output/lattice/minstretch/`, dashboard folder `Platonic solids ·
+min-stretch` (earlier `… · T4×S2` versions left in place).
 
 ## Method (sliding-class relaxation, `docs/sliding-class-relaxation-method.md`)
 
 Node classes V/E/F↓/F↑/I; ψ support + anchor + hard phase; constructive bottom-up start for
-faces; MIP (β reward + slacks + clearance); repair; bridge posts. Key bugs fixed: shared-node
-clearance, fixed-node jitter, face inset, frame-clearance, bridge angle-penalty.
+faces; MIP (β reward + slacks + clearance); repair; bridge posts. Generalized to polygon faces
+(triangle/rhombus/pentagon). Key bugs fixed: shared-node clearance, fixed-node jitter, face
+inset, frame-clearance, bridge angle-penalty.
 
 ## Known limitation
 
-Icosahedron's upper pentagon ring: ~11 bridge nodes have no post (their posts would run along
-the near-vertical band face and collide with its face lattice). Fix = fold posts into the MIP
-as fixed parent requirements (follow-up).
+Icosahedron's upper pentagon ring: ~16 bridge nodes have no post (their posts would run along
+the near-vertical band face and collide with its face lattice). Fix = fold posts into the MIP as
+fixed parent requirements (follow-up).
 
 ## Next steps
 
-1. Fold icosahedron ring posts into the MIP (or accept 11 bridge nodes).
-2. Slice a chosen solid (T4×S2) for real print-time + filament estimate.
-3. Orient / brim / stabilizer-strut decisions (vertex-down solids stand on a point).
+1. Fold icosahedron ring posts into the MIP (or accept ~16 bridge nodes).
+2. Slice a chosen solid for a real print-time + filament estimate.
+3. Scale the face-down solids (cube/octa are ~46 mm at 0.8 — quite small) if a consistent size
+   across solids is wanted.

@@ -859,10 +859,52 @@
     </details>
   </article>
 
+  <article class="phase">
+    <div class="head">
+      <span class="num">Phase 18</span>
+      <span class="title">Minimal-stretch orientation + horizontal-face exceptions</span>
+      <span class="badge done">✓ Done</span>
+    </div>
+    <div class="deliverable">
+      <h4>Deliverable</h4>
+      <ul>
+        <li>Rule change: pick the orientation with the <strong>least stretch</strong> — face-down where that's easier, vertex-down where face-down would need more. Face-down: cube/tetra/octa/dodeca; vertex-down (tip-lift): icosahedron (face-down would need ×3.12 vs tip-lift ×1.51).</li>
+        <li><strong>Horizontal-face exceptions</strong> in <code>printable.py</code>: the bottom face sits on the build plate (its edges subdivide at ~spacing to provide parents, but need no posts — they rest on the plate); the top face is a horizontal ceiling left open (no face nodes, its edges become ≤10&nbsp;mm bridges + posts).</li>
+        <li>Tetrahedron interior fixed (was nearly empty): per-solid spacing + a bottom margin (interior nodes kept ≥ <code>L_MIN</code> above the raft).</li>
+        <li>New versions in a <em>new</em> folder <code>Platonic solids · min-stretch</code> (old versions untouched).</li>
+      </ul>
+    </div>
+    <details class="notes" open>
+      <summary>min-stretch T4×S2 (Ø1.2 rod, 0.8 scale)</summary>
+      <div class="body">
+        <table style="border-collapse:collapse;font-size:.92em;color:var(--text);">
+          <thead><tr style="color:var(--muted);text-align:left;">
+            <th style="padding:.2rem .8rem .2rem 0;">Solid</th><th style="padding:.2rem .6rem;">orientation</th>
+            <th style="padding:.2rem .6rem;">stretch</th><th style="padding:.2rem .6rem;">W×D×H (mm)</th>
+            <th style="padding:.2rem .6rem;">PLA g</th>
+          </tr></thead>
+          <tbody>
+            <tr><td>cube</td><td>face down</td><td>none</td><td>46×46×46</td><td>7.7</td></tr>
+            <tr><td>tetrahedron</td><td>face down</td><td>none</td><td>63×63×53</td><td>3.4</td></tr>
+            <tr><td>octahedron</td><td>face down</td><td>none</td><td>63×63×46</td><td>8.0</td></tr>
+            <tr><td>icosahedron</td><td>vertex down</td><td>tip-lift</td><td>68×72×121</td><td>13.5</td></tr>
+            <tr><td>dodecahedron</td><td>face down</td><td>×1.93</td><td>79×75×123</td><td>13.0</td></tr>
+          </tbody>
+        </table>
+        <p style="color:var(--muted);margin-bottom:0;">
+          All 0 unprintable rods; 0 unsupported for cube/tetra/octa/dodeca. The icosahedron (vertex-down)
+          keeps its known ~16 unsupported upper-ring bridge nodes (posts would collide with the band face —
+          still needs the "fold posts into the MIP" follow-up). The face-down solids are naturally small
+          (no stretch), so their rods are proportionally shorter (spacing 12–14) to avoid an empty interior.
+        </p>
+      </div>
+    </details>
+  </article>
+
 </main>
 
 <footer>
-  Living document · append, don't rewrite · last updated 2026-10-24 (phase 17: all five Platonic solids)
+  Living document · append, don't rewrite · last updated 2026-10-24 (phase 18: minimal-stretch + horizontal faces)
 </footer>
 </body>
 </html>
