@@ -54,7 +54,8 @@ def material_volume_mm3(nodes: np.ndarray, rods: np.ndarray, rod_r: float, joint
 
 def main() -> None:
     verts, edges, faces = cube_rhombohedron(50.0, 1.69)
-    nodes, rods = printable_lattice(verts, edges, faces, spacing=15.0, n_face=48, n_interior=105,
+    # Sparse base (vs the original spacing=15 / n_face=48 / n_interior=105 → 449 nodes, 1110 rods).
+    nodes, rods = printable_lattice(verts, edges, faces, spacing=17.0, n_face=36, n_interior=80,
                                     seed=1, iters=900, lam=1.0)
 
     base_bbox = np.ptp(verts, axis=0)  # (W, D, H) of the polytope at scale 1

@@ -6,97 +6,97 @@
         {
           "path": "output/lattice/versions/rhombohedron_T1_S1.stl",
           "kind": "stl",
-          "label": "Rhombohedron T1\u00d7S1 \u00b7 rod \u00d82.4 \u00b7 91\u00d7169 mm \u00b7 89.6 g",
+          "label": "Rhombohedron T1\u00d7S1 \u00b7 rod \u00d82.4 \u00b7 91\u00d7169 mm \u00b7 72.6 g",
           "stage": "lattice"
         },
         {
           "path": "output/lattice/versions/rhombohedron_T1_S2.stl",
           "kind": "stl",
-          "label": "Rhombohedron T1\u00d7S2 \u00b7 rod \u00d82.4 \u00b7 73\u00d7135 mm \u00b7 69.9 g",
+          "label": "Rhombohedron T1\u00d7S2 \u00b7 rod \u00d82.4 \u00b7 73\u00d7135 mm \u00b7 56.7 g",
           "stage": "lattice"
         },
         {
           "path": "output/lattice/versions/rhombohedron_T1_S3.stl",
           "kind": "stl",
-          "label": "Rhombohedron T1\u00d7S3 \u00b7 rod \u00d82.4 \u00b7 55\u00d7101 mm \u00b7 50.2 g",
+          "label": "Rhombohedron T1\u00d7S3 \u00b7 rod \u00d82.4 \u00b7 55\u00d7101 mm \u00b7 40.9 g",
           "stage": "lattice"
         },
         {
           "path": "output/lattice/versions/rhombohedron_T1_S4.stl",
           "kind": "stl",
-          "label": "Rhombohedron T1\u00d7S4 \u00b7 rod \u00d82.4 \u00b7 46\u00d785 mm \u00b7 40.4 g",
+          "label": "Rhombohedron T1\u00d7S4 \u00b7 rod \u00d82.4 \u00b7 46\u00d785 mm \u00b7 32.9 g",
           "stage": "lattice"
         },
         {
           "path": "output/lattice/versions/rhombohedron_T2_S1.stl",
           "kind": "stl",
-          "label": "Rhombohedron T2\u00d7S1 \u00b7 rod \u00d82.0 \u00b7 91\u00d7169 mm \u00b7 63.2 g",
+          "label": "Rhombohedron T2\u00d7S1 \u00b7 rod \u00d82.0 \u00b7 91\u00d7169 mm \u00b7 51.2 g",
           "stage": "lattice"
         },
         {
           "path": "output/lattice/versions/rhombohedron_T2_S2.stl",
           "kind": "stl",
-          "label": "Rhombohedron T2\u00d7S2 \u00b7 rod \u00d82.0 \u00b7 73\u00d7135 mm \u00b7 49.5 g",
+          "label": "Rhombohedron T2\u00d7S2 \u00b7 rod \u00d82.0 \u00b7 73\u00d7135 mm \u00b7 40.2 g",
           "stage": "lattice"
         },
         {
           "path": "output/lattice/versions/rhombohedron_T2_S3.stl",
           "kind": "stl",
-          "label": "Rhombohedron T2\u00d7S3 \u00b7 rod \u00d82.0 \u00b7 55\u00d7101 mm \u00b7 35.9 g",
+          "label": "Rhombohedron T2\u00d7S3 \u00b7 rod \u00d82.0 \u00b7 55\u00d7101 mm \u00b7 29.2 g",
           "stage": "lattice"
         },
         {
           "path": "output/lattice/versions/rhombohedron_T2_S4.stl",
           "kind": "stl",
-          "label": "Rhombohedron T2\u00d7S4 \u00b7 rod \u00d82.0 \u00b7 46\u00d785 mm \u00b7 29.1 g",
+          "label": "Rhombohedron T2\u00d7S4 \u00b7 rod \u00d82.0 \u00b7 46\u00d785 mm \u00b7 23.6 g",
           "stage": "lattice"
         },
         {
           "path": "output/lattice/versions/rhombohedron_T3_S1.stl",
           "kind": "stl",
-          "label": "Rhombohedron T3\u00d7S1 \u00b7 rod \u00d81.6 \u00b7 91\u00d7169 mm \u00b7 41.1 g",
+          "label": "Rhombohedron T3\u00d7S1 \u00b7 rod \u00d81.6 \u00b7 91\u00d7169 mm \u00b7 33.3 g",
           "stage": "lattice"
         },
         {
           "path": "output/lattice/versions/rhombohedron_T3_S2.stl",
           "kind": "stl",
-          "label": "Rhombohedron T3\u00d7S2 \u00b7 rod \u00d81.6 \u00b7 73\u00d7135 mm \u00b7 32.4 g",
+          "label": "Rhombohedron T3\u00d7S2 \u00b7 rod \u00d81.6 \u00b7 73\u00d7135 mm \u00b7 26.2 g",
           "stage": "lattice"
         },
         {
           "path": "output/lattice/versions/rhombohedron_T3_S3.stl",
           "kind": "stl",
-          "label": "Rhombohedron T3\u00d7S3 \u00b7 rod \u00d81.6 \u00b7 55\u00d7101 mm \u00b7 23.6 g",
+          "label": "Rhombohedron T3\u00d7S3 \u00b7 rod \u00d81.6 \u00b7 55\u00d7101 mm \u00b7 19.2 g",
           "stage": "lattice"
         },
         {
           "path": "output/lattice/versions/rhombohedron_T3_S4.stl",
           "kind": "stl",
-          "label": "Rhombohedron T3\u00d7S4 \u00b7 rod \u00d81.6 \u00b7 46\u00d785 mm \u00b7 19.2 g",
+          "label": "Rhombohedron T3\u00d7S4 \u00b7 rod \u00d81.6 \u00b7 46\u00d785 mm \u00b7 15.6 g",
           "stage": "lattice"
         },
         {
           "path": "output/lattice/versions/rhombohedron_T4_S1.stl",
           "kind": "stl",
-          "label": "Rhombohedron T4\u00d7S1 \u00b7 rod \u00d81.2 \u00b7 91\u00d7169 mm \u00b7 23.5 g",
+          "label": "Rhombohedron T4\u00d7S1 \u00b7 rod \u00d81.2 \u00b7 91\u00d7169 mm \u00b7 19.0 g",
           "stage": "lattice"
         },
         {
           "path": "output/lattice/versions/rhombohedron_T4_S2.stl",
           "kind": "stl",
-          "label": "Rhombohedron T4\u00d7S2 \u00b7 rod \u00d81.2 \u00b7 73\u00d7135 mm \u00b7 18.6 g",
+          "label": "Rhombohedron T4\u00d7S2 \u00b7 rod \u00d81.2 \u00b7 73\u00d7135 mm \u00b7 15.0 g",
           "stage": "lattice"
         },
         {
           "path": "output/lattice/versions/rhombohedron_T4_S3.stl",
           "kind": "stl",
-          "label": "Rhombohedron T4\u00d7S3 \u00b7 rod \u00d81.2 \u00b7 55\u00d7101 mm \u00b7 13.7 g",
+          "label": "Rhombohedron T4\u00d7S3 \u00b7 rod \u00d81.2 \u00b7 55\u00d7101 mm \u00b7 11.1 g",
           "stage": "lattice"
         },
         {
           "path": "output/lattice/versions/rhombohedron_T4_S4.stl",
           "kind": "stl",
-          "label": "Rhombohedron T4\u00d7S4 \u00b7 rod \u00d81.2 \u00b7 46\u00d785 mm \u00b7 11.2 g",
+          "label": "Rhombohedron T4\u00d7S4 \u00b7 rod \u00d81.2 \u00b7 46\u00d785 mm \u00b7 9.1 g",
           "stage": "lattice"
         }
       ]
