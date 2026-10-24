@@ -23,7 +23,7 @@ PLA_DENSITY = 1.24  # g/cm^3 (PrusaSlicer nominal PLA)
 
 ROD_R = 0.6       # Ø1.2 rod (T4)
 JOINT_R = 0.9     # Ø1.8 joint
-SCALE = 0.8       # S2
+TARGET_HEIGHT = 100.0  # comparable size: all solids scaled to the same height
 
 # (name, geometry, lattice params) — spacing scaled to each solid's size (small solids get
 # shorter rods so their interior isn't empty; the big stretched ones stay sparse).
@@ -53,8 +53,9 @@ def main() -> None:
     rows = []
     for name, (verts, edges, faces), params in SOLIDS:
         nodes, rods = printable_lattice(verts, edges, faces, seed=1, iters=900, lam=1.0, **params)
-        sc = nodes * SCALE
-        w, d, h = np.ptp(verts, axis=0) * SCALE
+        scale = TARGET_HEIGHT / np.ptp(verts, axis=0)[2]  # per-solid scale to a common height
+        sc = nodes * scale
+        w, d, h = np.ptp(verts, axis=0) * scale
         vol_cm3 = material_volume_mm3(sc, rods, ROD_R, JOINT_R) / 1000.0
         grams = vol_cm3 * PLA_DENSITY
         rows.append((name, f"{w:.0f}×{d:.0f}×{h:.0f}", len(nodes), len(rods), vol_cm3, grams))
@@ -63,7 +64,7 @@ def main() -> None:
         stl = f"{out_dir}/{name}_T4_S2.stl"
         mesh.export(stl)
         register("lattice", stl, "stl",
-                 f"{name} T4×S2 · rod Ø1.2 · {w:.0f}×{h:.0f} mm · {grams:.1f} g",
+                 f"{name} · rod Ø1.2 · {h:.0f} mm tall · {w:.0f}×{d:.0f} mm · {grams:.1f} g",
                  folder=folder)
 
     for name, dims, nn, nr, vol, grams in rows:

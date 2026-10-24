@@ -23,18 +23,19 @@ vertex-down where face-down would need more stretch.
 subdivide at ~spacing to provide parents, no posts); the top face is a horizontal ceiling left
 open (no face nodes, its edges become ≤10 mm bridges + posts).
 
-## Chosen version — T4×S2 (Ø1.2 rod, 0.8 scale)
+## Chosen version — T4 (Ø1.2 rod), comparable size (100 mm tall)
 
 | Solid | W×D×H (mm) | nodes | rods | PLA (g) |
 |---|---|---|---|---|
-| cube | 46×46×46 | 174 | 438 | 7.7 |
-| tetrahedron | 63×63×53 | 107 | 226 | 3.4 |
-| octahedron | 63×63×46 | 197 | 490 | 8.0 |
-| icosahedron | 68×72×121 | 380 | 810 | 13.5 |
-| dodecahedron | 79×75×123 | 280 | 632 | 13.0 |
+| cube | 100×100×100 | 174 | 438 | 17.3 |
+| tetrahedron | 118×118×100 | 107 | 226 | 6.5 |
+| octahedron | 137×137×100 | 197 | 490 | 17.8 |
+| icosahedron | 56×59×100 | 380 | 810 | 11.0 |
+| dodecahedron | 64×61×100 | 280 | 632 | 10.5 |
 
 All 0 unprintable. STLs in `output/lattice/minstretch/`, dashboard folder `Platonic solids ·
-min-stretch` (earlier `… · T4×S2` versions left in place).
+min-stretch` (earlier `… · T4×S2` versions left in place). Viewer fetches STLs with
+`cache: no-store` so regenerated meshes show immediately.
 
 ## Method (sliding-class relaxation, `docs/sliding-class-relaxation-method.md`)
 

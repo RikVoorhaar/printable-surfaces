@@ -194,7 +194,7 @@ function setError(msg) { statsEl.className = 'err'; statsEl.textContent = 'error
 function toUrl(p) { return p.startsWith('/') ? p : '/' + p; }
 
 async function loadBuffer(url) {
-  const res = await fetch(url);
+  const res = await fetch(url, { cache: 'no-store' });
   if (!res.ok) throw new Error('HTTP ' + res.status + ' for ' + url);
   return res.arrayBuffer();
 }

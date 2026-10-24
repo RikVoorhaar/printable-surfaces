@@ -6,31 +6,31 @@
         {
           "path": "output/lattice/minstretch/cube_T4_S2.stl",
           "kind": "stl",
-          "label": "cube T4\u00d7S2 \u00b7 rod \u00d81.2 \u00b7 46\u00d746 mm \u00b7 7.7 g",
+          "label": "cube \u00b7 rod \u00d81.2 \u00b7 100 mm tall \u00b7 100\u00d7100 mm \u00b7 17.3 g",
           "stage": "lattice"
         },
         {
           "path": "output/lattice/minstretch/tetrahedron_T4_S2.stl",
           "kind": "stl",
-          "label": "tetrahedron T4\u00d7S2 \u00b7 rod \u00d81.2 \u00b7 63\u00d753 mm \u00b7 3.4 g",
+          "label": "tetrahedron \u00b7 rod \u00d81.2 \u00b7 100 mm tall \u00b7 118\u00d7118 mm \u00b7 6.5 g",
           "stage": "lattice"
         },
         {
           "path": "output/lattice/minstretch/octahedron_T4_S2.stl",
           "kind": "stl",
-          "label": "octahedron T4\u00d7S2 \u00b7 rod \u00d81.2 \u00b7 63\u00d746 mm \u00b7 8.0 g",
+          "label": "octahedron \u00b7 rod \u00d81.2 \u00b7 100 mm tall \u00b7 137\u00d7137 mm \u00b7 17.8 g",
           "stage": "lattice"
         },
         {
           "path": "output/lattice/minstretch/icosahedron_T4_S2.stl",
           "kind": "stl",
-          "label": "icosahedron T4\u00d7S2 \u00b7 rod \u00d81.2 \u00b7 68\u00d7121 mm \u00b7 13.5 g",
+          "label": "icosahedron \u00b7 rod \u00d81.2 \u00b7 100 mm tall \u00b7 56\u00d759 mm \u00b7 11.0 g",
           "stage": "lattice"
         },
         {
           "path": "output/lattice/minstretch/dodecahedron_T4_S2.stl",
           "kind": "stl",
-          "label": "dodecahedron T4\u00d7S2 \u00b7 rod \u00d81.2 \u00b7 79\u00d7123 mm \u00b7 13.0 g",
+          "label": "dodecahedron \u00b7 rod \u00d81.2 \u00b7 100 mm tall \u00b7 64\u00d761 mm \u00b7 10.5 g",
           "stage": "lattice"
         }
       ]
