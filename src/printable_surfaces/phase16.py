@@ -30,11 +30,11 @@ TARGET_VOLUME = 200_000.0  # mm³ (200 cm³) — normalize to equal *shape* volu
 # (name, geometry, lattice params) — spacing scaled to each solid's size so small solids
 # aren't empty and big ones stay sparse.
 SOLIDS = [
-    ("cube",        cube_face_down(50.0),     dict(spacing=14, n_face=16, n_interior=80)),
+    ("cube",        cube_face_down(50.0),     dict(spacing=14, n_face=16, n_interior=120)),
     ("tetrahedron", tetrahedron(50.0),        dict(spacing=12, n_face=18, n_interior=80)),
-    ("octahedron",  octahedron_face_down(50.0), dict(spacing=14, n_face=14, n_interior=80)),
+    ("octahedron",  octahedron_face_down(50.0), dict(spacing=14, n_face=14, n_interior=120)),
     ("icosahedron", icosahedron(50.0),        dict(spacing=17, n_face=12, n_interior=60)),
-    ("dodecahedron", dodecahedron(50.0),      dict(spacing=17, n_face=12, n_interior=80)),
+    ("dodecahedron", dodecahedron(50.0),      dict(spacing=17, n_face=12, n_interior=120)),
 ]
 
 

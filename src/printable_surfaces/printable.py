@@ -779,7 +779,7 @@ def _add_bridge_posts(pos, rods, bridge_nodes, face_ids=None):
             dd = float(np.linalg.norm(pos[p] - pos[nd]))
             if not (L_MIN <= dd <= L_MAX and (pos[nd, 2] - pos[p, 2]) / dd >= SIN48):
                 continue
-            if deg[nd] >= DEG_MAX or deg[p] >= DEG_MAX:
+            if deg[p] >= DEG_MAX:
                 continue
             ok = True
             for a, b in rods:
@@ -833,6 +833,26 @@ def _delete_unsupported(pos, rods, fixed):
                 keep[nd] = False
         if keep.all():
             break
+        new_idx = np.cumsum(keep) - 1
+        valid = keep[rods[:, 0]] & keep[rods[:, 1]]
+        rods = np.stack([new_idx[rods[valid, 0]], new_idx[rods[valid, 1]]], axis=1)
+        pos = pos[keep]
+        fixed = fixed[keep]
+    return pos, rods, fixed
+
+
+def _enforce_min_degree(pos, rods, fixed, min_deg=2):
+    """Delete non-frame nodes with degree < min_deg (dangling rods), iteratively."""
+    pos = np.asarray(pos, dtype=float)
+    rods = np.asarray(rods, dtype=int)
+    fixed = np.asarray(fixed, dtype=bool)
+    for _ in range(8):
+        deg = np.bincount(rods.ravel(), minlength=len(pos))
+        bad = np.where((~fixed) & (deg < min_deg))[0]
+        if len(bad) == 0:
+            break
+        keep = np.ones(len(pos), dtype=bool)
+        keep[bad] = False
         new_idx = np.cumsum(keep) - 1
         valid = keep[rods[:, 0]] & keep[rods[:, 1]]
         rods = np.stack([new_idx[rods[valid, 0]], new_idx[rods[valid, 1]]], axis=1)
@@ -900,36 +920,59 @@ def printable_lattice(
         g["inset"] = shrink_polygon(g["poly"], inset)
         face_geoms.append(g)
 
-    # base lattice on the bottom (plate) faces: scatter nodes + Delaunay-triangulate into
-    # horizontal rods lying on the build plate (exempt from the steep/bridge rule). These
-    # nodes also give the interior and side faces something to rest on.
+    # Horizontal-face lattice (bottom on the plate; top in the air).
+    #   bottom face: scatter + triangulate into horizontal rods lying on the build plate
+    #                (exempt from the steep/bridge rule) — also gives the interior support.
+    #   top face:    scatter + triangulate into horizontal rods ≤ BRIDGE_MAX (bridges), each
+    #                node supported by a steep post from below.
     n_frame_orig = n_frame
-    if bottom_face.any():
+    horiz_faces = bottom_face | top_face
+    top_nodes: list[int] = []
+    if horiz_faces.any():
         base_pts: list[np.ndarray] = []
         base_chain: list[tuple[int, int]] = []
         base_idx = n_frame
-        for fi in np.where(bottom_face)[0]:
+        for fi in np.where(horiz_faces)[0]:
             geom = face_geoms[fi]
+            is_top = bool(top_face[fi])
             bidx = np.where(frame_on_face[:, fi])[0]
             b2d = (frame_pts[bidx] - geom["origin"]) @ np.stack([geom["u"], geom["v"]], axis=1)
-            pts2d = np.array([sample_in_polygon(geom["inset"], rng) for _ in range(n_face)])
+            if is_top:
+                n_scatter = n_face  # same density as the interior so posts line up (rods get subdivided below)
+            else:
+                n_scatter = n_face
+            pts2d = np.array([sample_in_polygon(geom["inset"], rng) for _ in range(n_scatter)])
             all2d = np.vstack([b2d, pts2d]) if len(b2d) else pts2d
             if len(all2d) < 3:
                 continue
             tri = Delaunay(all2d)
-            local_map = np.concatenate([bidx, np.arange(base_idx, base_idx + len(pts2d))])
-            base_idx += len(pts2d)
-            for p2d in pts2d:
-                base_pts.append(geom["origin"] + p2d[0] * geom["u"] + p2d[1] * geom["v"])
+            local3d = np.vstack([frame_pts[bidx],
+                                 np.array([geom["origin"] + p[0] * geom["u"] + p[1] * geom["v"] for p in pts2d])])
+            local_to_global = np.concatenate([bidx, np.arange(base_idx, base_idx + n_scatter)])
+            base_idx += n_scatter
+            for p in pts2d:
+                base_pts.append(geom["origin"] + p[0] * geom["u"] + p[1] * geom["v"])
+            if is_top:
+                top_nodes.extend(np.arange(base_idx - n_scatter, base_idx).tolist())
             for s in tri.simplices:
                 for k in range(3):
-                    a = int(local_map[s[k]])
-                    b = int(local_map[s[(k + 1) % 3]])
+                    i, j = int(s[k]), int(s[(k + 1) % 3])
+                    a, b = int(local_to_global[i]), int(local_to_global[j])
                     if a == b:
                         continue
                     if a < n_frame_orig and b < n_frame_orig:
                         continue  # already a frame edge
-                    base_chain.append((min(a, b), max(a, b)))
+                    pa, pb = local3d[i], local3d[j]
+                    L = float(np.linalg.norm(pb - pa))
+                    nseg = max(1, int(np.ceil(L / BRIDGE_MAX))) if is_top else 1
+                    prev = a
+                    for kk in range(1, nseg):
+                        p_mid = pa + (kk / nseg) * (pb - pa)
+                        base_pts.append(p_mid)
+                        base_chain.append((prev, base_idx))
+                        prev = base_idx
+                        base_idx += 1
+                    base_chain.append((prev, b))
         if base_pts:
             frame_pts = np.vstack([frame_pts, np.asarray(base_pts, dtype=float)])
             chain = np.vstack([chain, np.asarray(base_chain, dtype=int)])
@@ -963,9 +1006,11 @@ def printable_lattice(
         face_pts = np.zeros((0, 3))
     face_ids = np.asarray(face_ids, dtype=int)
 
-    # interior points (rejection sampling in the bounding box), kept ≥ L_MIN above the raft
+    # interior points (rejection sampling in the bounding box), kept ≥ L_MIN inside the raft
+    # and ceiling so they can find steep parents/posts
     lo = vertices.min(axis=0); hi = vertices.max(axis=0)
-    lo[2] += L_MIN  # bottom margin: nodes too close to the plate can't find a parent
+    lo[2] += L_MIN  # bottom margin
+    hi[2] -= L_MIN  # top margin
     interior = []
     while len(interior) < n_interior:
         batch = rng.uniform(lo, hi, size=(n_interior * 4, 3))
@@ -989,6 +1034,8 @@ def printable_lattice(
 
     all_pts, rods, fixed, all_ids = _repair(all_pts, fixed, all_ids, face_geoms, normals, centers,
                                             n_frame, frame_on_face, chain, spacing, seed=seed)
-    rods = _add_bridge_posts(all_pts, rods, bridge_nodes, all_ids)
+    post_nodes = np.concatenate([bridge_nodes, np.asarray(top_nodes, dtype=int)]) if top_nodes else bridge_nodes
+    rods = _add_bridge_posts(all_pts, rods, post_nodes, all_ids)
     all_pts, rods, fixed = _delete_unsupported(all_pts, rods, fixed)
+    all_pts, rods, fixed = _enforce_min_degree(all_pts, rods, fixed, min_deg=2)
     return all_pts, rods
