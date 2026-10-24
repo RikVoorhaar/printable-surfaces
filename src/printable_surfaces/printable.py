@@ -15,6 +15,8 @@ import numpy as np
 from scipy.optimize import Bounds, LinearConstraint, milp
 from scipy.spatial import cKDTree
 
+from .platonic import clamp_to_polygon, face_geometry, sample_in_polygon, shrink_polygon
+
 SIN48 = np.sin(np.radians(48.0))   # steep rod threshold (45° + 3° margin)
 SIN5 = np.sin(np.radians(5.0))     # "horizontal" tolerance for bridges
 L_MIN, L_MAX, L_TARGET = 8.0, 28.0, 15.0
@@ -197,24 +199,25 @@ def _count_parents(pos, i, allowed_row):
     return int(((below & (steep | bridge)) & allowed_row).sum())
 
 
-def _project(pos, fixed, face_ids, face_paras, normals, centers, margin):
+def _face_project(geom: dict, pts3d: np.ndarray) -> np.ndarray:
+    """Project 3-D points onto a face's plane and clamp them to its inset polygon."""
+    pts3d = np.asarray(pts3d, dtype=float)
+    basis = np.stack([geom["u"], geom["v"]], axis=1)  # (3, 2)
+    p2d = (pts3d - geom["origin"]) @ basis
+    out = np.empty_like(pts3d)
+    for k in range(len(pts3d)):
+        q = clamp_to_polygon(geom["inset"], p2d[k])
+        out[k] = geom["origin"] + q[0] * geom["u"] + q[1] * geom["v"]
+    return out
+
+
+def _project(pos, fixed, face_ids, face_geoms, normals, centers, margin):
     """Project nodes back onto their class region (face plane inset 0.35h / interior inset)."""
     pos = pos.copy()
     is_interior = (~fixed) & (face_ids < 0)
-    inset = 0.875 * margin  # 0.35 h (margin is 0.4 h)
     for fi in np.unique(face_ids[face_ids >= 0]):
         m = face_ids == fi
-        corner, e1, e2 = face_paras[fi]
-        e1n = float(np.linalg.norm(e1)); e2n = float(np.linalg.norm(e2))
-        eps1 = inset / e1n if e1n > 0 else 0.0
-        eps2 = inset / e2n if e2n > 0 else 0.0
-        g11, g12, g22 = e1 @ e1, e1 @ e2, e2 @ e2
-        det = g11 * g22 - g12 * g12
-        q = pos[m] - corner
-        r1, r2 = q @ e1, q @ e2
-        s = np.clip((g22 * r1 - g12 * r2) / det, eps1, 1.0 - eps1)
-        t = np.clip((g11 * r2 - g12 * r1) / det, eps2, 1.0 - eps2)
-        pos[m] = corner + s[:, None] * e1 + t[:, None] * e2
+        pos[m] = _face_project(face_geoms[fi], pos[m])
     for n_, c_ in zip(normals, centers):
         proj = (pos - c_) @ n_
         too_close = is_interior & (proj > -margin)
@@ -224,7 +227,7 @@ def _project(pos, fixed, face_ids, face_paras, normals, centers, margin):
 
 
 def relax_printable(
-    pos, fixed, face_ids, face_paras, normals, centers, n_frame, frame_on_face,
+    pos, fixed, face_ids, face_geoms, normals, centers, n_frame, frame_on_face,
     spacing, iters=900, lam=1.0, kappa=1.25, seed=None, anchor_scale=1.0, r_c_factor=1.25,
     same_face_boost=1.0, rep_power=2.0,
 ):
@@ -290,7 +293,7 @@ def relax_printable(
                 placed = False
                 for _attempt in range(5):
                     trial = _project(pos[i:i + 1] + d_i[None, :], np.array([False]),
-                                     face_ids[i:i + 1], face_paras, normals, centers, margin)[0]
+                                     face_ids[i:i + 1], face_geoms, normals, centers, margin)[0]
                     trial_pos = pos.copy(); trial_pos[i] = trial
                     if old < 2 or _count_parents(trial_pos, i, allowed[i]) >= 2:
                         pos[i] = trial
@@ -299,10 +302,10 @@ def relax_printable(
                     d_i = d_i * 0.5
                 if not placed:
                     pos[i] = _project(pos[i:i + 1], np.array([False]),
-                                      face_ids[i:i + 1], face_paras, normals, centers, margin)[0]
+                                      face_ids[i:i + 1], face_geoms, normals, centers, margin)[0]
         else:
             pos = pos + step
-            pos = _project(pos, fixed, face_ids, face_paras, normals, centers, margin)
+            pos = _project(pos, fixed, face_ids, face_geoms, normals, centers, margin)
 
     return pos
 
@@ -578,22 +581,17 @@ def repair(all_pts, all_ids, fixed, face_paras, normals, centers, n_frame, frame
     return all_pts, all_ids, fixed
 
 
-def _constructive_face(start_positions, corner, e1, e2, n_target, r, spacing, rng):
+def _constructive_face(start_positions, geom, n_target, r, rng):
     """Bottom-up sampler for an overhanging face (Section 6.1): each new node gets ≥2
     in-face parents among already-placed nodes, keeping min distance ≥ r."""
     placed = [np.asarray(p, dtype=float) for p in start_positions]
-    inset = 0.35 * spacing
-    e1n = float(np.linalg.norm(e1)); e2n = float(np.linalg.norm(e2))
-    eps1 = inset / e1n if e1n > 0 else 0.0
-    eps2 = inset / e2n if e2n > 0 else 0.0
     result = []
     for _ in range(n_target):
         best = None
         best_score = np.inf
         for _t in range(400):
-            u = rng.uniform(eps1, 1.0 - eps1)
-            w = rng.uniform(eps2, 1.0 - eps2)
-            p = corner + u * e1 + w * e2
+            p2d = sample_in_polygon(geom["inset"], rng)
+            p = geom["origin"] + p2d[0] * geom["u"] + p2d[1] * geom["v"]
             parents = 0
             mind = np.inf
             for q in placed:
@@ -616,7 +614,7 @@ def _constructive_face(start_positions, corner, e1, e2, n_target, r, spacing, rn
     return result
 
 
-def _repair(pos, fixed, face_ids, face_paras, normals, centers, n_frame, frame_on_face,
+def _repair(pos, fixed, face_ids, face_geoms, normals, centers, n_frame, frame_on_face,
             chain, spacing, seed=None):
     """Section 8 repair: move unsupported nodes (by MIP slack) and re-solve, then a
     clearance-aware fallback rod for the last holdouts."""
@@ -636,7 +634,7 @@ def _repair(pos, fixed, face_ids, face_paras, normals, centers, n_frame, frame_o
             best, best_cnt = None, -1
             for _t in range(400):
                 trial = _project((pos[i] + rng.uniform(-1.0, 1.0, 3) * 0.6 * spacing)[None, :],
-                                 np.array([False]), face_ids[i:i + 1], face_paras,
+                                 np.array([False]), face_ids[i:i + 1], face_geoms,
                                  normals, centers, margin)[0]
                 dd = np.linalg.norm(pos - trial, axis=1); dd[i] = np.inf
                 if dd.min() < 0.65 * spacing:
@@ -707,10 +705,10 @@ def _repair(pos, fixed, face_ids, face_paras, normals, centers, n_frame, frame_o
             deg[nd] += 1; deg[best] += 1
 
     rods = np.unique(np.sort(np.asarray(rods, dtype=int), axis=1), axis=0)
-    return pos, rods
+    return pos, rods, fixed, face_ids
 
 
-def _spread_faces(pos, fixed, face_ids, face_paras, normals, centers, n_frame, frame_on_face,
+def _spread_faces(pos, fixed, face_ids, face_geoms, normals, centers, n_frame, frame_on_face,
                   spacing, iters=300, seed=None):
     """2-D Coulomb spreading of face nodes across their own face (organic-uniform), keeping the
     0.35h inset. Runs after the 3-D relaxation so the interior is untouched."""
@@ -747,8 +745,100 @@ def _spread_faces(pos, fixed, face_ids, face_paras, normals, centers, n_frame, f
         step = step + jitter0 * (1.0 - it / iters) * rng.standard_normal(pos.shape)
         step[~is_face] = 0.0
         pos = pos + step
-        pos = _project(pos, fixed, face_ids, face_paras, normals, centers, margin)
+        pos = _project(pos, fixed, face_ids, face_geoms, normals, centers, margin)
     return pos
+
+
+def _add_bridge_posts(pos, rods, bridge_nodes, face_ids=None):
+    """Give each intermediate bridge node (on a horizontal frame edge) a steep post from
+    below, so the ≤10 mm bridge spans rest on something already printed."""
+    if len(bridge_nodes) == 0:
+        return rods
+    rods = [tuple(map(int, e)) for e in rods]
+    deg = np.zeros(len(pos), dtype=int)
+    for a, b in rods:
+        deg[a] += 1
+        deg[b] += 1
+
+    def _has_steep_parent(nd):
+        for a, b in rods:
+            if (a == nd and pos[b, 2] < pos[nd, 2]) or (b == nd and pos[a, 2] < pos[nd, 2]):
+                q = b if a == nd else a
+                dd = float(np.linalg.norm(pos[q] - pos[nd]))
+                if dd > 0 and (pos[nd, 2] - pos[q, 2]) / dd >= SIN48:
+                    return True
+        return False
+
+    for nd in bridge_nodes:
+        if _has_steep_parent(nd):
+            continue
+        best, best_d = None, np.inf
+        for p in range(len(pos)):
+            if p == nd or pos[p, 2] >= pos[nd, 2]:
+                continue
+            dd = float(np.linalg.norm(pos[p] - pos[nd]))
+            if not (L_MIN <= dd <= L_MAX and (pos[nd, 2] - pos[p, 2]) / dd >= SIN48):
+                continue
+            if deg[nd] >= DEG_MAX or deg[p] >= DEG_MAX:
+                continue
+            ok = True
+            for a, b in rods:
+                if a == nd or b == nd or a == p or b == p:
+                    continue
+                if segment_segment_dist(pos[nd], pos[p], pos[a], pos[b]) < CLEARANCE:
+                    ok = False
+                    break
+            if not ok:
+                continue
+            for k in range(len(pos)):
+                if k == nd or k == p:
+                    continue
+                if point_segment_dist(pos[k], pos[nd], pos[p]) < NODE_CLEARANCE:
+                    ok = False
+                    break
+            if ok and dd < best_d:
+                best = p
+                best_d = dd
+        if best is not None:
+            rods.append((min(nd, best), max(nd, best)))
+            deg[nd] += 1
+            deg[best] += 1
+    return np.unique(np.sort(np.asarray(rods, dtype=int), axis=1), axis=0)
+
+
+def _has_steep_parent(pos, rods, nd):
+    for a, b in rods:
+        if a == nd and pos[b, 2] < pos[nd, 2]:
+            dd = float(np.linalg.norm(pos[b] - pos[nd]))
+            if dd >= L_MIN and (pos[nd, 2] - pos[b, 2]) / dd >= SIN48:
+                return True
+        if b == nd and pos[a, 2] < pos[nd, 2]:
+            dd = float(np.linalg.norm(pos[a] - pos[nd]))
+            if dd >= L_MIN and (pos[nd, 2] - pos[a, 2]) / dd >= SIN48:
+                return True
+    return False
+
+
+def _delete_unsupported(pos, rods, fixed):
+    """Delete non-frame nodes with no steep parent (stranded too close to the raft)."""
+    pos = np.asarray(pos, dtype=float)
+    rods = np.asarray(rods, dtype=int)
+    fixed = np.asarray(fixed, dtype=bool)
+    for _ in range(4):
+        keep = np.ones(len(pos), dtype=bool)
+        for nd in range(len(pos)):
+            if fixed[nd]:
+                continue
+            if not _has_steep_parent(pos, rods, nd):
+                keep[nd] = False
+        if keep.all():
+            break
+        new_idx = np.cumsum(keep) - 1
+        valid = keep[rods[:, 0]] & keep[rods[:, 1]]
+        rods = np.stack([new_idx[rods[valid, 0]], new_idx[rods[valid, 1]]], axis=1)
+        pos = pos[keep]
+        fixed = fixed[keep]
+    return pos, rods, fixed
 
 
 def printable_lattice(
@@ -758,48 +848,66 @@ def printable_lattice(
     rep_power=2.0, face_spread_iters=0,
 ):
     """Generate a support-free lattice inside a convex polytope. Returns (nodes, rods)."""
-    from .platonic import face_parallelogram, face_planes, inside_mask
+    from .platonic import face_planes, inside_mask
 
     normals, centers = face_planes(vertices, faces)
 
-    # frame
+    # frame: subdivide each edge; horizontal edges become ≤10 mm bridge spans
     frame_pts = [v for v in vertices]
     chain = []
+    bridge_nodes = []
     idx = len(vertices)
     for i, j in edges:
         d = vertices[j] - vertices[i]
-        nseg = max(1, int(round(np.linalg.norm(d) / spacing)))
+        L = float(np.linalg.norm(d))
+        sin_elev = abs(d[2]) / L if L > 1e-9 else 0.0
+        horizontal = sin_elev < SIN5
+        if horizontal:
+            nseg = max(1, int(np.ceil(L / BRIDGE_MAX)))
+        else:
+            nseg = max(1, int(round(L / spacing)))
         prev = i
         for k in range(1, nseg):
             frame_pts.append(vertices[i] + (k / nseg) * d)
-            chain.append((prev, idx)); prev = idx; idx += 1
+            chain.append((prev, idx))
+            if horizontal:
+                bridge_nodes.append(idx)
+            prev = idx
+            idx += 1
         chain.append((prev, j))
     frame_pts = np.asarray(frame_pts, dtype=float)
     chain = np.asarray(chain, dtype=int)
+    bridge_nodes = np.asarray(bridge_nodes, dtype=int)
     n_frame = len(frame_pts)
     frame_on_face = _frame_on_faces(frame_pts, normals, centers)
 
     rng = np.random.default_rng(seed)
 
+    # face geometry (any convex polygon) + inset
+    inset = 0.35 * spacing
+    face_geoms = []
+    for f in faces:
+        g = face_geometry(vertices, f)
+        g["inset"] = shrink_polygon(g["poly"], inset)
+        face_geoms.append(g)
+
     # every face gets a constructive bottom-up start (Section 6.1) so the face lattice
     # has ~2 in-face parents per node by construction
     r_construct = 0.73 * spacing
 
-    # face points
     face_pts, face_ids = [], []
     for fi, face in enumerate(faces):
-        corner, e1, e2 = face_parallelogram(vertices, face)
+        geom = face_geoms[fi]
         start = frame_pts[frame_on_face[:, fi]]
-        pts = _constructive_face(start, corner, e1, e2, n_face, r_construct, spacing, rng)
+        pts = _constructive_face(start, geom, n_face, r_construct, rng)
         pts_arr = np.asarray(pts, dtype=float).reshape(-1, 3)
         if len(pts) < n_face:
             n_extra = n_face - len(pts)
-            e1n = float(np.linalg.norm(e1)); e2n = float(np.linalg.norm(e2))
-            eps1 = (0.35 * spacing) / e1n if e1n > 0 else 0.0
-            eps2 = (0.35 * spacing) / e2n if e2n > 0 else 0.0
-            u = rng.uniform(eps1, 1 - eps1, n_extra); w = rng.uniform(eps2, 1 - eps2, n_extra)
-            extra = corner + u[:, None] * e1 + w[:, None] * e2
-            pts_arr = np.vstack([pts_arr, extra])
+            extra = []
+            for _ in range(n_extra):
+                p2d = sample_in_polygon(geom["inset"], rng)
+                extra.append(geom["origin"] + p2d[0] * geom["u"] + p2d[1] * geom["v"])
+            pts_arr = np.vstack([pts_arr, np.asarray(extra)])
         face_pts.append(pts_arr)
         face_ids += [fi] * n_face
     face_pts = np.vstack(face_pts)
@@ -816,23 +924,20 @@ def printable_lattice(
     all_pts = np.vstack([frame_pts, face_pts, interior])
     all_ids = np.concatenate([np.full(n_frame, -1), face_ids, np.full(n_interior, -1)])
     fixed = np.zeros(len(all_pts), dtype=bool); fixed[:n_frame] = True
-    face_paras = [face_parallelogram(vertices, f) for f in faces]
 
-    all_pts = relax_printable(all_pts, fixed, all_ids, face_paras, normals, centers,
+    all_pts = relax_printable(all_pts, fixed, all_ids, face_geoms, normals, centers,
                               n_frame, frame_on_face, spacing, iters=iters, lam=lam,
                               kappa=kappa, seed=seed, anchor_scale=anchor_scale,
                               r_c_factor=r_c_factor, same_face_boost=same_face_boost,
                               rep_power=rep_power)
 
     if face_spread_iters > 0:
-        all_pts = _spread_faces(all_pts, fixed, all_ids, face_paras, normals, centers,
+        all_pts = _spread_faces(all_pts, fixed, all_ids, face_geoms, normals, centers,
                                 n_frame, frame_on_face, spacing, iters=face_spread_iters,
                                 seed=seed)
 
-    # repair is currently a no-op; the post-MIP fix below handles unsupported nodes
-    # all_pts, all_ids, fixed = repair(all_pts, all_ids, fixed, face_paras, normals, centers,
-    #                                  n_frame, chain)
-
-    all_pts, rods = _repair(all_pts, fixed, all_ids, face_paras, normals, centers,
-                            n_frame, frame_on_face, chain, spacing, seed=seed)
+    all_pts, rods, fixed, all_ids = _repair(all_pts, fixed, all_ids, face_geoms, normals, centers,
+                                            n_frame, frame_on_face, chain, spacing, seed=seed)
+    rods = _add_bridge_posts(all_pts, rods, bridge_nodes, all_ids)
+    all_pts, rods, fixed = _delete_unsupported(all_pts, rods, fixed)
     return all_pts, rods
