@@ -13,7 +13,7 @@ from __future__ import annotations
 
 import numpy as np
 from scipy.optimize import Bounds, LinearConstraint, milp
-from scipy.spatial import cKDTree
+from scipy.spatial import Delaunay, cKDTree
 
 from .platonic import clamp_to_polygon, face_geometry, sample_in_polygon, shrink_polygon
 
@@ -899,6 +899,42 @@ def printable_lattice(
         g = face_geometry(vertices, f)
         g["inset"] = shrink_polygon(g["poly"], inset)
         face_geoms.append(g)
+
+    # base lattice on the bottom (plate) faces: scatter nodes + Delaunay-triangulate into
+    # horizontal rods lying on the build plate (exempt from the steep/bridge rule). These
+    # nodes also give the interior and side faces something to rest on.
+    n_frame_orig = n_frame
+    if bottom_face.any():
+        base_pts: list[np.ndarray] = []
+        base_chain: list[tuple[int, int]] = []
+        base_idx = n_frame
+        for fi in np.where(bottom_face)[0]:
+            geom = face_geoms[fi]
+            bidx = np.where(frame_on_face[:, fi])[0]
+            b2d = (frame_pts[bidx] - geom["origin"]) @ np.stack([geom["u"], geom["v"]], axis=1)
+            pts2d = np.array([sample_in_polygon(geom["inset"], rng) for _ in range(n_face)])
+            all2d = np.vstack([b2d, pts2d]) if len(b2d) else pts2d
+            if len(all2d) < 3:
+                continue
+            tri = Delaunay(all2d)
+            local_map = np.concatenate([bidx, np.arange(base_idx, base_idx + len(pts2d))])
+            base_idx += len(pts2d)
+            for p2d in pts2d:
+                base_pts.append(geom["origin"] + p2d[0] * geom["u"] + p2d[1] * geom["v"])
+            for s in tri.simplices:
+                for k in range(3):
+                    a = int(local_map[s[k]])
+                    b = int(local_map[s[(k + 1) % 3]])
+                    if a == b:
+                        continue
+                    if a < n_frame_orig and b < n_frame_orig:
+                        continue  # already a frame edge
+                    base_chain.append((min(a, b), max(a, b)))
+        if base_pts:
+            frame_pts = np.vstack([frame_pts, np.asarray(base_pts, dtype=float)])
+            chain = np.vstack([chain, np.asarray(base_chain, dtype=int)])
+            n_frame = len(frame_pts)
+            frame_on_face = _frame_on_faces(frame_pts, normals, centers)
 
     # every face gets a constructive bottom-up start (Section 6.1) so the face lattice
     # has ~2 in-face parents per node by construction
