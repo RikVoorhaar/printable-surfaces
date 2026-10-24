@@ -749,10 +749,68 @@
     </p>
   </div>
 
+  <article class="phase">
+    <div class="head">
+      <span class="num">Phase 16</span>
+      <span class="title">Version matrix — thickness × scale (pre-print sizing)</span>
+      <span class="badge done">✓ Done</span>
+    </div>
+    <div class="deliverable">
+      <h4>Deliverable</h4>
+      <ul>
+        <li><code>phase16.py</code>: generates the support-free rhombohedron lattice once, then 4 rod-thickness settings × 4 scale settings = <strong>16 STLs</strong> (each sliceable), plus a material/dimensions table.</li>
+        <li>Material computed analytically as the union of node spheres + rods cut at the joints (not the non-watertight triangle soup). PLA density 1.24&nbsp;g/cm³ (PrusaSlicer nominal; Wikipedia lists 1.21–1.43).</li>
+        <li>STLs registered on the dashboard under <code>Cube · rhombohedron · versions</code>; table also in <code>output/lattice/version_matrix.csv</code>.</li>
+      </ul>
+    </div>
+    <details class="notes" open>
+      <summary>Version matrix (449 nodes / 1110 rods)</summary>
+      <div class="body">
+        <table style="border-collapse:collapse;font-size:.92em;color:var(--text);">
+          <thead>
+            <tr style="color:var(--muted);text-align:left;">
+              <th style="padding:.2rem .6rem .2rem 0;">Thickness</th>
+              <th style="padding:.2rem .6rem;">rod Ø</th>
+              <th style="padding:.2rem .6rem;">joint Ø</th>
+              <th style="padding:.2rem .6rem;">Scale</th>
+              <th style="padding:.2rem .6rem;">W×D×H (mm)</th>
+              <th style="padding:.2rem .6rem;">cm³</th>
+              <th style="padding:.2rem .6rem;">PLA g</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>T1</td><td>2.4</td><td>3.6</td><td>S1 1.00</td><td>91×91×169</td><td>72.2</td><td>89.6</td></tr>
+            <tr><td>T1</td><td>2.4</td><td>3.6</td><td>S2 0.80</td><td>73×73×135</td><td>56.4</td><td>69.9</td></tr>
+            <tr><td>T1</td><td>2.4</td><td>3.6</td><td>S3 0.60</td><td>55×55×101</td><td>40.5</td><td>50.2</td></tr>
+            <tr><td>T1</td><td>2.4</td><td>3.6</td><td>S4 0.50</td><td>46×46×85</td><td>32.6</td><td>40.4</td></tr>
+            <tr><td>T2</td><td>2.0</td><td>3.0</td><td>S1 1.00</td><td>91×91×169</td><td>51.0</td><td>63.2</td></tr>
+            <tr><td>T2</td><td>2.0</td><td>3.0</td><td>S2 0.80</td><td>73×73×135</td><td>40.0</td><td>49.5</td></tr>
+            <tr><td>T2</td><td>2.0</td><td>3.0</td><td>S3 0.60</td><td>55×55×101</td><td>28.9</td><td>35.9</td></tr>
+            <tr><td>T2</td><td>2.0</td><td>3.0</td><td>S4 0.50</td><td>46×46×85</td><td>23.4</td><td>29.1</td></tr>
+            <tr><td>T3</td><td>1.6</td><td>2.4</td><td>S1 1.00</td><td>91×91×169</td><td>33.2</td><td>41.1</td></tr>
+            <tr><td>T3</td><td>1.6</td><td>2.4</td><td>S2 0.80</td><td>73×73×135</td><td>26.1</td><td>32.4</td></tr>
+            <tr style="background:rgba(52,211,153,.12);"><td>T3</td><td>1.6</td><td>2.4</td><td>S3 0.60</td><td>55×55×101</td><td>19.1</td><td>23.6</td></tr>
+            <tr><td>T3</td><td>1.6</td><td>2.4</td><td>S4 0.50</td><td>46×46×85</td><td>15.5</td><td>19.2</td></tr>
+            <tr><td>T4</td><td>1.2</td><td>1.8</td><td>S1 1.00</td><td>91×91×169</td><td>18.9</td><td>23.5</td></tr>
+            <tr><td>T4</td><td>1.2</td><td>1.8</td><td>S2 0.80</td><td>73×73×135</td><td>15.0</td><td>18.6</td></tr>
+            <tr><td>T4</td><td>1.2</td><td>1.8</td><td>S3 0.60</td><td>55×55×101</td><td>11.0</td><td>13.7</td></tr>
+            <tr><td>T4</td><td>1.2</td><td>1.8</td><td>S4 0.50</td><td>46×46×85</td><td>9.0</td><td>11.2</td></tr>
+          </tbody>
+        </table>
+        <p style="color:var(--muted);margin-bottom:0;">
+          Rod Ø is relative to a 0.4&nbsp;mm nozzle: T1 Ø2.4 = 6 widths (robust), T3 Ø1.6 = 4
+          widths (slim, still solid), T4 Ø1.2 = 3 widths (thinnest, fragile). At small scales the
+          joints dominate, so small scale pairs best with thin rods. Recommended "slimmer + smaller":
+          <strong>T3×S3</strong> (Ø1.6 rod, ~101&nbsp;mm tall, 23.6&nbsp;g). Undecided — user will pick.
+        </p>
+      </div>
+    </details>
+  </article>
+
 </main>
 
 <footer>
-  Living document · append, don't rewrite · last updated 2026-10-24 (phase 15: sliding-class relaxation; face-void findings)
+  Living document · append, don't rewrite · last updated 2026-10-24 (phase 16: version matrix)
 </footer>
 </body>
 </html>
