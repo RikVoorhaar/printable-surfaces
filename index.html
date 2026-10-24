@@ -57,6 +57,8 @@
   .tag.stl { background: rgba(110,168,254,.15); color: var(--accent); border: 1px solid rgba(110,168,254,.3); }
   .tag.image { background: rgba(52,211,153,.15); color: var(--green); border: 1px solid rgba(52,211,153,.3); }
   .tag.gcode, .tag.other { background: rgba(139,147,163,.12); color: var(--gray); border: 1px solid rgba(139,147,163,.3); }
+  .artifact .dl { flex: 0 0 auto; text-decoration: none; color: var(--muted); font-size: 1.05rem; width: 26px; height: 26px; display: flex; align-items: center; justify-content: center; border-radius: 6px; border: 1px solid transparent; }
+  .artifact .dl:hover { color: var(--accent); border-color: var(--border); background: var(--panel-2); }
 
   #modal { position: fixed; inset: 0; display: none; z-index: 50; }
   #modal.open { display: block; }
@@ -143,7 +145,15 @@ function artifactEl(a) {
   tag.className = 'tag ' + meta.tagCls;
   tag.textContent = meta.tag;
 
-  div.append(thumb, metaDiv, tag);
+  const dl = document.createElement('a');
+  dl.className = 'dl';
+  dl.href = '/' + a.path;
+  dl.download = (a.path.split('/').pop() || a.path);
+  dl.title = 'Download';
+  dl.textContent = '⭳';
+  dl.onclick = (e) => e.stopPropagation();
+
+  div.append(thumb, metaDiv, tag, dl);
   return div;
 }
 
