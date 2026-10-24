@@ -640,10 +640,119 @@
     </details>
   </article>
 
+  <article class="phase">
+    <div class="head">
+      <span class="num">Phase 14</span>
+      <span class="title">Support-free printable lattice (MIP rod selection)</span>
+      <span class="badge done">✓ Done</span>
+    </div>
+    <div class="deliverable">
+      <h4>Deliverable</h4>
+      <ul>
+        <li><code>printable.py</code>: relax points (repulsion + a support spring + face/interior constraints) → generate only <em>printable</em> candidate rods (steep ≥48° within 8–22&nbsp;mm, or a horizontal bridge ≤10&nbsp;mm) → pick rods with a mixed-integer program → thicken.</li>
+        <li><code>phase14.py</code> emits a rod-direction-colored PLY + STL, registered on the dashboard.</li>
+        <li>First end-to-end <strong>support-free</strong> result: 0 unprintable rods, slices OK.</li>
+      </ul>
+    </div>
+    <details class="notes">
+      <summary>Implementation notes</summary>
+      <div class="body">
+        <ul>
+          <li>MIP (scipy <code>milp</code>/HiGHS): each free node ≥1 downward rod, degree 3–6, cost prefers ~15&nbsp;mm rods; a post-fix gives the stragglers a rod to the nearest node below.</li>
+          <li>Result at the time: 0 unprintable rods, ~4–7 nodes with no downward rod, mean degree ~3.3 (target 4.7).</li>
+          <li><strong>Rod-rod clearance (2.6&nbsp;mm) was disabled</strong> — enabling it made the MIP infeasible (~3,400 exclusion pairs). This became the first bug the next phase fixed.</li>
+          <li>The remaining gaps (unsupported nodes, degree, clearance) were the motivation for the sliding-class method (Phase 15).</li>
+        </ul>
+      </div>
+    </details>
+  </article>
+
+  <h2>Pivot: sliding-class relaxation method (2026-10-22)</h2>
+  <div class="decisions">
+    <p style="margin-top:0;color:var(--muted);">
+      Phase 14's ad-hoc support spring wasn't enough. Adopted the <strong>sliding-class
+      relaxation method</strong> from the Perplexity theory report
+      <code>docs/sliding-class-relaxation-method.md</code>. It replaces the hand-rolled relax
+      + MIP with a principled pipeline, summarized in the next phase.
+    </p>
+    <p style="color:var(--muted);">
+      Core ideas: fixed node <strong>classes</strong> (V vertices / E edges / F↓ overhanging
+      faces / F↑ upward faces / I interior) with <em>restricted parent sets</em> (F↓ may not
+      use interior parents — they're out of reach); a ψ-based support energy; a hard final
+      phase that locks in ≥2 parents; a constructive bottom-up start for faces; and an integer
+      program with a per-rod reward β and slacks on every lower bound.
+    </p>
+    <p style="margin-bottom:0;color:var(--muted);">
+      The theory reference (written to <code>docs/sliding-class-relaxation-method.md</code>)
+      is itself a complete spec — sections 1–11 — and is the source of truth for the rewrite.
+    </p>
+  </div>
+
+  <article class="phase">
+    <div class="head">
+      <span class="num">Phase 15</span>
+      <span class="title">Sliding-class relaxation implementation</span>
+      <span class="badge done">✓ Done</span>
+    </div>
+    <div class="deliverable">
+      <h4>Deliverable</h4>
+      <ul>
+        <li>Full rewrite of <code>printable.py</code> to the sliding-class method: node classes + restricted parents, ψ support, anchor, hard phase, constructive start, and an MIP with β reward + slacks + clearance.</li>
+        <li>Result: <strong>0 unprintable, 0 clearance violations, 0 unsupported free nodes</strong> (bottom vertex sits on the raft), mean degree ~4.7–5.3, slices OK.</li>
+      </ul>
+    </div>
+    <details class="notes">
+      <summary>Implementation notes</summary>
+      <div class="body">
+        <ul>
+          <li><strong>MIP (Section 7):</strong> per-rod reward <code>β=0.6</code> (raises degree ~3.2 → 4.7), slacks <code>s1/s2/sd/sf/sa</code> on every lower bound (never infeasible), rod-rod clearance as pairwise exclusions, face bonus γ.</li>
+          <li><strong>Relaxation (Sections 5–6):</strong> quadratic repulsion <code>(r_c−d)²</code> with κ vertical anisotropy, ψ support <code>(sinα·L−Δz)₊²+(L−Lmax)₊²+(Lmin−L)₊²</code> (symmetric), anchor (F↑→interior), and a hard final phase that forbids any move dropping a node below 2 parents.</li>
+          <li><strong>Constructive start (Section 6.1)</strong> for faces — bottom-up, each node placed where ≥2 in-face parents exist. Applied to all faces, not just F↓.</li>
+          <li><strong>Repair (Section 8):</strong> slack-driven random moves → single-pass I-node deletion → clearance-aware fallback rod. (Iterating the deletion cascaded and deleted the whole interior, so it's single-pass.)</li>
+          <li><strong>Key bugs found &amp; fixed:</strong>
+            <ul>
+              <li><em>Clearance — skip shared-node pairs.</em> The old code counted rods sharing a node as clearance conflicts (distance 0), giving ~3,400 spurious exclusions instead of ~13 real ones. This is why Phase 14's clearance was infeasible.</li>
+              <li><em>Jitter moved fixed frame nodes</em> off their edges (42 unprintable rods). Fixed by zeroing the step on fixed nodes.</li>
+              <li><em>Missing face inset (0.35h).</em> Face nodes sat exactly on the edges, so their rods crossed the frame (frame-clearance 0). Adding the inset was the single biggest fix: unsupported 5–7 → 2–3 and degree 3.68 → 3.85.</li>
+              <li><em>Frame-clearance — skip shared endpoints.</em> Face→frame rods were tested against frame rods sharing an endpoint (distance 0), so <em>every</em> face→frame rod was deleted. This was the real "faces not connected to the edge points" bug: fixing it took frame degree 2.3 → 5.2 and face degree 3.5 → 4.2.</li>
+              <li><em>Bridge angle-penalty.</em> The cost term <code>0.3·exp(−(θ−48°)/4°)</code> is ~48,000 for a 0° bridge, so horizontal rods were silently forbidden. Fixed to only apply to steep rods.</li>
+            </ul>
+          </li>
+          <li><strong>Tuning that stuck:</strong> <code>L_MAX</code> 22 → 28&nbsp;mm (longer rods fill downhill gaps), <code>n_face</code> 17 → 24 → 48 (denser faces). Several repulsion knobs (power, cutoff, same-face boost, a 2-D face-spreading pass) were tried and <em>reverted to defaults</em> — every perturbation made the coverage worse, i.e. the relaxation is already at its equilibrium.</li>
+          <li><strong>Metrics (3 seeds, rhombohedron):</strong> 0 unprintable, 0 clearance violations, mean degree ~4.7–5.3, 1 "unsupported" node that is the bottom vertex (raft-exempt). Slices clean.</li>
+        </ul>
+      </div>
+    </details>
+  </article>
+
+  <h2>Face voids — cross-slope gaps are unprintable (2026-10-24)</h2>
+  <div class="decisions">
+    <p style="margin-top:0;color:var(--muted);">
+      Remaining visual issue: <strong>elongated voids</strong> on some faces — rods on the
+      left/right of a gap, nothing above/below. Diagnosis: the rods are steep (within ±36° of
+      the face's downhill direction), so they form columns; the gap between columns runs
+      <em>perpendicular</em> to the rods, at ~22° elevation, which is unprintable — too shallow
+      for a steep rod (≥48°) and too steep for a horizontal bridge (≤5°).
+    </p>
+    <p style="color:var(--muted);">
+      So the face lattice is <strong>inherently columnar</strong> — this is a hard printability
+      wall, not a wiring gap. The only lever that narrows the strips is <strong>density</strong>:
+      max distance to the nearest rod is ~6.7&nbsp;mm at <code>n_face=24</code>, ~5 at 48, ~4.2 at 64
+      (≈79% more nodes). Node <em>coverage</em> sits at ~9.7&nbsp;mm — the organic blue-noise floor
+      (~12% above the 8.7&nbsp;mm perfect-triangular lattice; all tuning knobs made it worse, so
+      that's the equilibrium).
+    </p>
+    <p style="margin-bottom:0;color:var(--muted);">
+      Open choice for the user: keep the lighter columnar look, densify (n_face 48→64+) to narrow
+      the strips, or accept a slightly-saggy horizontal bridge (bridge limit 10 → ~13&nbsp;mm) to
+      actually tie adjacent columns together. Not yet decided.
+    </p>
+  </div>
+
 </main>
 
 <footer>
-  Living document · append, don't rewrite · last updated 2026-10-21 (phase 13: cube → rhombohedron lattice)
+  Living document · append, don't rewrite · last updated 2026-10-24 (phase 15: sliding-class relaxation; face-void findings)
 </footer>
 </body>
 </html>
