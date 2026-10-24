@@ -24,6 +24,7 @@ BRIDGE_MAX = 10.0
 CLEARANCE = 2.6   # rod-rod axis-to-axis minimum (gap of 1.4 mm between 1.2 mm rods)
 NODE_CLEARANCE = 2.0  # rod-axis-to-node-center minimum (0.6 rod + 0.9 node + 0.5 gap)
 DEG_MIN, DEG_MAX = 3, 6
+POST_DEG_MAX = 8  # parents may exceed DEG_MAX to accept support posts
 
 ALPHA_DEG = 48.0      # steep rod threshold in degrees
 BETA = 0.6            # per-rod reward in the MIP cost (raises degree)
@@ -772,14 +773,14 @@ def _add_bridge_posts(pos, rods, bridge_nodes, face_ids=None):
     for nd in bridge_nodes:
         if _has_steep_parent(nd):
             continue
-        best, best_d = None, np.inf
+        best, best_h = None, np.inf
         for p in range(len(pos)):
             if p == nd or pos[p, 2] >= pos[nd, 2]:
                 continue
             dd = float(np.linalg.norm(pos[p] - pos[nd]))
             if not (L_MIN <= dd <= L_MAX and (pos[nd, 2] - pos[p, 2]) / dd >= SIN48):
                 continue
-            if deg[p] >= DEG_MAX:
+            if deg[p] >= POST_DEG_MAX:
                 continue
             ok = True
             for a, b in rods:
@@ -796,9 +797,11 @@ def _add_bridge_posts(pos, rods, bridge_nodes, face_ids=None):
                 if point_segment_dist(pos[k], pos[nd], pos[p]) < NODE_CLEARANCE:
                     ok = False
                     break
-            if ok and dd < best_d:
+            # prefer the most vertical parent (smallest horizontal offset) so posts don't converge
+            horiz = float(np.linalg.norm(pos[p][:2] - pos[nd][:2]))
+            if ok and horiz < best_h:
                 best = p
-                best_d = dd
+                best_h = horiz
         if best is not None:
             rods.append((min(nd, best), max(nd, best)))
             deg[nd] += 1
@@ -877,6 +880,7 @@ def printable_lattice(
     bottom_face = horizontal_face & (normals[:, 2] < 0.0)   # on the build plate
     top_face = horizontal_face & (normals[:, 2] > 0.0)      # horizontal ceiling (left open)
     zmin = float(vertices[:, 2].min())
+    zmax = float(vertices[:, 2].max())
 
     # frame: subdivide each edge; horizontal edges become ≤10 mm bridge spans (unless on raft)
     frame_pts = [v for v in vertices]
@@ -923,8 +927,8 @@ def printable_lattice(
     # Horizontal-face lattice (bottom on the plate; top in the air).
     #   bottom face: scatter + triangulate into horizontal rods lying on the build plate
     #                (exempt from the steep/bridge rule) — also gives the interior support.
-    #   top face:    scatter + triangulate into horizontal rods ≤ BRIDGE_MAX (bridges), each
-    #                node supported by a steep post from below.
+    #   top face:    scatter + triangulate into horizontal rods ≤ BRIDGE_MAX (bridges); every
+    #                node gets a steep parent (post) from the interior below.
     n_frame_orig = n_frame
     horiz_faces = bottom_face | top_face
     top_nodes: list[int] = []
@@ -938,22 +942,25 @@ def printable_lattice(
             bidx = np.where(frame_on_face[:, fi])[0]
             b2d = (frame_pts[bidx] - geom["origin"]) @ np.stack([geom["u"], geom["v"]], axis=1)
             if is_top:
-                n_scatter = n_face  # same density as the interior so posts line up (rods get subdivided below)
+                poly = geom["poly"]
+                area = abs(np.sum(poly[:, 0] * np.roll(poly[:, 1], -1) - np.roll(poly[:, 0], -1) * poly[:, 1])) / 2.0
+                n_scatter = max(3, int(area / (BRIDGE_MAX * BRIDGE_MAX * 0.866)))
             else:
                 n_scatter = n_face
             pts2d = np.array([sample_in_polygon(geom["inset"], rng) for _ in range(n_scatter)])
+            pts3d = np.array([geom["origin"] + p[0] * geom["u"] + p[1] * geom["v"] for p in pts2d])
             all2d = np.vstack([b2d, pts2d]) if len(b2d) else pts2d
             if len(all2d) < 3:
                 continue
             tri = Delaunay(all2d)
-            local3d = np.vstack([frame_pts[bidx],
-                                 np.array([geom["origin"] + p[0] * geom["u"] + p[1] * geom["v"] for p in pts2d])])
-            local_to_global = np.concatenate([bidx, np.arange(base_idx, base_idx + n_scatter)])
+            scatter_global = np.arange(base_idx, base_idx + n_scatter)
+            local_to_global = np.concatenate([bidx, scatter_global])
             base_idx += n_scatter
-            for p in pts2d:
-                base_pts.append(geom["origin"] + p[0] * geom["u"] + p[1] * geom["v"])
+            for p3 in pts3d:
+                base_pts.append(p3)
             if is_top:
-                top_nodes.extend(np.arange(base_idx - n_scatter, base_idx).tolist())
+                top_nodes.extend(scatter_global.tolist())
+            # triangulation edges (horizontal rods; ≤ BRIDGE_MAX bridges on the top face)
             for s in tri.simplices:
                 for k in range(3):
                     i, j = int(s[k]), int(s[(k + 1) % 3])
@@ -962,17 +969,7 @@ def printable_lattice(
                         continue
                     if a < n_frame_orig and b < n_frame_orig:
                         continue  # already a frame edge
-                    pa, pb = local3d[i], local3d[j]
-                    L = float(np.linalg.norm(pb - pa))
-                    nseg = max(1, int(np.ceil(L / BRIDGE_MAX))) if is_top else 1
-                    prev = a
-                    for kk in range(1, nseg):
-                        p_mid = pa + (kk / nseg) * (pb - pa)
-                        base_pts.append(p_mid)
-                        base_chain.append((prev, base_idx))
-                        prev = base_idx
-                        base_idx += 1
-                    base_chain.append((prev, b))
+                    base_chain.append((min(a, b), max(a, b)))
         if base_pts:
             frame_pts = np.vstack([frame_pts, np.asarray(base_pts, dtype=float)])
             chain = np.vstack([chain, np.asarray(base_chain, dtype=int)])
