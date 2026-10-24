@@ -417,7 +417,10 @@ def select_rods(pos, cand, frame_chain, face_ids, normals, centers, n_frame, cle
                         or (fi >= 0 and j < n_frame and frame_on_face[j, fi])
                         or (fj >= 0 and i < n_frame and frame_on_face[i, fj]))
 
-    cost = ((Lc - H) / H) ** 2 - BETA + 0.3 * np.exp(-(theta_deg - ALPHA_DEG) / 4.0) - GAMMA * same_face
+    # angle term only for steep rods (θ ≥ α); for a bridge (θ ≈ 0°) it would blow up to
+    # ~48k and wrongly forbid every horizontal rod.
+    angle_pen = np.where(sin_elev >= SIN48, 0.3 * np.exp(-(theta_deg - ALPHA_DEG) / 4.0), 0.0)
+    cost = ((Lc - H) / H) ** 2 - BETA + angle_pen - GAMMA * same_face
 
     # 5 slack blocks: s1 (≥1 down), s2 (≥2 down), sd (degree≥3), sf (≥2 in-face), sa (≥1 to-I)
     nslack = 5 * n
