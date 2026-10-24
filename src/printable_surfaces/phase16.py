@@ -63,9 +63,14 @@ def main() -> None:
         grams = vol_cm3 * PLA_DENSITY
         rows.append((name, f"{w:.0f}×{d:.0f}×{h:.0f}", len(nodes), len(rods), vol_cm3, grams))
 
-        mesh = build_frame_mesh(sc, rods, rod_radius=ROD_R, joint_radius=JOINT_R)
+        mesh = build_frame_mesh(sc, rods, rod_radius=ROD_R, joint_radius=JOINT_R, color_by_direction=True)
         stl = f"{out_dir}/{name}_T4_S2.stl"
+        ply = f"{out_dir}/{name}_T4_S2.ply"
         mesh.export(stl)
+        mesh.export(ply)
+        register("lattice", ply, "ply",
+                 f"{name} · rod angle · {grams:.1f} g",
+                 folder=folder)
         register("lattice", stl, "stl",
                  f"{name} · rod Ø1.2 · {w:.0f}×{d:.0f}×{h:.0f} mm · {grams:.1f} g",
                  folder=folder)
