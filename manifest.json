@@ -1,6 +1,41 @@
 {
   "folders": [
     {
+      "name": "Platonic solids \u00b7 T4\u00d7S2",
+      "artifacts": [
+        {
+          "path": "output/lattice/solids/cube_T4_S2.stl",
+          "kind": "stl",
+          "label": "cube T4\u00d7S2 \u00b7 rod \u00d81.2 \u00b7 73\u00d7135 mm \u00b7 15.2 g",
+          "stage": "lattice"
+        },
+        {
+          "path": "output/lattice/solids/tetrahedron_T4_S2.stl",
+          "kind": "stl",
+          "label": "tetrahedron T4\u00d7S2 \u00b7 rod \u00d81.2 \u00b7 63\u00d753 mm \u00b7 2.9 g",
+          "stage": "lattice"
+        },
+        {
+          "path": "output/lattice/solids/octahedron_T4_S2.stl",
+          "kind": "stl",
+          "label": "octahedron T4\u00d7S2 \u00b7 rod \u00d81.2 \u00b7 80\u00d795 mm \u00b7 10.3 g",
+          "stage": "lattice"
+        },
+        {
+          "path": "output/lattice/solids/icosahedron_T4_S2.stl",
+          "kind": "stl",
+          "label": "icosahedron T4\u00d7S2 \u00b7 rod \u00d81.2 \u00b7 68\u00d7121 mm \u00b7 13.5 g",
+          "stage": "lattice"
+        },
+        {
+          "path": "output/lattice/solids/dodecahedron_T4_S2.stl",
+          "kind": "stl",
+          "label": "dodecahedron T4\u00d7S2 \u00b7 rod \u00d81.2 \u00b7 79\u00d7123 mm \u00b7 13.3 g",
+          "stage": "lattice"
+        }
+      ]
+    },
+    {
       "name": "Cube \u00b7 rhombohedron \u00b7 versions",
       "artifacts": [
         {

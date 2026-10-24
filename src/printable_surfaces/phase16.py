@@ -1,10 +1,7 @@
-"""Phase 16 — version matrix: thickness × scale, with dimensions, material, and STLs.
+"""Phase 16 — version matrix: all five Platonic solids, sparse + slim + scaled.
 
-Generates the support-free rhombohedron lattice once, then tabulates 4 rod-thickness
-settings × 4 scale settings. Material is computed analytically (union of node spheres
-plus rods cut at the joint spheres), not from the (non-watertight) triangle soup.
-
-Each of the 16 combinations is also exported as an STL and registered on the dashboard.
+Generates the support-free lattice for each of the five (stretched) Platonic solids, then
+exports the chosen "T4×S2" version (Ø1.2 rod, 0.8 scale, sparse base) plus a material table.
 
 Run: uv run python -m printable_surfaces.phase16
 """
@@ -17,35 +14,27 @@ import numpy as np
 
 from .artifacts import register
 from .lattice import build_frame_mesh
-from .platonic import cube_rhombohedron
+from .platonic import cube_rhombohedron, dodecahedron, icosahedron, octahedron, tetrahedron
 from .printable import printable_lattice
 
 PLA_DENSITY = 1.24  # g/cm^3 (PrusaSlicer nominal PLA; Wikipedia lists 1.21–1.43)
 
-# (label, rod radius mm, joint radius mm) — joint kept at 1.5× rod, as now.
-THICKNESS = [
-    ("T1", 1.2, 1.8),  # rod Ø2.4 / joint Ø3.6 (current)
-    ("T2", 1.0, 1.5),  # rod Ø2.0 / joint Ø3.0
-    ("T3", 0.8, 1.2),  # rod Ø1.6 / joint Ø2.4
-    ("T4", 0.6, 0.9),  # rod Ø1.2 / joint Ø1.8
+# chosen "slim + smaller" version: rod radius 0.6 (Ø1.2), joint 0.9 (Ø1.8), scale 0.8
+ROD_R = 0.6
+JOINT_R = 0.9
+SCALE = 0.8
+
+# (name, geometry, lattice params) — sparse base (spacing 17, ~25% fewer rods than the dense cut)
+SOLIDS = [
+    ("cube",        cube_rhombohedron(50.0, 1.69), dict(spacing=17, n_face=36, n_interior=80)),
+    ("tetrahedron", tetrahedron(50.0),             dict(spacing=17, n_face=12, n_interior=40)),
+    ("octahedron",  octahedron(50.0),              dict(spacing=17, n_face=15, n_interior=60)),
+    ("icosahedron", icosahedron(50.0),             dict(spacing=17, n_face=12, n_interior=60)),
+    ("dodecahedron", dodecahedron(50.0),           dict(spacing=17, n_face=10, n_interior=70)),
 ]
 
-# (label, scale factor)
-SCALES = [
-    ("S1", 1.00),  # original
-    ("S2", 0.80),
-    ("S3", 0.60),
-    ("S4", 0.50),
-]
 
-
-def material_volume_mm3(nodes: np.ndarray, rods: np.ndarray, rod_r: float, joint_r: float) -> float:
-    """Union volume of the ball-and-stick lattice (mm^3).
-
-    Every rod is a cylinder of radius ``rod_r``; at each end it is swallowed by the
-    endpoint's joint sphere of radius ``joint_r`` up to the sphere surface (length
-    ``joint_r`` along the axis), so the visible rod length is ``L - 2·joint_r``.
-    """
+def material_volume_mm3(nodes, rods, rod_r, joint_r):
     L = np.linalg.norm(nodes[rods[:, 1]] - nodes[rods[:, 0]], axis=1)
     rod_vol = float(np.sum(np.pi * rod_r**2 * np.maximum(0.0, L - 2.0 * joint_r)))
     node_vol = float((4.0 / 3.0) * np.pi * joint_r**3 * len(nodes))
@@ -53,51 +42,31 @@ def material_volume_mm3(nodes: np.ndarray, rods: np.ndarray, rod_r: float, joint
 
 
 def main() -> None:
-    verts, edges, faces = cube_rhombohedron(50.0, 1.69)
-    # Sparse base (vs the original spacing=15 / n_face=48 / n_interior=105 → 449 nodes, 1110 rods).
-    nodes, rods = printable_lattice(verts, edges, faces, spacing=17.0, n_face=36, n_interior=80,
-                                    seed=1, iters=900, lam=1.0)
-
-    base_bbox = np.ptp(verts, axis=0)  # (W, D, H) of the polytope at scale 1
-    out_dir = "output/lattice/versions"
+    out_dir = "output/lattice/solids"
     os.makedirs(out_dir, exist_ok=True)
 
+    print("| Solid | W×D×H (mm) | nodes | rods | cm³ | PLA (g) |")
+    print("|---|---|---|---|---|---|")
     rows = []
-    for tlabel, rod_r, joint_r in THICKNESS:
-        for slabel, s in SCALES:
-            sc_nodes = nodes * s
-            vol_cm3 = material_volume_mm3(sc_nodes, rods, rod_r, joint_r) / 1000.0
-            grams = vol_cm3 * PLA_DENSITY
-            w, d, h = base_bbox * s
-            rows.append((tlabel, rod_r, joint_r, slabel, f"{w:.0f}×{d:.0f}×{h:.0f}", vol_cm3, grams))
+    for name, (verts, edges, faces), params in SOLIDS:
+        nodes, rods = printable_lattice(verts, edges, faces, seed=1, iters=900, lam=1.0, **params)
+        sc = nodes * SCALE
+        w, d, h = np.ptp(verts, axis=0) * SCALE
+        vol_cm3 = material_volume_mm3(sc, rods, ROD_R, JOINT_R) / 1000.0
+        grams = vol_cm3 * PLA_DENSITY
+        rows.append((name, f"{w:.0f}×{d:.0f}×{h:.0f}", len(nodes), len(rods), vol_cm3, grams))
 
-            # Export a sliceable STL for this version.
-            mesh = build_frame_mesh(sc_nodes, rods, rod_radius=rod_r, joint_radius=joint_r,
-                                    color_by_direction=False)
-            stl = f"{out_dir}/rhombohedron_{tlabel}_{slabel}.stl"
-            mesh.export(stl)
-            register("lattice", stl, "stl",
-                     f"Rhombohedron {tlabel}×{slabel} · rod Ø{2*rod_r:.1f} · {w:.0f}×{h:.0f} mm · {grams:.1f} g",
-                     folder="Cube · rhombohedron · versions")
+        mesh = build_frame_mesh(sc, rods, rod_radius=ROD_R, joint_radius=JOINT_R)
+        stl = f"{out_dir}/{name}_T4_S2.stl"
+        mesh.export(stl)
+        register("lattice", stl, "stl",
+                 f"{name} T4×S2 · rod Ø1.2 · {w:.0f}×{h:.0f} mm · {grams:.1f} g",
+                 folder="Platonic solids · T4×S2")
 
-    # Markdown table
-    print("| Thickness | rod Ø | joint Ø | Scale | W×D×H (mm) | Volume (cm³) | PLA (g) |")
-    print("|---|---|---|---|---|---|---|")
-    for tlabel, rod_r, joint_r, slabel, dims, vol, grams in rows:
-        print(f"| {tlabel} | Ø{2*rod_r:.1f} | Ø{2*joint_r:.1f} | {slabel} | {dims} | {vol:.2f} | {grams:.1f} |")
+    for name, dims, nn, nr, vol, grams in rows:
+        print(f"| {name} | {dims} | {nn} | {nr} | {vol:.2f} | {grams:.1f} |")
 
-    # CSV for the dashboard
-    csv = "output/lattice/version_matrix.csv"
-    with open(csv, "w") as f:
-        f.write("thickness,rod_dia_mm,joint_dia_mm,scale,width_mm,depth_mm,height_mm,volume_cm3,mass_g\n")
-        for tlabel, rod_r, joint_r, slabel, dims, vol, grams in rows:
-            w, d, h = dims.split("×")
-            f.write(f"{tlabel},{2*rod_r:.1f},{2*joint_r:.1f},{slabel[1:]},"
-                    f"{w},{d},{h},{vol:.3f},{grams:.2f}\n")
-
-    print(f"\nSaved {csv} + {len(rows)} STLs in {out_dir}")
-    print(f"base polytope bbox (W×D×H) = {base_bbox[0]:.0f}×{base_bbox[1]:.0f}×{base_bbox[2]:.0f} mm; "
-          f"{len(nodes)} nodes / {len(rods)} rods")
+    print(f"\nSaved {len(rows)} STLs in {out_dir}")
 
 
 if __name__ == "__main__":

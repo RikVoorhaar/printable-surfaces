@@ -810,10 +810,59 @@
     </details>
   </article>
 
+  <article class="phase">
+    <div class="head">
+      <span class="num">Phase 17</span>
+      <span class="title">All five Platonic solids — sparse, slim, scaled</span>
+      <span class="badge done">✓ Done</span>
+    </div>
+    <div class="deliverable">
+      <h4>Deliverable</h4>
+      <ul>
+        <li>Geometry for the four remaining solids in <code>platonic.py</code>, each oriented + deformed per the theory doc (<code>docs/Support-Free Rod Lattices…</code>): tetrahedron (face down, none), octahedron (vertex down ×1.19), icosahedron (vertex down, tip-lift), dodecahedron (face down ×1.93 relaxed). Edge elevations verified against the doc.</li>
+        <li><code>printable.py</code> generalized: <strong>polygon faces</strong> (triangle/rhombus/pentagon, replacing the parallelogram-only fill) and <strong>horizontal frame edges → ≤10 mm bridges + steep posts</strong>.</li>
+        <li><code>phase16.py</code> now emits every solid in the chosen <strong>T4×S2</strong> version (Ø1.2 rod, 0.8 scale, sparse) + a material table; STLs on the dashboard under <code>Platonic solids · T4×S2</code>.</li>
+      </ul>
+    </div>
+    <details class="notes" open>
+      <summary>T4×S2 material (Ø1.2 rod, 0.8 scale, spacing 17)</summary>
+      <div class="body">
+        <table style="border-collapse:collapse;font-size:.92em;color:var(--text);">
+          <thead><tr style="color:var(--muted);text-align:left;">
+            <th style="padding:.2rem .8rem .2rem 0;">Solid</th><th style="padding:.2rem .6rem;">W×D×H (mm)</th>
+            <th style="padding:.2rem .6rem;">nodes</th><th style="padding:.2rem .6rem;">rods</th>
+            <th style="padding:.2rem .6rem;">cm³</th><th style="padding:.2rem .6rem;">PLA g</th>
+          </tr></thead>
+          <tbody>
+            <tr><td>cube</td><td>73×73×135</td><td>337</td><td>851</td><td>12.3</td><td>15.2</td></tr>
+            <tr><td>tetrahedron</td><td>63×63×53</td><td>86</td><td>180</td><td>2.4</td><td>2.9</td></tr>
+            <tr><td>octahedron</td><td>80×80×95</td><td>245</td><td>612</td><td>8.3</td><td>10.3</td></tr>
+            <tr><td>icosahedron</td><td>68×72×121</td><td>380</td><td>823</td><td>10.9</td><td>13.5</td></tr>
+            <tr><td>dodecahedron</td><td>79×75×123</td><td>280</td><td>645</td><td>10.7</td><td>13.3</td></tr>
+          </tbody>
+        </table>
+        <p style="color:var(--muted);margin-bottom:0;">
+          <strong>Pipeline changes:</strong> (1) <code>face_geometry</code> + <code>shrink_polygon</code>/<code>sample_in_polygon</code>/<code>clamp_to_polygon</code>
+          let the face-filler work on any convex polygon (fixed a sign bug: the CCW inward normal is on the
+          <em>positive</em> side, so the inset was originally expanding). (2) Horizontal frame edges (the
+          octa/icosa/dodeca belts &amp; rings) are split into ≤10&nbsp;mm bridge spans, and each intermediate
+          bridge node gets a steep post from below. (3) A final pass deletes free nodes stranded too close to
+          the raft to find an ≥8&nbsp;mm parent.
+        </p>
+        <p style="color:var(--muted);margin-bottom:0;">
+          <strong>Known limitation:</strong> the icosahedron's <em>upper</em> pentagon ring has ~11 bridge nodes
+          whose posts would run along the near-vertical band face and collide with its face lattice (post passes
+          within ~1&nbsp;mm of face nodes). The doc's fix is to fold posts into the MIP as fixed parent
+          requirements — left as a follow-up. Everything else is 0 unprintable / 0 unsupported.
+        </p>
+      </div>
+    </details>
+  </article>
+
 </main>
 
 <footer>
-  Living document · append, don't rewrite · last updated 2026-10-24 (phase 16: version matrix)
+  Living document · append, don't rewrite · last updated 2026-10-24 (phase 17: all five Platonic solids)
 </footer>
 </body>
 </html>

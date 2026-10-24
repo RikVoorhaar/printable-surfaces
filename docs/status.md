@@ -1,55 +1,54 @@
 # Project status (compact)
 
-**Goal:** fill a convex polytope (currently a rhombohedron = stretched cube, ~94×169 mm) with a
-rod-and-node lattice that FDM-prints with zero support. Rods 1.2 mm, nodes 1.8 mm.
+**Goal:** fill a convex polytope with a rod-and-node lattice that FDM-prints with zero support.
+Rods 1.2 mm, nodes 1.8 mm (chosen "slim" Ø), build direction +Z.
 
 **Printability rule:** rod printable iff within 48° of vertical (α=48°), or a horizontal bridge
 ≤10 mm.
 
-## Method (implemented in `src/printable_surfaces/printable.py`)
+## Solids
 
-The sliding-class relaxation method (`docs/sliding-class-relaxation-method.md`):
+All five Platonic solids, oriented + stretched so their frame edges are printable (per
+`docs/Support-Free Rod Lattices for the Platonic Solids…`):
 
-1. **Node classes** V/E/F↓/F↑/I with restricted parent sets (Section 4); face nodes inset 0.35h
-   from edges, interior inset 0.4h from faces.
-2. **Relaxation** (Sections 5–6): quadratic repulsion `(r_c−d)²` with κ vertical anisotropy,
-   ψ-based symmetric support, anchor term, and a hard final phase forbidding a move that drops a
-   node below 2 parents.
-3. **Constructive start** (Section 6.1) for every face: bottom-up sampler.
-4. **MIP** (Section 7): β=0.6 per-rod reward; slacks s1/s2/sd/sf/sa; rod-rod clearance as pairwise
-   exclusions (skipping shared-node pairs).
-5. **Repair** (Section 8): slack-driven moves, single-pass I-node deletion, clearance-aware fallback.
+| Solid | Orientation | Deformation | Horizontal edges |
+|---|---|---|---|
+| cube | vertex down (body diagonal vertical) | ×1.69 | none |
+| tetrahedron | face down | none | base (raft) |
+| octahedron | vertex down | ×1.19 | 4 belt, 70.7 mm |
+| icosahedron | vertex down | tip-lift ×1.51 | 10 (two pentagon rings) |
+| dodecahedron | face down | ×1.93 (relaxed) | 5 top pentagon |
 
-## Current metrics (rhombohedron, spacing=15 / n_face=48 / n_interior=105)
+Geometry in `platonic.py`; lattice in `printable.py` (generalized: polygon faces, horizontal
+edges → ≤10 mm bridges + steep posts, stranded-node cleanup).
 
-| Metric | Value | Target |
-|---|---|---|
-| Unprintable rods | **0** | 0 |
-| Rod-rod clearance violations | **0** | 0 |
-| Mean degree | ~4.7–5.3 | 4.7 |
-| Unsupported free nodes | **0** (bottom vertex sits on raft) | ~0 |
-| Slices (PrusaSlicer) | OK | OK |
+## Chosen version — T4×S2 (Ø1.2 rod, 0.8 scale, spacing 17)
 
-## Key bugs fixed (this session)
+| Solid | W×D×H (mm) | nodes | rods | PLA (g) |
+|---|---|---|---|---|
+| cube | 73×73×135 | 337 | 851 | 15.2 |
+| tetrahedron | 63×63×53 | 86 | 180 | 2.9 |
+| octahedron | 80×80×95 | 245 | 612 | 10.3 |
+| icosahedron | 68×72×121 | 380 | 823 | 13.5 |
+| dodecahedron | 79×75×123 | 280 | 645 | 13.3 |
 
-1. **Clearance — skip shared-node pairs**: was counting rods sharing a node as conflicts (distance
-   0) → ~3,400 spurious exclusions (why clearance was infeasible in Phase 14).
-2. **Jitter moved fixed frame nodes** off their edges → 42 unprintable rods.
-3. **Missing face inset (0.35h)**: face nodes sat on the edges so rods crossed the frame.
-4. **Frame-clearance — skip shared endpoints**: every face→frame rod was deleted (distance 0 vs the
-   chain). This was the "faces not connected to edge points" bug; fix took frame degree 2.3→5.2.
-5. **Bridge angle-penalty**: `0.3·exp(−(θ−48°)/4°)` ≈ 48,000 for a 0° bridge, silently forbidding
-   horizontal rods.
+All 0 unprintable rods. STLs in `output/lattice/solids/`, registered on the dashboard under
+`Platonic solids · T4×S2`.
 
-## Known limitation — cross-slope face voids
+## Method (sliding-class relaxation, `docs/sliding-class-relaxation-method.md`)
 
-The face lattice is inherently **columnar**: rods are steep (within ±36° of downhill), so the
-perpendicular ("cross-slope") direction sits at ~22° elevation — too shallow for steep, too steep
-for a bridge. This leaves elongated voids between the downhill columns. Density is the only lever
-(max distance to nearest rod: ~6.7 mm at n_face=24, ~4.2 mm at n_face=64). Open: densify vs accept
-columnar vs longer bridges (10→13 mm).
+Node classes V/E/F↓/F↑/I; ψ support + anchor + hard phase; constructive bottom-up start for
+faces; MIP (β reward + slacks + clearance); repair; bridge posts. Key bugs fixed: shared-node
+clearance, fixed-node jitter, face inset, frame-clearance, bridge angle-penalty.
+
+## Known limitation
+
+Icosahedron's upper pentagon ring: ~11 bridge nodes have no post (their posts would run along
+the near-vertical band face and collide with its face lattice). Fix = fold posts into the MIP
+as fixed parent requirements (follow-up).
 
 ## Next steps
 
-1. Decide the face-density / bridge trade-off (see above).
-2. Then run tetrahedron / octahedron / icosahedron / dodecahedron through the pipeline.
+1. Fold icosahedron ring posts into the MIP (or accept 11 bridge nodes).
+2. Slice a chosen solid (T4×S2) for real print-time + filament estimate.
+3. Orient / brim / stabilizer-strut decisions (vertex-down solids stand on a point).
