@@ -24,13 +24,13 @@
         {
           "path": "output/lattice/minstretch/icosahedron_T4_S2.stl",
           "kind": "stl",
-          "label": "icosahedron \u00b7 rod \u00d81.2 \u00b7 68\u00d771\u00d7120 mm \u00b7 13.0 g",
+          "label": "icosahedron \u00b7 rod \u00d81.2 \u00b7 68\u00d771\u00d7120 mm \u00b7 13.3 g",
           "stage": "lattice"
         },
         {
           "path": "output/lattice/minstretch/dodecahedron_T4_S2.stl",
           "kind": "stl",
-          "label": "dodecahedron \u00b7 rod \u00d81.2 \u00b7 66\u00d762\u00d7102 mm \u00b7 17.2 g",
+          "label": "dodecahedron \u00b7 rod \u00d81.2 \u00b7 66\u00d762\u00d7102 mm \u00b7 17.3 g",
           "stage": "lattice"
         },
         {
@@ -54,13 +54,13 @@
         {
           "path": "output/lattice/minstretch/icosahedron_T4_S2.ply",
           "kind": "ply",
-          "label": "icosahedron \u00b7 rod angle \u00b7 13.0 g",
+          "label": "icosahedron \u00b7 rod angle \u00b7 13.3 g",
           "stage": "lattice"
         },
         {
           "path": "output/lattice/minstretch/dodecahedron_T4_S2.ply",
           "kind": "ply",
-          "label": "dodecahedron \u00b7 rod angle \u00b7 17.2 g",
+          "label": "dodecahedron \u00b7 rod angle \u00b7 17.3 g",
           "stage": "lattice"
         }
       ]

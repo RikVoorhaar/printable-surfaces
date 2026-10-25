@@ -24,7 +24,6 @@ BRIDGE_MAX = 10.0
 CLEARANCE = 2.6   # rod-rod axis-to-axis minimum (gap of 1.4 mm between 1.2 mm rods)
 NODE_CLEARANCE = 2.0  # rod-axis-to-node-center minimum (0.6 rod + 0.9 node + 0.5 gap)
 DEG_MIN, DEG_MAX = 3, 6
-POST_DEG_MAX = 8  # parents may exceed DEG_MAX to accept support posts
 
 ALPHA_DEG = 48.0      # steep rod threshold in degrees
 BETA = 0.6            # per-rod reward in the MIP cost (raises degree)
@@ -142,14 +141,17 @@ def _support_forces(pos, allowed, is_frame, lam_t):
     return lam_t * F
 
 
-def _anchor_forces(pos, allowed, overhang, is_frame, is_face, is_interior, normals, face_ids, lam_t):
-    """Anchor (Section 5.3): pull one interior node under each F↑ non-vertical face node."""
+def _anchor_forces(pos, allowed, overhang, is_frame, is_face, is_interior, normals, face_ids, lam_t, post_nodes=None):
+    """Anchor (Section 5.3): pull one interior node under each F↑ non-vertical face node,
+    and under each post node (top-face / horizontal-ring bridge intermediates)."""
     n = len(pos)
     up_face = is_face & ~overhang
     non_vertical = np.zeros(n, dtype=bool)
     for i in np.where(up_face)[0]:
         non_vertical[i] = abs(normals[face_ids[i], 2]) < 0.99
     targets = np.where(up_face & non_vertical)[0]
+    if post_nodes is not None and len(post_nodes):
+        targets = np.unique(np.concatenate([targets, np.asarray(post_nodes, dtype=int)]))
     if len(targets) == 0:
         return np.zeros_like(pos)
 
@@ -230,7 +232,7 @@ def _project(pos, fixed, face_ids, face_geoms, normals, centers, margin):
 def relax_printable(
     pos, fixed, face_ids, face_geoms, normals, centers, n_frame, frame_on_face,
     spacing, iters=900, lam=1.0, kappa=1.25, seed=None, anchor_scale=1.0, r_c_factor=1.25,
-    same_face_boost=1.0, rep_power=2.0,
+    same_face_boost=1.0, rep_power=2.0, post_nodes=None,
 ):
     """Sliding-class relaxation (Sections 5–6): quadratic repulsion (+ κ anisotropy on I
     pairs), ψ support, anchor, and a hard final phase that locks in ≥2 parents."""
@@ -274,7 +276,7 @@ def relax_printable(
         # support + anchor
         if it >= iters // 3:
             F += _support_forces(pos, allowed, is_frame, lam_t)
-            F += anchor_scale * _anchor_forces(pos, allowed, overhang, is_frame, is_face, is_interior, normals, face_ids, lam_t)
+            F += anchor_scale * _anchor_forces(pos, allowed, overhang, is_frame, is_face, is_interior, normals, face_ids, lam_t, post_nodes)
 
         F[fixed] = 0.0
 
@@ -385,13 +387,15 @@ def candidate_rods(pos, n_frame, frame_chain, face_ids, normals, centers, cleara
 
 
 # ------------------------------------------------------------- integer program
-def select_rods(pos, cand, frame_chain, face_ids, normals, centers, n_frame, clearance=CLEARANCE):
+def select_rods(pos, cand, frame_chain, face_ids, normals, centers, n_frame, clearance=CLEARANCE, post_nodes=None):
     """Choose rods with an integer program (Section 7 of the method).
 
     Cost carries a per-rod reward β so rods are added until degree/clearance stop them;
     every lower bound has a slack so the LP is never infeasible; rod-rod clearance pairs
     that *share a node* are skipped (they are not conflicts). The sf/sa constraints make
-    the face lattice visible (≥2 in-face parents per F node, ≥1 interior parent per F↑)."""
+    the face lattice visible (≥2 in-face parents per F node, ≥1 interior parent per F↑).
+    ``post_nodes`` are frame nodes (top-face scatter, horizontal-ring intermediates) that
+    must still get a steep parent below — they receive the s1/s2 constraints too."""
     E = len(cand)
     n = len(pos)
     empty = {"s1": np.zeros(n), "s2": np.zeros(n), "sd": np.zeros(n), "sf": np.zeros(n), "sa": np.zeros(n)}
@@ -401,6 +405,9 @@ def select_rods(pos, cand, frame_chain, face_ids, normals, centers, n_frame, cle
     is_frame = np.zeros(n, dtype=bool); is_frame[:n_frame] = True
     is_face = face_ids >= 0
     is_interior = ~is_frame & ~is_face
+    post = np.zeros(n, dtype=bool)
+    if post_nodes is not None and len(post_nodes):
+        post[np.asarray(post_nodes, dtype=int)] = True
     overhang = np.zeros(n, dtype=bool)
     for i in np.where(is_face)[0]:
         overhang[i] = normals[face_ids[i], 2] < 0.0
@@ -476,7 +483,7 @@ def select_rods(pos, cand, frame_chain, face_ids, normals, centers, n_frame, cle
         rows.append(row); lb.append(rhs); ub.append(np.inf)
 
     for nd in range(n):
-        if not is_frame[nd]:
+        if not is_frame[nd] or post[nd]:
             add(nd, 0, down_mask, 1.0)      # s1: ≥ 1 downward rod
             add(nd, n, down_mask, 2.0)      # s2: ≥ 2 downward rods
         if is_face[nd]:
@@ -616,7 +623,7 @@ def _constructive_face(start_positions, geom, n_target, r, rng):
 
 
 def _repair(pos, fixed, face_ids, face_geoms, normals, centers, n_frame, frame_on_face,
-            chain, spacing, seed=None):
+            chain, spacing, seed=None, post_nodes=None):
     """Section 8 repair: move unsupported nodes (by MIP slack) and re-solve, then a
     clearance-aware fallback rod for the last holdouts."""
     allowed, _, _, _, _ = _allowed_parents(face_ids, normals, centers, n_frame, frame_on_face)
@@ -625,7 +632,7 @@ def _repair(pos, fixed, face_ids, face_geoms, normals, centers, n_frame, frame_o
 
     for _round in range(3):
         cand = candidate_rods(pos, n_frame, chain, face_ids, normals, centers)
-        _, slack = select_rods(pos, cand, chain, face_ids, normals, centers, n_frame)
+        _, slack = select_rods(pos, cand, chain, face_ids, normals, centers, n_frame, post_nodes=post_nodes)
         bad = np.where(((slack['s1'] > 0.5) | (slack['s2'] > 0.5)) & ~fixed)[0]
         if len(bad) == 0:
             break
@@ -652,7 +659,7 @@ def _repair(pos, fixed, face_ids, face_geoms, normals, centers, n_frame, frame_o
             break
 
     cand = candidate_rods(pos, n_frame, chain, face_ids, normals, centers)
-    selected, slack = select_rods(pos, cand, chain, face_ids, normals, centers, n_frame)
+    selected, slack = select_rods(pos, cand, chain, face_ids, normals, centers, n_frame, post_nodes=post_nodes)
 
     # delete interior nodes with no downward rod (Section 8: "delete any I node with s1 > 0"),
     # then re-solve once
@@ -665,7 +672,7 @@ def _repair(pos, fixed, face_ids, face_geoms, normals, centers, n_frame, frame_o
         fixed = fixed[keep]
 
     cand = candidate_rods(pos, n_frame, chain, face_ids, normals, centers)
-    selected, _ = select_rods(pos, cand, chain, face_ids, normals, centers, n_frame)
+    selected, _ = select_rods(pos, cand, chain, face_ids, normals, centers, n_frame, post_nodes=post_nodes)
     rods = [(min(a, b), max(a, b)) for a, b in chain] + [tuple(map(int, e)) for e in selected]
 
     # clearance-aware fallback for any remaining unsupported free node
@@ -748,65 +755,6 @@ def _spread_faces(pos, fixed, face_ids, face_geoms, normals, centers, n_frame, f
         pos = pos + step
         pos = _project(pos, fixed, face_ids, face_geoms, normals, centers, margin)
     return pos
-
-
-def _add_bridge_posts(pos, rods, bridge_nodes, face_ids=None):
-    """Give each intermediate bridge node (on a horizontal frame edge) a steep post from
-    below, so the ≤10 mm bridge spans rest on something already printed."""
-    if len(bridge_nodes) == 0:
-        return rods
-    rods = [tuple(map(int, e)) for e in rods]
-    deg = np.zeros(len(pos), dtype=int)
-    for a, b in rods:
-        deg[a] += 1
-        deg[b] += 1
-
-    def _has_steep_parent(nd):
-        for a, b in rods:
-            if (a == nd and pos[b, 2] < pos[nd, 2]) or (b == nd and pos[a, 2] < pos[nd, 2]):
-                q = b if a == nd else a
-                dd = float(np.linalg.norm(pos[q] - pos[nd]))
-                if dd > 0 and (pos[nd, 2] - pos[q, 2]) / dd >= SIN48:
-                    return True
-        return False
-
-    for nd in bridge_nodes:
-        if _has_steep_parent(nd):
-            continue
-        best, best_h = None, np.inf
-        for p in range(len(pos)):
-            if p == nd or pos[p, 2] >= pos[nd, 2]:
-                continue
-            dd = float(np.linalg.norm(pos[p] - pos[nd]))
-            if not (L_MIN <= dd <= L_MAX and (pos[nd, 2] - pos[p, 2]) / dd >= SIN48):
-                continue
-            if deg[p] >= POST_DEG_MAX:
-                continue
-            ok = True
-            for a, b in rods:
-                if a == nd or b == nd or a == p or b == p:
-                    continue
-                if segment_segment_dist(pos[nd], pos[p], pos[a], pos[b]) < CLEARANCE:
-                    ok = False
-                    break
-            if not ok:
-                continue
-            for k in range(len(pos)):
-                if k == nd or k == p:
-                    continue
-                if point_segment_dist(pos[k], pos[nd], pos[p]) < NODE_CLEARANCE:
-                    ok = False
-                    break
-            # prefer the most vertical parent (smallest horizontal offset) so posts don't converge
-            horiz = float(np.linalg.norm(pos[p][:2] - pos[nd][:2]))
-            if ok and horiz < best_h:
-                best = p
-                best_h = horiz
-        if best is not None:
-            rods.append((min(nd, best), max(nd, best)))
-            deg[nd] += 1
-            deg[best] += 1
-    return np.unique(np.sort(np.asarray(rods, dtype=int), axis=1), axis=0)
 
 
 def _has_steep_parent(pos, rods, nd):
@@ -976,6 +924,10 @@ def printable_lattice(
             n_frame = len(frame_pts)
             frame_on_face = _frame_on_faces(frame_pts, normals, centers)
 
+    # nodes that must still get a steep parent below (horizontal-ring bridge intermediates
+    # and top-face scatter nodes) — folded into the MIP as fixed parent requirements
+    post_nodes = np.concatenate([bridge_nodes, np.asarray(top_nodes, dtype=int)]) if top_nodes else bridge_nodes
+
     # every face gets a constructive bottom-up start (Section 6.1) so the face lattice
     # has ~2 in-face parents per node by construction
     r_construct = 0.73 * spacing
@@ -1022,7 +974,7 @@ def printable_lattice(
                               n_frame, frame_on_face, spacing, iters=iters, lam=lam,
                               kappa=kappa, seed=seed, anchor_scale=anchor_scale,
                               r_c_factor=r_c_factor, same_face_boost=same_face_boost,
-                              rep_power=rep_power)
+                              rep_power=rep_power, post_nodes=post_nodes)
 
     if face_spread_iters > 0:
         all_pts = _spread_faces(all_pts, fixed, all_ids, face_geoms, normals, centers,
@@ -1030,9 +982,8 @@ def printable_lattice(
                                 seed=seed)
 
     all_pts, rods, fixed, all_ids = _repair(all_pts, fixed, all_ids, face_geoms, normals, centers,
-                                            n_frame, frame_on_face, chain, spacing, seed=seed)
-    post_nodes = np.concatenate([bridge_nodes, np.asarray(top_nodes, dtype=int)]) if top_nodes else bridge_nodes
-    rods = _add_bridge_posts(all_pts, rods, post_nodes, all_ids)
+                                            n_frame, frame_on_face, chain, spacing, seed=seed,
+                                            post_nodes=post_nodes)
     all_pts, rods, fixed = _delete_unsupported(all_pts, rods, fixed)
     all_pts, rods, fixed = _enforce_min_degree(all_pts, rods, fixed, min_deg=2)
     return all_pts, rods
