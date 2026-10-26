@@ -58,6 +58,105 @@ def _rod_color(d: np.ndarray) -> np.ndarray:
     return np.array([int(round(c[0])), int(round(c[1])), int(round(c[2])), 255], dtype=np.uint8)
 
 
+def _clip_convex_halfspace(
+    mesh: trimesh.Trimesh, origin: np.ndarray, normal: np.ndarray, tol: float = 1e-7
+) -> trimesh.Trimesh | None:
+    """Clip a *convex* mesh to the half-space ``(x − origin) · normal ≤ 0``, capping the cut.
+
+    Vertices are shared (indexed and snapped to 1e-6 mm), so the cap closes exactly onto the
+    clipped triangles — the result stays a closed, solid shell rather than a leaky triangle
+    soup.
+    """
+    from scipy.spatial import ConvexHull
+
+    v = np.asarray(mesh.vertices, dtype=float)
+    f = np.asarray(mesh.faces, dtype=int)
+    if len(v) == 0 or len(f) == 0:
+        return None
+    d = (v - origin) @ normal
+    if d.max() <= tol:                 # already inside
+        return mesh
+    if d.min() > -tol:                 # entirely outside
+        return None
+
+    verts: list[np.ndarray] = []
+    index: dict[tuple[float, float, float], int] = {}
+
+    def vid(p: np.ndarray) -> int:
+        key = (round(float(p[0]), 6), round(float(p[1]), 6), round(float(p[2]), 6))
+        i = index.get(key)
+        if i is None:
+            i = len(verts)
+            index[key] = i
+            verts.append(np.array(key, dtype=float))
+        return i
+
+    faces: list[tuple[int, int, int]] = []
+
+    def add_face(a: int, b: int, c: int) -> None:
+        if a != b and b != c and a != c:
+            faces.append((a, b, c))
+
+    cut_ids: list[int] = []
+    for tri in f:
+        dt = d[tri]
+        inside = dt <= tol
+        if inside.all():
+            add_face(vid(v[tri[0]]), vid(v[tri[1]]), vid(v[tri[2]]))
+            continue
+        if not inside.any():
+            continue
+        pts: list[np.ndarray] = []
+        for k in range(3):
+            k2 = (k + 1) % 3
+            if inside[k]:
+                pts.append(v[tri[k]])
+            if inside[k] != inside[k2]:
+                t = float(dt[k] / (dt[k] - dt[k2]))
+                pts.append(v[tri[k]] + t * (v[tri[k2]] - v[tri[k]]))
+        ids = [vid(p) for p in pts]
+        for k in range(1, len(pts) - 1):
+            add_face(ids[0], ids[k], ids[k + 1])
+        for i in ids:                    # every cut vertex lies on the plane
+            if abs(float((verts[i] - origin) @ normal)) <= 1e-6:
+                cut_ids.append(i)
+
+    # cap the cross-section (a convex polygon) with a fan from its centroid. Use *all* cut
+    # points, ordered by angle: the convex hull alone would drop collinear edge points and
+    # leave T-junction cracks.
+    if len(cut_ids) >= 3:
+        uniq = sorted(set(cut_ids))
+        pts = np.asarray([verts[i] for i in uniq])
+        helper = np.array([1.0, 0.0, 0.0])
+        if abs(float(normal @ helper)) > 0.9:
+            helper = np.array([0.0, 1.0, 0.0])
+        u = np.cross(normal, helper)
+        u /= np.linalg.norm(u)
+        w = np.cross(normal, u)
+        centre = pts.mean(axis=0)
+        rel = pts - centre
+        ang = np.arctan2(rel @ w, rel @ u)
+        order = np.argsort(ang)
+        ring = [uniq[int(k)] for k in order]
+        # shoelace area in the plane; skip a degenerate (tangent) cross-section
+        pa = np.stack([(verts[i] - centre) @ u for i in ring])
+        pb = np.stack([(verts[i] - centre) @ w for i in ring])
+        area2 = float(np.abs(np.dot(pa, np.roll(pb, -1)) - np.dot(pb, np.roll(pa, -1))))
+        if area2 > 1e-9 and len(ring) >= 3:
+            cid = vid(centre)
+            for i in range(len(ring)):
+                a, b = ring[i], ring[(i + 1) % len(ring)]
+                pp, qq = verts[a], verts[b]
+                if np.cross(pp - verts[cid], qq - verts[cid]) @ normal < 0.0:
+                    add_face(cid, b, a)
+                else:
+                    add_face(cid, a, b)
+
+    if not faces:
+        return None
+    return trimesh.Trimesh(vertices=np.asarray(verts), faces=np.asarray(faces), process=False)
+
+
 def build_frame_mesh(
     nodes: np.ndarray,
     edges: np.ndarray,
@@ -66,6 +165,9 @@ def build_frame_mesh(
     rod_sections: int = 12,
     joint_count: tuple[int, int] = (6, 6),
     color_by_direction: bool = False,
+    clip_planes: tuple[np.ndarray, np.ndarray] | None = None,
+    clip_base_z: float | None = None,
+    clip_rods: bool = False,
 ) -> trimesh.Trimesh:
     """Thicken a node+edge frame into a single mesh.
 
@@ -76,10 +178,34 @@ def build_frame_mesh(
     If ``color_by_direction`` is True, rods are vertex-coloured by their angle from
     horizontal (green=steep, orange=horizontal, red=shallow) and joints grey — bake this
     into a PLY export for the viewer.
+
+    ``clip_planes = (normals, centers)`` trims only the **joints** against the convex
+    polytope's faces, so the part of each node that sticks out of a face is cut off flush
+    while the rods stay whole, solid cylinders. ``clip_base_z`` also cuts a flat base plane
+    (used for vertex-down solids whose lowest feature is a single point); that plane is
+    applied to rods as well, since the converging rods must be truncated to form the base.
+    ``clip_rods=True`` additionally applies ``clip_planes`` to rods.
     """
     joint_color = np.array([154, 163, 178, 255], dtype=np.uint8)
 
-    def _paint(mesh: trimesh.Trimesh, color: np.ndarray) -> trimesh.Trimesh:
+    joint_planes: list[tuple[np.ndarray, np.ndarray]] = []
+    rod_planes: list[tuple[np.ndarray, np.ndarray]] = []
+    if clip_planes is not None:
+        pn, pc = np.asarray(clip_planes[0], dtype=float), np.asarray(clip_planes[1], dtype=float)
+        joint_planes.extend(zip(pn, pc))
+        if clip_rods:
+            rod_planes.extend(zip(pn, pc))
+    if clip_base_z is not None:
+        base = (np.array([0.0, 0.0, -1.0]), np.array([0.0, 0.0, float(clip_base_z)]))
+        joint_planes.append(base)
+        rod_planes.append(base)
+
+    def _finish(mesh: trimesh.Trimesh, color: np.ndarray,
+                planes: list[tuple[np.ndarray, np.ndarray]]) -> trimesh.Trimesh | None:
+        for n, c in planes:
+            mesh = _clip_convex_halfspace(mesh, c, n)
+            if mesh is None or len(mesh.faces) == 0:
+                return None
         if color_by_direction:
             mesh.visual.vertex_colors = np.tile(color, (len(mesh.vertices), 1))
         return mesh
@@ -90,11 +216,15 @@ def build_frame_mesh(
         if np.linalg.norm(seg[1] - seg[0]) < 1e-9:
             continue  # skip degenerate (zero-length) edges
         cyl = trimesh.creation.cylinder(radius=rod_radius, segment=seg, sections=rod_sections)
-        parts.append(_paint(cyl, _rod_color(seg[1] - seg[0])))
+        part = _finish(cyl, _rod_color(seg[1] - seg[0]), rod_planes)
+        if part is not None:
+            parts.append(part)
     for p in np.asarray(nodes, dtype=float):
         s = trimesh.creation.uv_sphere(radius=joint_radius, count=joint_count)
         s.apply_translation(p)
-        parts.append(_paint(s, joint_color))
+        part = _finish(s, joint_color, joint_planes)
+        if part is not None:
+            parts.append(part)
     return trimesh.util.concatenate(parts)
 
 
