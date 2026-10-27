@@ -829,13 +829,38 @@ def _rod_is_clear(pos, rods, i, j, clearance=CLEARANCE):
     return True
 
 
-def _best_extra_rod(pos, rods, i, deg, upper_only=False, eps=1e-6, min_slope=0.0):
+def _rod_printable(p, q, z_floor):
+    """True if the rod ``p``–``q`` obeys the angle rule (never negotiable).
+
+    Printable means steep (elevation ≥ 48° at *any* length) or a legal horizontal bridge
+    (elevation ≤ 5° and length ≤ BRIDGE_MAX); rods lying on the build plate are exempt.
+    The rod length window (L_MIN/L_MAX) is deliberately *not* checked here: forced rods may
+    break it, but never the angle rule."""
+    d = np.asarray(q, dtype=float) - np.asarray(p, dtype=float)
+    L = float(np.linalg.norm(d))
+    if L <= 1e-9:
+        return False
+    elev = abs(float(d[2])) / L
+    if elev >= SIN48:
+        return True                                   # steep: any length
+    if elev <= SIN5 and L <= BRIDGE_MAX:
+        return True                                   # legal horizontal bridge
+    return p[2] <= z_floor + 1e-6 and q[2] <= z_floor + 1e-6   # flat on the build plate
+
+
+def _best_extra_rod(pos, rods, i, deg, upper_only=False, eps=1e-6, min_slope=0.0,
+                    require_printable=True):
     """Best node to link to ``i``: prefer deg < DEG_MAX, then clearance, then nearest.
 
-    The rod length rule (L_MIN/L_MAX) is deliberately ignored; clearance is only a
-    preference and is dropped when nothing clear exists. Returns None if no legal
-    target exists (self, coincident, duplicate or — with ``upper_only`` — not above)."""
+    The rod length window (L_MIN/L_MAX) is deliberately ignored — a forced rod may be
+    shorter than L_MIN or longer than L_MAX — but the 48° angle rule is enforced: with
+    ``require_printable`` (the default) any candidate whose rod is not steep (≥48°, any
+    length), a legal horizontal bridge (≤5° and ≤BRIDGE_MAX) or flat on the build plate is
+    dropped. Clearance is only a preference and is dropped when nothing clear exists.
+    Returns None if no legal target exists (self, coincident, duplicate, unprintable or —
+    with ``upper_only`` — not above)."""
     d = np.linalg.norm(pos - pos[i], axis=1)
+    z_floor = float(pos[:, 2].min())
     edges = {(min(int(a), int(b)), max(int(a), int(b))) for a, b in rods}
     groups = ([], [])   # [room to grow, already at DEG_MAX]
     for j in np.argsort(d):
@@ -844,8 +869,10 @@ def _best_extra_rod(pos, rods, i, deg, upper_only=False, eps=1e-6, min_slope=0.0
             continue
         if upper_only and not (pos[j, 2] > pos[i, 2] + eps):
             continue
-        if min_slope > 0.0 and (pos[j, 2] - pos[i, 2]) / d[j] <= min_slope:
+        if min_slope > 0.0 and (pos[j, 2] - pos[i, 2]) / d[j] < min_slope:
             continue  # too flat: a later horizontal snap would erase the upward link
+        if require_printable and not _rod_printable(pos[i], pos[j], z_floor):
+            continue  # unprintable rod: the angle rule is never negotiable
         if (min(i, j), max(i, j)) in edges:
             continue
         groups[0 if deg[j] < DEG_MAX else 1].append(j)
@@ -861,10 +888,12 @@ def _best_extra_rod(pos, rods, i, deg, upper_only=False, eps=1e-6, min_slope=0.0
 def _force_min_degree(pos, rods, fixed, min_deg=3):
     """Top up every node below ``min_deg`` with one extra rod.
 
-    Rod length limits are deliberately ignored (a forced rod may be shorter than L_MIN
-    or longer than L_MAX); clearance is preferred but dropped as a last resort, so this
-    never leaves a legal target unused. Fixed (frame) nodes are topped up too. Returns
-    the updated ``rods``; ``pos`` and ``fixed`` are unchanged."""
+    The rod length window is deliberately ignored (a forced rod may be shorter than L_MIN
+    or longer than L_MAX) but the 48° angle rule is not: every added rod must be printable
+    (steep ≥48° at any length, a legal horizontal bridge, or flat on the plate). Clearance
+    is preferred but dropped as a last resort. A node stays below ``min_deg`` when no
+    printable target exists — an unprintable rod is never added. Fixed (frame) nodes are
+    topped up too. Returns the updated ``rods``; ``pos`` and ``fixed`` are unchanged."""
     pos = np.asarray(pos, dtype=float)
     rods = [tuple(map(int, e)) for e in np.asarray(rods, dtype=int).reshape(-1, 2)]
     deg = np.zeros(len(pos), dtype=int)
@@ -889,11 +918,13 @@ def _force_min_degree(pos, rods, fixed, min_deg=3):
 
 
 def _force_upward_links(pos, rods, zmax, eps=1e-6):
-    """Give every node below the top plane a neighbour strictly above it.
+    """Give every node below the top plane a steep (≥48°) neighbour strictly above it.
 
-    Two sweeps so links added in the first sweep count towards later nodes. Degree caps
-    and the rod length rule are deliberately broken when needed; clearance is preferred
-    but dropped as a last resort. Nodes on the top plane (z >= zmax - eps) are exempt.
+    Two sweeps so links added in the first sweep count towards later nodes. Degree caps and
+    the rod length window are deliberately broken when needed, but the 48° angle rule is
+    not: the upward rod must be steep at any length, so no shallow fallback is attempted —
+    a node with no printable upward candidate is skipped. Clearance is preferred but
+    dropped as a last resort. Nodes on the top plane (z >= zmax - eps) are exempt.
     Returns the updated ``rods``."""
     pos = np.asarray(pos, dtype=float)
     rods = [tuple(map(int, e)) for e in np.asarray(rods, dtype=int).reshape(-1, 2)]
@@ -910,11 +941,9 @@ def _force_upward_links(pos, rods, zmax, eps=1e-6):
             )
             if has_up:
                 continue
-            # prefer a clearly steep upward rod, so `_snap_horizontal` (which runs before
-            # this pass) can never have flattened it into a non-upward edge
-            j = _best_extra_rod(pos, rods, i, deg, upper_only=True, eps=eps, min_slope=SIN5)
-            if j is None:
-                j = _best_extra_rod(pos, rods, i, deg, upper_only=True, eps=eps)
+            # hard 48° requirement (no fallback): a shallow upward rod would be both
+            # unprintable and erasable by a later horizontal snap, so skip instead
+            j = _best_extra_rod(pos, rods, i, deg, upper_only=True, eps=eps, min_slope=SIN48)
             if j is None:
                 continue
             rods.append((min(i, j), max(i, j)))
@@ -1141,7 +1170,8 @@ def printable_lattice(
     all_pts, rods, fixed = _enforce_min_degree(all_pts, rods, fixed, min_deg=2)
     rods = _force_min_degree(all_pts, rods, fixed, min_deg=3)
     # snap first (a snap can re-classify other incident rods), then add upward links;
-    # the upward pass only picks rods steeper than SIN5, so they survive classification
+    # the upward pass only picks printable rods (≥48° or a legal bridge), so they survive
+    # classification and no unprintable rod is ever introduced
     for _ in range(3):
         snapped = _snap_horizontal(all_pts, rods)
         if np.array_equal(snapped, all_pts):
