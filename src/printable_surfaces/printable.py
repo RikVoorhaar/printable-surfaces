@@ -812,6 +812,159 @@ def _enforce_min_degree(pos, rods, fixed, min_deg=2):
     return pos, rods, fixed
 
 
+def _rod_is_clear(pos, rods, i, j, clearance=CLEARANCE):
+    """True if rod (i, j) keeps node clearance and rod-rod clearance from ``rods``."""
+    p, q = pos[i], pos[j]
+    for k in range(len(pos)):
+        if k == i or k == j:
+            continue
+        if point_segment_dist(pos[k], p, q) < NODE_CLEARANCE:
+            return False
+    for a, b in rods:
+        a, b = int(a), int(b)
+        if a == i or a == j or b == i or b == j:
+            continue
+        if segment_segment_dist(p, q, pos[a], pos[b]) < clearance:
+            return False
+    return True
+
+
+def _best_extra_rod(pos, rods, i, deg, upper_only=False, eps=1e-6, min_slope=0.0):
+    """Best node to link to ``i``: prefer deg < DEG_MAX, then clearance, then nearest.
+
+    The rod length rule (L_MIN/L_MAX) is deliberately ignored; clearance is only a
+    preference and is dropped when nothing clear exists. Returns None if no legal
+    target exists (self, coincident, duplicate or — with ``upper_only`` — not above)."""
+    d = np.linalg.norm(pos - pos[i], axis=1)
+    edges = {(min(int(a), int(b)), max(int(a), int(b))) for a, b in rods}
+    groups = ([], [])   # [room to grow, already at DEG_MAX]
+    for j in np.argsort(d):
+        j = int(j)
+        if j == i or d[j] <= 1e-9:
+            continue
+        if upper_only and not (pos[j, 2] > pos[i, 2] + eps):
+            continue
+        if min_slope > 0.0 and (pos[j, 2] - pos[i, 2]) / d[j] <= min_slope:
+            continue  # too flat: a later horizontal snap would erase the upward link
+        if (min(i, j), max(i, j)) in edges:
+            continue
+        groups[0 if deg[j] < DEG_MAX else 1].append(j)
+    for group in groups:
+        for j in group:
+            if _rod_is_clear(pos, rods, i, j):
+                return j
+        if group:
+            return group[0]  # last resort: nearest, clearance ignored
+    return None
+
+
+def _force_min_degree(pos, rods, fixed, min_deg=3):
+    """Top up every node below ``min_deg`` with one extra rod.
+
+    Rod length limits are deliberately ignored (a forced rod may be shorter than L_MIN
+    or longer than L_MAX); clearance is preferred but dropped as a last resort, so this
+    never leaves a legal target unused. Fixed (frame) nodes are topped up too. Returns
+    the updated ``rods``; ``pos`` and ``fixed`` are unchanged."""
+    pos = np.asarray(pos, dtype=float)
+    rods = [tuple(map(int, e)) for e in np.asarray(rods, dtype=int).reshape(-1, 2)]
+    deg = np.zeros(len(pos), dtype=int)
+    for a, b in rods:
+        deg[a] += 1; deg[b] += 1
+    while True:
+        added = False
+        for i in np.where(deg < min_deg)[0]:
+            i = int(i)
+            if deg[i] >= min_deg:
+                continue  # topped up as a target earlier in this sweep
+            j = _best_extra_rod(pos, rods, i, deg)
+            if j is None:
+                continue
+            rods.append((min(i, j), max(i, j)))
+            deg[i] += 1; deg[j] += 1
+            added = True
+        if not added:
+            break
+    rods = np.asarray(rods, dtype=int).reshape(-1, 2)
+    return np.unique(np.sort(rods, axis=1), axis=0)
+
+
+def _force_upward_links(pos, rods, zmax, eps=1e-6):
+    """Give every node below the top plane a neighbour strictly above it.
+
+    Two sweeps so links added in the first sweep count towards later nodes. Degree caps
+    and the rod length rule are deliberately broken when needed; clearance is preferred
+    but dropped as a last resort. Nodes on the top plane (z >= zmax - eps) are exempt.
+    Returns the updated ``rods``."""
+    pos = np.asarray(pos, dtype=float)
+    rods = [tuple(map(int, e)) for e in np.asarray(rods, dtype=int).reshape(-1, 2)]
+    deg = np.zeros(len(pos), dtype=int)
+    for a, b in rods:
+        deg[a] += 1; deg[b] += 1
+    for _ in range(2):
+        for i in np.where(pos[:, 2] < zmax - eps)[0]:
+            i = int(i)
+            has_up = any(
+                (a == i and pos[b, 2] > pos[i, 2] + eps)
+                or (b == i and pos[a, 2] > pos[i, 2] + eps)
+                for a, b in rods
+            )
+            if has_up:
+                continue
+            # prefer a clearly steep upward rod, so `_snap_horizontal` (which runs before
+            # this pass) can never have flattened it into a non-upward edge
+            j = _best_extra_rod(pos, rods, i, deg, upper_only=True, eps=eps, min_slope=SIN5)
+            if j is None:
+                j = _best_extra_rod(pos, rods, i, deg, upper_only=True, eps=eps)
+            if j is None:
+                continue
+            rods.append((min(i, j), max(i, j)))
+            deg[i] += 1; deg[j] += 1
+    rods = np.asarray(rods, dtype=int).reshape(-1, 2)
+    return np.unique(np.sort(rods, axis=1), axis=0)
+
+
+def _snap_horizontal(pos, rods, sin_tol=SIN5):
+    """Make every rod classified as horizontal exactly horizontal (dz == 0).
+
+    Near-horizontal rods are grouped into connected components; each component's node
+    heights are set to the component mean so every edge in it has dz exactly 0.
+    """
+    pos = np.asarray(pos, dtype=float).copy()
+    rods = np.asarray(rods, dtype=int)
+    if len(pos) == 0 or len(rods) == 0:
+        return pos
+
+    d = pos[rods[:, 1]] - pos[rods[:, 0]]
+    L = np.linalg.norm(d, axis=1)
+    horiz = (L > 1e-9) & (np.abs(d[:, 2]) <= sin_tol * L)
+    edges = rods[horiz]
+
+    # union-find over the nodes touched by near-horizontal rods
+    parent = np.arange(len(pos))
+
+    def find(a):
+        while parent[a] != a:
+            parent[a] = parent[parent[a]]
+            a = parent[a]
+        return a
+
+    for a, b in edges:
+        ra, rb = find(int(a)), find(int(b))
+        if ra != rb:
+            parent[rb] = ra
+
+    groups: dict[int, list[int]] = {}
+    for nd in np.unique(edges):
+        groups.setdefault(find(int(nd)), []).append(int(nd))
+
+    for nodes in groups.values():
+        z = pos[nodes, 2]
+        if float(z.max() - z.min()) > 2.0:
+            continue  # near-horizontal rods chained across a real slope: don't flatten
+        pos[nodes, 2] = float(z.mean())  # identical float => every component dz exactly 0
+    return pos
+
+
 def printable_lattice(
     vertices, edges, faces,
     spacing=12.0, n_face=10, n_interior=150, seed=1,
@@ -986,4 +1139,13 @@ def printable_lattice(
                                             post_nodes=post_nodes)
     all_pts, rods, fixed = _delete_unsupported(all_pts, rods, fixed)
     all_pts, rods, fixed = _enforce_min_degree(all_pts, rods, fixed, min_deg=2)
+    rods = _force_min_degree(all_pts, rods, fixed, min_deg=3)
+    # snap first (a snap can re-classify other incident rods), then add upward links;
+    # the upward pass only picks rods steeper than SIN5, so they survive classification
+    for _ in range(3):
+        snapped = _snap_horizontal(all_pts, rods)
+        if np.array_equal(snapped, all_pts):
+            break
+        all_pts = snapped
+    rods = _force_upward_links(all_pts, rods, float(vertices[:, 2].max()))
     return all_pts, rods

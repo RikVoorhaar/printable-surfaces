@@ -6,49 +6,49 @@
         {
           "path": "output/lattice/minstretch_v2/cube_T5_S2.ply",
           "kind": "ply",
-          "label": "cube \u00b7 rod angle \u00b7 \u00d81.8 \u00b7 42.1 g",
+          "label": "cube \u00b7 rod angle \u00b7 \u00d81.8 \u00b7 42.7 g",
           "stage": "lattice"
         },
         {
           "path": "output/lattice/minstretch_v2/cube_T5_S2.stl",
           "kind": "stl",
-          "label": "cube \u00b7 rod \u00d81.8 \u00b7 58\u00d758\u00d758 mm \u00b7 42.1 g",
+          "label": "cube \u00b7 rod \u00d81.8 \u00b7 58\u00d758\u00d758 mm \u00b7 42.7 g",
           "stage": "lattice"
         },
         {
           "path": "output/lattice/minstretch_v2/tetrahedron_T5_S2.ply",
           "kind": "ply",
-          "label": "tetrahedron \u00b7 rod angle \u00b7 \u00d81.8 \u00b7 28.0 g",
+          "label": "tetrahedron \u00b7 rod angle \u00b7 \u00d81.8 \u00b7 28.4 g",
           "stage": "lattice"
         },
         {
           "path": "output/lattice/minstretch_v2/tetrahedron_T5_S2.stl",
           "kind": "stl",
-          "label": "tetrahedron \u00b7 rod \u00d81.8 \u00b7 115\u00d7115\u00d797 mm \u00b7 28.0 g",
+          "label": "tetrahedron \u00b7 rod \u00d81.8 \u00b7 115\u00d7115\u00d797 mm \u00b7 28.4 g",
           "stage": "lattice"
         },
         {
           "path": "output/lattice/minstretch_v2/octahedron_T5_S2.ply",
           "kind": "ply",
-          "label": "octahedron \u00b7 rod angle \u00b7 \u00d81.8 \u00b7 39.3 g",
+          "label": "octahedron \u00b7 rod angle \u00b7 \u00d81.8 \u00b7 39.9 g",
           "stage": "lattice"
         },
         {
           "path": "output/lattice/minstretch_v2/octahedron_T5_S2.stl",
           "kind": "stl",
-          "label": "octahedron \u00b7 rod \u00d81.8 \u00b7 84\u00d784\u00d761 mm \u00b7 39.3 g",
+          "label": "octahedron \u00b7 rod \u00d81.8 \u00b7 84\u00d784\u00d761 mm \u00b7 39.9 g",
           "stage": "lattice"
         },
         {
           "path": "output/lattice/minstretch_v2/icosahedron_T5_S2.ply",
           "kind": "ply",
-          "label": "icosahedron \u00b7 rod angle \u00b7 \u00d81.8 \u00b7 29.2 g",
+          "label": "icosahedron \u00b7 rod angle \u00b7 \u00d81.8 \u00b7 30.0 g",
           "stage": "lattice"
         },
         {
           "path": "output/lattice/minstretch_v2/icosahedron_T5_S2.stl",
           "kind": "stl",
-          "label": "icosahedron \u00b7 rod \u00d81.8 \u00b7 68\u00d771\u00d7120 mm \u00b7 29.2 g",
+          "label": "icosahedron \u00b7 rod \u00d81.8 \u00b7 68\u00d771\u00d7120 mm \u00b7 30.0 g",
           "stage": "lattice"
         },
         {
