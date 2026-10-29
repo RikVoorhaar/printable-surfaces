@@ -593,6 +593,8 @@
         </ul>
       </div>
     </details>
+  </article>
+
   <h2>Pivot: Platonic solids, optionally stretched (2026-10-21)</h2>
   <div class="decisions">
     <p style="margin-top:0;color:var(--muted);">
@@ -901,10 +903,227 @@
     </details>
   </article>
 
+  <article class="phase">
+    <div class="head">
+      <span class="num">Phase 19</span>
+      <span class="title">Top-face / ring posts folded into the MIP</span>
+      <span class="badge done">✓ Done</span>
+    </div>
+    <div class="deliverable">
+      <h4>Deliverable</h4>
+      <ul>
+        <li><strong>Diagnosis.</strong> Horizontal-in-air support was a post-hoc “steep post to the
+        nearest node below” pass (<code>_add_bridge_posts</code>). It ignored the global clearance and
+        degree budget, the posts converged, and ~19 of 62 top-face nodes (cube) still had no parent.
+        The method doc is explicit — <em>“do NOT use a rod to the nearest node below post-fix”</em> —
+        and says to fold bridge posts into the lattice as <strong>fixed parent requirements</strong>.</li>
+        <li><strong>Refactor.</strong> The set of nodes that must have a parent (<code>post_nodes</code>:
+        top-face scatter nodes plus the horizontal-ring bridge intermediates) is passed into the MIP
+        (<code>select_rods(…, post_nodes=…)</code>), which gives each the same ≥1/≥2 downward-rod
+        constraints as any other non-frame node — solved jointly with clearance and degree. The
+        relaxation anchor also pulls interior nodes under these nodes, so the parents exist where they
+        are needed.</li>
+        <li>Removed <code>_add_bridge_posts</code>, the <code>POST_DEG_MAX</code> workaround and the
+        nearest-below fallback.</li>
+        <li><strong>Viewer.</strong> The STL path coloured each <em>triangle</em> by its normal, so a
+        rod's cylinder facets got different colours (half-red/half-green rods). The PLY bakes one
+        colour per rod from its elevation and is now registered next to the STL; a per-artifact
+        download button was added too.</li>
+      </ul>
+    </div>
+    <details class="notes" open>
+      <summary>Outcome, and what it exposed</summary>
+      <div class="body">
+        <p style="color:var(--muted);margin-bottom:0;">
+          Icosahedron ring nodes improved from ~12 to 4 unsupported and the tetrahedron went to 0.
+          But the flat ceiling exposed two intrinsic problems the MIP cannot fix by itself:
+          (1) Delaunay hatching on the top face produces <strong>horizontal rods of 10–21&nbsp;mm</strong>,
+          longer than the 10&nbsp;mm bridge limit; (2) a ceiling filled at ≤10&nbsp;mm spacing needs
+          ≤10&nbsp;mm-spaced posts, which at a steep angle still converge — the “organic vs columns”
+          trade-off. Both are recorded as open limitations, not implementation bugs.
+        </p>
+      </div>
+    </details>
+  </article>
+
+  <article class="phase">
+    <div class="head">
+      <span class="num">Phase 20</span>
+      <span class="title">Plate contact, solid caps, thicker rods</span>
+      <span class="badge done">✓ Done</span>
+    </div>
+    <div class="deliverable">
+      <h4>Deliverable</h4>
+      <ul>
+        <li><strong>Print finding.</strong> On the printed tetrahedron the first two layers were only
+        node cross-sections: the joint spheres (Ø1.8) reached 0.9&nbsp;mm below the bottom face while
+        the rods (Ø1.2) reached only 0.6&nbsp;mm, so after the slicer drops the mesh onto the bed the
+        rods started ~0.3&nbsp;mm late.</li>
+        <li><strong>Fix (after one rejected attempt).</strong> Clipping the whole frame at the face
+        planes cut every bottom rod into a half-cylinder, so the rule became: <em>cut only the joint
+        caps</em>, at face planes <strong>offset outward by half a rod diameter</strong>. Face rods are
+        tangent to that plane and stay whole; only the joint spheres (which bulge past the rods) are
+        trimmed. This requires joints larger than rods, so the 1.5 joint:rod ratio was restored at the
+        new thickness.</li>
+        <li><strong>Thickness.</strong> Rods Ø1.2 → <strong>Ø1.8&nbsp;mm</strong> (+50&nbsp;%, user
+        request — the thin rods were hard to print in practice), joints Ø1.8 →
+        <strong>Ø2.7&nbsp;mm</strong>.</li>
+        <li><strong>Solid, not hollow.</strong> The first clipper rebuilt cut parts as an unindexed
+        triangle soup: the cut caps had hairline cracks, so the slicer saw open shells (“hollow rods”).
+        The clipper now snaps vertices to a shared 1e-6 grid and closes each cut with an angle-ordered
+        fan cap. The assembled frame is 629 closed bodies with every edge shared exactly twice.</li>
+        <li><strong>Base.</strong> The vertex-down icosahedron gets a 2&nbsp;mm flat base cut (a
+        one-point base cannot print); the four face-down solids sit on a real face.</li>
+        <li>New folder <code>minstretch_v2</code> / dashboard folder
+        <code>Platonic solids · min-stretch v2 (Ø1.8)</code>; older versions untouched.</li>
+      </ul>
+    </div>
+    <details class="notes" open>
+      <summary>T5×S2 — Ø1.8 rod / Ø2.7 joint, normalized to 200&nbsp;cm³ shape volume</summary>
+      <div class="body">
+        <table style="border-collapse:collapse;font-size:.92em;color:var(--text);">
+          <thead><tr style="color:var(--muted);text-align:left;">
+            <th style="padding:.2rem .8rem .2rem 0;">Solid</th><th style="padding:.2rem .6rem;">orientation</th>
+            <th style="padding:.2rem .6rem;">W×D×H (mm)</th>
+            <th style="padding:.2rem .6rem;">nodes</th><th style="padding:.2rem .6rem;">rods</th>
+          </tr></thead>
+          <tbody>
+            <tr><td>cube</td><td>face down</td><td>60×60×60</td><td>305</td><td>986</td></tr>
+            <tr><td>tetrahedron</td><td>face down</td><td>118×118×100</td><td>165</td><td>475</td></tr>
+            <tr><td>octahedron</td><td>face down</td><td>86×86×63</td><td>306</td><td>903</td></tr>
+            <tr><td>icosahedron</td><td>vertex down</td><td>70×73×120</td><td>373</td><td>845</td></tr>
+            <tr><td>dodecahedron</td><td>face down</td><td>68×64×104</td><td>407</td><td>1102</td></tr>
+          </tbody>
+        </table>
+        <p style="color:var(--muted);margin-bottom:0;">
+          First-layer footprint (material within 0.2&nbsp;mm of the bed): cube 1100, tetrahedron 1532,
+          octahedron 889, dodecahedron 539, icosahedron 19&nbsp;mm². Every mesh sits at
+          <code>z&nbsp;=&nbsp;0</code>. Material table is emitted by <code>phase16.py</code>.
+        </p>
+      </div>
+    </details>
+  </article>
+
+  <article class="phase">
+    <div class="head">
+      <span class="num">Phase 21</span>
+      <span class="title">Structural post-optimization rules (exact horizontals, degree 3, upward links, angle)</span>
+      <span class="badge done">✓ Done</span>
+    </div>
+    <div class="deliverable">
+      <h4>Deliverable</h4>
+      <ul>
+        <li><strong>Exact horizontals.</strong> A rod classified horizontal
+        (<code>|dz|/L ≤ sin 5°</code>) must be <em>exactly</em> horizontal. <code>_snap_horizontal</code>
+        groups near-horizontal rods into components and assigns each component one shared z (the
+        component mean), iterated; components with a z-span &gt; 2&nbsp;mm are left alone (that would
+        be a real slope, not a horizontal plane).</li>
+        <li><strong>Minimum degree 3.</strong> Weak degree-2 points are topped up with one extra rod,
+        deliberately allowed to break the <code>L_MIN</code>/<code>L_MAX</code> window.</li>
+        <li><strong>Upward link.</strong> Every node below the top plane must have a neighbour above
+        it; the degree cap may be broken for this.</li>
+        <li><strong>Ordering bug found by verification.</strong> With the snap running last it
+        flattened the shallow upward links just added (4 nodes on the octahedron) and destroyed the
+        property. Final order: force degree → snap (iterated) → upward links.</li>
+        <li><strong>The angle rule is absolute.</strong> The shallow fallback was rejected: a forced
+        rod may break length and degree limits but <em>never</em> the 48° rule. Every forced rod must
+        be steep (≥48°, any length) or a legal horizontal bridge (≤10&nbsp;mm); if no legal candidate
+        exists, the node is skipped rather than connected unprintably.</li>
+        <li><code>AGENTS.md</code> added: when to delegate to subagents (bounded work that needs many
+        tool calls or long shell runs), model routing (deepseek for implementation, GLM flash for
+        regeneration), and the rule that a subagent must run long jobs in the foreground and may not
+        exit until finished.</li>
+      </ul>
+    </div>
+    <details class="notes" open>
+      <summary>Verification — all five, final regeneration</summary>
+      <div class="body">
+        <table style="border-collapse:collapse;font-size:.92em;color:var(--text);">
+          <thead><tr style="color:var(--muted);text-align:left;">
+            <th style="padding:.2rem .8rem .2rem 0;">Solid</th>
+            <th style="padding:.2rem .6rem;">band rods<br>(5°–48°)</th>
+            <th style="padding:.2rem .6rem;">min deg</th><th style="padding:.2rem .6rem;">deg≤2</th>
+            <th style="padding:.2rem .6rem;">horiz dz≠0</th><th style="padding:.2rem .6rem;">dup/self</th>
+            <th style="padding:.2rem .6rem;">nodes without<br>printable up-link</th>
+          </tr></thead>
+          <tbody>
+            <tr><td>cube</td><td>0</td><td>3</td><td>0</td><td>0</td><td>0</td><td>14</td></tr>
+            <tr><td>tetrahedron</td><td>0</td><td>3</td><td>0</td><td>0</td><td>0</td><td>0</td></tr>
+            <tr><td>octahedron</td><td>0</td><td>3</td><td>0</td><td>0</td><td>0</td><td>4</td></tr>
+            <tr><td>icosahedron</td><td>0</td><td>3</td><td>0</td><td>0</td><td>0</td><td>0</td></tr>
+            <tr><td>dodecahedron</td><td>0</td><td>3</td><td>0</td><td>0</td><td>0</td><td>0</td></tr>
+          </tbody>
+        </table>
+        <p style="color:var(--muted);">
+          “Band rods” are rods with <code>sin 5° &lt; slope &lt; sin 48°</code> — exactly the
+          unprintable angled rods the forced passes used to create. Now zero everywhere. Remaining
+          issues, both geometric rather than code bugs:
+        </p>
+        <ul style="color:var(--muted);margin-bottom:0;">
+          <li><strong>14 cube / 4 octa nodes have no <em>printable</em> upward link.</strong> They sit
+          5.6&nbsp;mm below the ceiling, where the maximum possible upward slope to any node is ≤45°.
+          The fix belongs in the relaxation/interior sampling (place an interior node under each
+          ceiling node), not in the forced pass.</li>
+          <li><strong>Top-face hatching rods &gt; 10&nbsp;mm</strong> (cube 57, octahedron 32,
+          dodecahedron 35) are flat horizontal spans longer than the bridge limit. Subdividing them
+          adds ceiling nodes and therefore more converging posts — the open ceiling problem from
+          Phase 19.</li>
+        </ul>
+      </div>
+    </details>
+  </article>
+
+  <h2>History — the twists and turns</h2>
+  <div class="decisions">
+    <p style="margin-top:0;color:var(--muted);">
+      A chronological arc of the decisions and reversals, for shaping the write-up.
+    </p>
+    <ol style="color:var(--muted);line-height:1.55;">
+      <li><strong>Sphere first.</strong> Cube-sphere parametrization, a surface frame, and interior
+      candidates (diamond, k-NN, Coulomb). Density and scale were tuned (13/21&nbsp;%, 60 →
+      100&nbsp;mm). It looked good, but printability had not been confronted.</li>
+      <li><strong>The real wall was support.</strong> Every rod must be steep or a short bridge;
+      the overhang/vertex-shadow theorem (<code>K ⊆ B ⊕ C_α</code>) turned this from a wiring problem
+      into a geometry problem. Nearest-neighbour wiring left up to 40&nbsp;% of rods unprintable.</li>
+      <li><strong>Theory doc v3.</strong> For convex polytopes, checking the edges suffices; a
+      vertical stretch, an orientation search and a height LP give the five Platonic solids with
+      minimal stretch. Face-down where easier, vertex-down where face-down would stretch more.</li>
+      <li><strong>The relaxation recipe.</strong> Perplexity's sliding-class method supplied the
+      machinery: node classes V/E/F↓/F↑/I, ψ support + anchor, constructive bottom-up start, an
+      integer program with slacks and clearance, and repair. It also warned against post-hoc
+      “nearest node below” posts — which the first implementation did anyway.</li>
+      <li><strong>Version matrix.</strong> T1–T4 thickness × S1–S4 scale on the rhombohedron to pick
+      a printable size; T4×S2 (Ø1.2) chosen, later revisited.</li>
+      <li><strong>Five solids.</strong> Polygon faces generalized (triangle/rhombus/pentagon);
+      horizontal belts and rings bridged into ≤10&nbsp;mm spans. Horizontal faces got explicit
+      treatment: a base lattice on the plate, and a top face treated as a ceiling.</li>
+      <li><strong>Post-hoc posts failed → folded into the MIP (Phase 19).</strong> The ceiling was the
+      hardest part: greedy posts converged and saturated the interior, so the parent requirement moved
+      into the integer program and the anchor. Icosahedron rings improved; the ceiling’s long
+      hatching rods and post convergence remained.</li>
+      <li><strong>A real print (Phase 20).</strong> The tetrahedron printed, but the first layers were
+      node-only: joints dipped below the plate while rods did not. The first fix (clip everything)
+      sliced rods in half and produced cracked caps that sliced hollow. The accepted fix clips only
+      joint caps at planes offset by half a rod diameter, keeps rods as whole solid cylinders, and
+      thickens them to Ø1.8.</li>
+      <li><strong>Structural hardening (Phase 21).</strong> Exact horizontals, minimum degree 3, an
+      upward link for every non-top node. Verification caught the snap/upward ordering conflict, and
+      the user then caught the deeper error: “above” is not enough — the link must lie inside the 48°
+      cone. Forced rods now never break the angle rule.</li>
+      <li><strong>Working method.</strong> Long generations and verifications moved to subagents after
+      several backgrounded jobs returned early; <code>AGENTS.md</code> now codifies when to delegate,
+      which model to use, and that a subagent must finish its foreground work before exiting.</li>
+    </ol>
+    <p style="margin-bottom:0;color:var(--muted);">
+      <strong>Still open:</strong> the ceiling gap (printable upward links / post convergence), the
+      &gt;10&nbsp;mm top-face hatching rods, and the resulting density-versus-organic tension.
+    </p>
+  </div>
+
 </main>
 
 <footer>
-  Living document · append, don't rewrite · last updated 2026-10-24 (phase 18: minimal-stretch + horizontal faces)
+  Living document · append, don't rewrite · last updated 2026-10-29 (phases 19–21 + history)
 </footer>
 </body>
 </html>

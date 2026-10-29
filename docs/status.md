@@ -1,59 +1,84 @@
 # Project status (compact)
 
 **Goal:** fill a convex polytope with a rod-and-node lattice that FDM-prints with zero support.
-Rods 1.2 mm, nodes 1.8 mm (chosen "slim" Ø), build direction +Z.
 
-**Printability rule:** rod printable iff within 48° of vertical (α=48°), or a horizontal bridge
-≤10 mm; rods lying on the build plate are exempt.
+**Printability rule:** a rod is printable iff its elevation is ≥ 48° (`SIN48`, any length), or it is
+a horizontal bridge ≤ 10 mm (`SIN5`); rods on the build plate are exempt. **The angle rule is never
+negotiable** — post-optimization may break length/degree limits, but never the 48° rule.
 
-## Solids (minimal-stretch orientation)
+## Current version — T5×S2
 
-Each solid is oriented with its **least-stretch** axis vertical: face-down where that's easier,
-vertex-down where face-down would need more stretch.
+Rods Ø1.8 mm (50 % thicker than T4's Ø1.2, which was fragile in practice), joints Ø2.7 mm (keeps
+the 1.5 rod:joint ratio). Normalized to 200 cm³ shape volume. Output in
+`output/lattice/minstretch_v2/`, dashboard folder `Platonic solids · min-stretch v2 (Ø1.8)`
+(STL for slicing, PLY for per-rod angle colouring). Older versions kept.
 
-| Solid | Orientation | Stretch | Horizontal faces |
-|---|---|---|---|
-| cube | face down | none | bottom (plate) + top (open) |
-| tetrahedron | face down | none | bottom (plate) |
-| octahedron | face down | none | bottom + top |
-| icosahedron | vertex down | tip-lift | 2 pentagon rings (bridged) |
-| dodecahedron | face down | ×1.93 | bottom + top |
+| Solid | Orientation | W×D×H (mm) | nodes | rods | base |
+|---|---|---|---|---|---|
+| cube | face down | 60×60×60 | 305 | 986 | face on plate |
+| tetrahedron | face down | 118×118×100 | 165 | 475 | face on plate |
+| octahedron | face down | 86×86×63 | 306 | 903 | face on plate |
+| icosahedron | vertex down (tip-lift) | 70×73×120 | 373 | 845 | 2 mm flat cut |
+| dodecahedron | face down ×1.93 | 68×64×104 | 407 | 1102 | face on plate |
 
-**Horizontal-face exceptions** (in `printable.py`): the bottom face is on the plate (its edges
-subdivide at ~spacing to provide parents, no posts); the top face is a horizontal ceiling left
-open (no face nodes, its edges become ≤10 mm bridges + posts).
+## Mesh
 
-## Chosen version — T4 (Ø1.2 rod), normalized to equal shape volume (200 cm³)
+- Frames are closed solid shells: each convex primitive is clipped with shared (1e-6-snapped)
+  vertices and an angle-ordered fan cap — no cracks, no hollow rods.
+- Only **joint caps** are clipped, at face planes offset outward by half a rod diameter; face rods
+  are tangent to that plane and stay whole. The bottom lattice therefore touches the plate
+  (first-layer footprint 539–1532 mm² for the face-down solids; icosahedron 19 mm² from its flat
+  base).
+- Every mesh sits at `z = 0`.
 
-| Solid | W×D×H (mm) | nodes | rods | PLA (g) |
-|---|---|---|---|---|
-| cube | 58×58×58 | 212 | 612 | 13.4 |
-| tetrahedron | 115×115×97 | 163 | 450 | 12.5 |
-| octahedron | 84×84×61 | 234 | 659 | 14.0 |
-| icosahedron | 68×71×120 | 380 | 810 | 13.4 |
-| dodecahedron | 66×62×102 | 302 | 717 | 11.9 |
+## Post-optimization rules (`printable_lattice`)
 
-All 0 unprintable. The bottom face now has a **base lattice** (nodes + horizontal rods on
-the plate, exempt); the top face is left open (edges bridged). STLs in
-`output/lattice/minstretch/`, dashboard folder `Platonic solids · min-stretch`. Viewer fetches
-STLs with `cache: no-store`.
+Order: repair → delete unsupported → enforce min degree 2 (delete) → force min degree 3 (add) →
+snap horizontals (iterated) → force upward links.
 
-## Method (sliding-class relaxation, `docs/sliding-class-relaxation-method.md`)
+- `_snap_horizontal`: every rod with `|dz|/L ≤ sin 5°` becomes exactly horizontal (component mean;
+  components spanning > 2 mm are skipped).
+- `_force_min_degree(3)`: adds a rod to any node below degree 3; the length window may be broken.
+- `_force_upward_links`: every node below the top plane gets a neighbour above it; the degree cap
+  may be broken. The rod must still be printable (≥ 48°, or a legal ≤ 10 mm bridge), otherwise the
+  node is skipped.
+- Every forced rod is printable by construction: length/degree may be broken, the angle never.
 
-Node classes V/E/F↓/F↑/I; ψ support + anchor + hard phase; constructive bottom-up start for
-faces; MIP (β reward + slacks + clearance); repair; bridge posts. Generalized to polygon faces
-(triangle/rhombus/pentagon). Key bugs fixed: shared-node clearance, fixed-node jitter, face
-inset, frame-clearance, bridge angle-penalty.
+## Verification (final)
 
-## Known limitation
+| Solid | band rods 5°–48° | min deg | deg≤2 | horiz dz≠0 | dup/self | nodes w/o printable up-link |
+|---|---|---|---|---|---|---|
+| cube | 0 | 3 | 0 | 0 | 0 | 14 |
+| tetrahedron | 0 | 3 | 0 | 0 | 0 | 0 |
+| octahedron | 0 | 3 | 0 | 0 | 0 | 4 |
+| icosahedron | 0 | 3 | 0 | 0 | 0 | 0 |
+| dodecahedron | 0 | 3 | 0 | 0 | 0 | 0 |
 
-Icosahedron's upper pentagon ring: ~16 bridge nodes have no post (their posts would run along
-the near-vertical band face and collide with its face lattice). Fix = fold posts into the MIP as
-fixed parent requirements (follow-up).
+“Band rods” are rods with `sin 5° < slope < sin 48°` — the unprintable angled rods that the forced
+passes used to create. Now zero everywhere.
 
-## Next steps
+## Known limitations (geometric, not code bugs)
 
-1. Fold icosahedron ring posts into the MIP (or accept ~16 bridge nodes).
-2. Slice a chosen solid for a real print-time + filament estimate.
-3. Scale the face-down solids (cube/octa are ~46 mm at 0.8 — quite small) if a consistent size
-   across solids is wanted.
+1. **Ceiling gap.** The topmost interior layer sits ~5.6 mm below a horizontal ceiling, so for
+   14 cube / 4 octahedron nodes the maximum possible upward slope is ≤ 45° and no printable upward
+   link exists. The fix belongs in the relaxation/interior sampling (place an interior node under
+   each ceiling node), not in the forced pass.
+2. **Top-face hatching rods > 10 mm** (cube 57, octahedron 32, dodecahedron 35): Delaunay hatching
+   on the ceiling produces flat horizontal spans longer than the bridge limit. Subdividing them adds
+   ceiling nodes and therefore more converging posts — the open ceiling problem.
+
+## Method
+
+Sliding-class relaxation (`docs/sliding-class-relaxation-method.md`); orientation and stretch from
+`docs/Support-Free Rod Lattices for the Platonic Solids - Theory and Algorithm.md`. Node classes
+V/E/F↓/F↑/I; ψ support + anchor + hard phase; constructive face start; MIP with β reward, slacks
+and clearance; repair. Top-face/ring posts are MIP constraints (folded in), not post-hoc.
+
+## Files
+
+- `src/printable_surfaces/printable.py` — lattice pipeline + post-optimization passes.
+- `src/printable_surfaces/platonic.py` — solid geometry, face polygons.
+- `src/printable_surfaces/phase16.py` — version driver, volume normalization, clipping, export.
+- `src/printable_surfaces/lattice.py` — thickening, clipping, per-rod colours.
+- `plan/plan.html` — living plan (phases 0–21 + history).
+- `AGENTS.md` — subagent policy (when to delegate, model routing, foreground rule).
