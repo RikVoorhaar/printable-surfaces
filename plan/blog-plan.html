@@ -162,6 +162,8 @@
       conversation about the section, not from a list agreed in advance. I propose, you react, and
       anything needed gets made before the draft is handed over — or in parallel when the prose
       does not depend on it.</li>
+      <li><strong>Re-read the voice notes before drafting.</strong> The Voice section below is the
+      reference for pronouns, register and typography; it gets read again when each section opens.</li>
       <li><strong>The draft is the only prose.</strong> It lives in
       <code>blog/src/posts/3d_print_platonic_solids.mdx</code> and is reviewed at
       <code>http://100.81.11.110:4321/blog/3d_print_platonic_solids</code>. This plan holds titles,
@@ -289,8 +291,9 @@
   <h2>Voice — notes from the existing posts</h2>
   <div class="decisions">
     <p style="margin-top:0;color:var(--muted);">
-      From a survey of the posts already on the blog. Short version: personal posts are “I”-heavy,
-      teaching posts are “we”-heavy, and mixing the two is the house style.
+      From a full pass over the 23 posts already on the blog. Short version: personal posts are
+      “I”-heavy, teaching posts are “we”-heavy, and mixing the two is the house style. Quotes are
+      verbatim, typos included.
     </p>
     <table>
       <thead><tr><th>Aspect</th><th>What the posts do</th></tr></thead>
@@ -298,29 +301,34 @@
         <tr>
           <td>Person</td>
           <td>“I” for history, opinions, and things that happened. “We” for walking the reader
-          through the reasoning. Project posts run 50–100 “I” and almost no “we”; math posts are the
-          reverse.</td>
+          through the reasoning. Project posts: <em>selfhosted</em> 115 “I” / 1 “we”,
+          <em>dashboard</em> 67 / 1, <em>epub</em> 54 / 0. Math posts flip: <em>validation_size</em>
+          0 / 114, <em>bayes_exam</em> 0 / 32, <em>discrete_function_tensor</em> 7 / 147. The “we” is
+          reader-inclusive, not royal.</td>
         </tr>
         <tr>
           <td>Openings</td>
           <td>Anecdote, claim-then-question, or a flat first-person debrief (“I made a dashboard
-          for…”). No throat-clearing, no abstract.</td>
+          for…”). No throat-clearing, no abstract. Examples in the quote bank.</td>
         </tr>
         <tr>
           <td>Rhythm</td>
-          <td>Long comma-chained sentences (~20 words on average) followed by a short paragraph for
-          the punchline. Rhetorical questions as transitions. Parentheses often.</td>
+          <td>Long comma-chained sentences followed by a short paragraph for the punchline. Mean
+          sentence ≈20 words, median 18; only 5.5% run under 8 words and 3.7% over 40. Rhetorical
+          questions as transitions (60 across the posts). Parentheses often (652), semicolons rarely
+          (91).</td>
         </tr>
         <tr>
           <td>Typography</td>
-          <td>Spaced <code>--</code> for dashes, not em dashes. “...” for ellipses. Italics for
-          terms and emphasis (heavily), bold sparingly, American spelling.</td>
+          <td>Spaced <code>--</code> for dashes (92 uses) rather than em dashes (11, all recent).
+          “...” for ellipses. Italics heavily (1,131 spans) for terms and emphasis, bold sparingly
+          (36). American spelling (-ize), though “towards” survives.</td>
         </tr>
         <tr>
           <td>Register</td>
-          <td>Contractions everywhere, jokes, self-deprecation (“I have no idea why I did it this
-          way”). No profanity. One-sentence personal asides inside technical paragraphs, then
-          straight back to the task.</td>
+          <td>Contractions everywhere (“don't” ×49, “isn't” ×12), jokes, self-deprecation. No
+          profanity. One-sentence personal asides inside technical paragraphs, then straight back to
+          the task. Exclamation marks when enthusiastic.</td>
         </tr>
         <tr>
           <td>Headings</td>
@@ -345,12 +353,79 @@
         </tr>
         <tr>
           <td>Tics</td>
-          <td>“just”, “actually”, “really”, “quite”, “Let's”, “It turns out”. The small informal
-          words carry the voice; don't sand them off.</td>
+          <td>“just” (116), “actually” (54), “really” (45), “quite” (44), “Let's” (52), “It turns
+          out”; “basically” and “of course” are rare (5 each). The small informal words carry the
+          voice; don't sand them off.</td>
         </tr>
         <tr>
           <td>Length</td>
-          <td>Median ≈2.2k words, most posts 1.7k–3.5k. Calibration only, not a target.</td>
+          <td>1.1k–5.7k words, median ≈2.2k, most 1.7k–3.5k. Calibration only, not a target.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h2>Quote bank</h2>
+  <div class="decisions">
+    <p style="margin-top:0;color:var(--muted);">
+      Use these as the ear-test when a draft starts sounding like a tech blog instead of a person.
+    </p>
+    <p style="margin:.4rem 0 .2rem;color:var(--muted);"><strong style="color:var(--text);">Openings</strong></p>
+    <ul style="color:var(--muted);margin-top:.2rem;">
+      <li>“My wife is very enthuisiastic about figure skating. She often mentions that the judging is biased…” <span style="color:var(--gray);">(figure_skating)</span></li>
+      <li>“Normally distributed data is great. … But how do we know if our data is actually normally distributed?” <span style="color:var(--gray);">(normal_data)</span></li>
+      <li>“I made a dashboard for exploring the access logs of this website.” <span style="color:var(--gray);">(dashboard)</span></li>
+    </ul>
+    <p style="margin:.6rem 0 .2rem;color:var(--muted);"><strong style="color:var(--text);">Asides and self-deprecation</strong></p>
+    <ul style="color:var(--muted);margin-top:.2rem;">
+      <li>“I was optimizing the code right before my wife went into labor, and after that I had other priorities for a while” <span style="color:var(--gray);">(ukf)</span></li>
+      <li>“I have no idea why I did it this way” <span style="color:var(--gray);">(ijzer)</span></li>
+      <li>“Reading without a dictionary is hell” <span style="color:var(--gray);">(epub)</span></li>
+    </ul>
+    <p style="margin:.6rem 0 .2rem;color:var(--muted);"><strong style="color:var(--text);">Jokes and signposting</strong></p>
+    <ul style="color:var(--muted);margin-top:.2rem;">
+      <li>“That's right; grab your sunglasses. We're about to join the cool kids…” <span style="color:var(--gray);">(ukf)</span></li>
+      <li>“the kernel we use -- the Gaussian kernel -- is itself symmetric” <span style="color:var(--gray);">(gmres)</span></li>
+      <li>“it turned out to be even harder to do right than I expected” <span style="color:var(--gray);">(deconvolution_part4)</span></li>
+    </ul>
+  </div>
+
+  <h2>Voice — do and don't</h2>
+  <div class="decisions">
+    <table>
+      <thead><tr><th>Do</th><th>Don't</th></tr></thead>
+      <tbody>
+        <tr>
+          <td>Open with a concrete first-person scene or a claim plus a question.</td>
+          <td>Open with a definition, an abstract, or a statement of significance.</td>
+        </tr>
+        <tr>
+          <td>Use “I” for what happened, “we” for the reasoning.</td>
+          <td>Use “we” as a default narrator voice, or “one”.</td>
+        </tr>
+        <tr>
+          <td>Let a long sentence run, then land it with a short one.</td>
+          <td>Write every sentence at the same medium length.</td>
+        </tr>
+        <tr>
+          <td>Keep the typographic habits: spaced <code>--</code>, “...”, italics for terms.</td>
+          <td>Em dashes, title case, or bold everywhere.</td>
+        </tr>
+        <tr>
+          <td>Signpost a derivation (“Recall that”, “It turns out”).</td>
+          <td>Drop a wall of notation with no runway.</td>
+        </tr>
+        <tr>
+          <td>Keep one-sentence asides; the small words (“just”, “actually”) stay.</td>
+          <td>Sand the voice into generic tech-blog prose.</td>
+        </tr>
+        <tr>
+          <td>Let a figure sit bare, with the explanation in the preceding sentence.</td>
+          <td>Write a caption that repeats the paragraph.</td>
+        </tr>
+        <tr>
+          <td>End on a forward-looking conclusion or a plain reflection.</td>
+          <td>End with a summary of what you just said, or a “key takeaways” box.</td>
         </tr>
       </tbody>
     </table>
@@ -684,6 +759,9 @@
       anything wrong; mixed “I”/“we” voice; a 3–5 bullet note with each draft. Commit rule
       corrected: the superproject is committed only when it actually changes. Voice notes from a
       survey of the existing posts added above.</li>
+      <li><strong>2026-10-30</strong> — voice notes expanded into a reference: pronoun counts per
+      post, sentence statistics, typography counts, a verbatim quote bank, and a do/don't table.
+      Contract now says to re-read them when a section opens.</li>
     </ul>
   </div>
 
