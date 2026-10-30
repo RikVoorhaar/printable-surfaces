@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Printable Surfaces — Blog Post Plan</title>
+<style>
+  :root {
+    --bg: #0f1115;
+    --panel: #171a21;
+    --panel-2: #1d212b;
+    --border: #2a2f3a;
+    --text: #e6e8ee;
+    --muted: #9aa3b2;
+    --accent: #6ea8fe;
+    --green: #34d399;
+    --yellow: #fbbf24;
+    --red: #f87171;
+    --gray: #8b93a3;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font: 15px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  header {
+    padding: 2.5rem 2rem 1.5rem;
+    border-bottom: 1px solid var(--border);
+    background: linear-gradient(180deg, #131722, var(--bg));
+  }
+  header h1 { margin: 0 0 .35rem; font-size: 1.7rem; letter-spacing: -.02em; }
+  header .sub { color: var(--muted); max-width: 62rem; }
+  main { max-width: 62rem; margin: 0 auto; padding: 2rem; }
+  h2 { font-size: 1.15rem; margin: 2.5rem 0 .75rem; letter-spacing: -.01em; }
+  .contract, .decisions {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--accent);
+    border-radius: 10px;
+    padding: 1.1rem 1.25rem;
+  }
+  .contract h3 { margin: 0 0 .5rem; font-size: .95rem; color: var(--accent); }
+  .contract ol { margin: 0; padding-left: 1.2rem; }
+  .contract li { margin: .3rem 0; }
+  code {
+    background: var(--panel-2);
+    padding: .1rem .35rem;
+    border-radius: 4px;
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: .85em;
+    color: var(--accent);
+  }
+  .decisions table { border-collapse: collapse; width: 100%; font-size: .9rem; }
+  .decisions th, .decisions td { text-align: left; padding: .4rem .6rem; border-bottom: 1px solid var(--border); vertical-align: top; }
+  .decisions th { color: var(--muted); font-weight: 600; font-size: .75rem; text-transform: uppercase; letter-spacing: .05em; }
+  .decisions td:first-child { color: var(--muted); white-space: nowrap; }
+  .decisions tr:last-child td { border-bottom: none; }
+  .legend { display: flex; gap: 1.25rem; flex-wrap: wrap; color: var(--muted); font-size: .85rem; margin-bottom: 1rem; }
+  .phase {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1.1rem 1.25rem;
+    margin-bottom: 1rem;
+  }
+  .phase .head { display: flex; align-items: baseline; gap: .75rem; flex-wrap: wrap; }
+  .phase .title { font-weight: 650; font-size: 1.02rem; }
+  .phase .num { color: var(--muted); font-variant-numeric: tabular-nums; font-family: ui-monospace, monospace; }
+  .badge {
+    font-size: .72rem; font-weight: 650; letter-spacing: .03em;
+    padding: .15rem .55rem; border-radius: 999px; white-space: nowrap;
+  }
+  .badge.done    { background: rgba(52,211,153,.15); color: var(--green); border: 1px solid rgba(52,211,153,.35); }
+  .badge.active  { background: rgba(251,191,36,.15); color: var(--yellow); border: 1px solid rgba(251,191,36,.35); }
+  .badge.blocked { background: rgba(248,113,113,.15); color: var(--red); border: 1px solid rgba(248,113,113,.35); }
+  .badge.todo    { background: rgba(139,147,163,.12); color: var(--gray); border: 1px solid rgba(139,147,163,.3); }
+  .deliverable { margin: .7rem 0 0; }
+  .deliverable h4, .notes h4 { margin: 0 0 .25rem; font-size: .78rem; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
+  .deliverable ul { margin: 0; padding-left: 1.2rem; }
+  .deliverable li { margin: .2rem 0; }
+  details.notes {
+    margin-top: .8rem;
+    background: var(--panel-2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: .55rem .7rem;
+  }
+  details.notes summary {
+    cursor: pointer; user-select: none; font-weight: 600; font-size: .88rem;
+    color: var(--accent); list-style: none;
+  }
+  details.notes summary::-webkit-details-marker { display: none; }
+  details.notes summary::before { content: "▸ "; }
+  details.notes[open] summary::before { content: "▾ "; }
+  details.notes .body { padding: .5rem .2rem .1rem; color: var(--muted); font-size: .9rem; }
+  details.notes .body ul { margin: .3rem 0; padding-left: 1.2rem; }
+  details.notes .body code {
+    background: var(--panel); padding: .05rem .3rem; border-radius: 4px;
+    font-family: ui-monospace, monospace; font-size: .85em; color: var(--text);
+  }
+  .pending {
+    border: 1px dashed var(--border); border-radius: 10px; padding: 1rem 1.25rem;
+    color: var(--muted); background: transparent;
+  }
+  .placeholder {
+    border: 1px dashed var(--border); border-radius: 8px; padding: .6rem .8rem;
+    color: var(--muted); font-size: .9rem; background: transparent;
+  }
+  .placeholder em { color: var(--gray); }
+  footer { color: var(--muted); font-size: .8rem; text-align: center; padding: 1rem 0 3rem; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Printable Surfaces — Blog Post Plan</h1>
+  <p class="sub">
+    Writing plan for the post about support-free lattices in the Platonic solids. Seven sections,
+    each with two human gates. This file records <em>structure, decisions and gate status</em> —
+    never drafted prose, and never section contents that have not been agreed out loud first.
+  </p>
+</header>
+
+<main>
+
+  <h2>Writing contract</h2>
+  <div class="contract">
+    <h3>How this works</h3>
+    <ol>
+      <li><strong>One section at a time.</strong> No drafting a section before the previous one is
+      approved. No exceptions, no "while I'm here" drafts.</li>
+      <li><strong>Two gates per section.</strong> Gate A: we agree, in rough bullets, what goes in
+      the section. Gate B: the draft is written and reviewed rendered in the browser.</li>
+      <li><strong>Recall before grilling.</strong> When a section opens, the agreed bullets are
+      restated back <em>before</em> any discussion of the draft, so the context is on the table.</li>
+      <li><strong>The draft is the only prose.</strong> It lives in
+      <code>blog/src/posts/3d_print_platonic_solids.mdx</code> and is reviewed at
+      <code>http://100.81.11.110:4321/blog/3d_print_platonic_solids</code>. This plan holds titles,
+      bullets, status and open questions only.</li>
+      <li><strong>Nothing is recorded as agreed until it is agreed.</strong> A section's contents
+      box stays empty until we have actually talked it through.</li>
+      <li><strong>The budget is fixed.</strong> If a section wants more words, another one gives them
+      up. The post does not grow.</li>
+      <li><strong>Figures belong to the section that uses them.</strong> Chosen at gate A, produced
+      before gate B, reviewed with the draft.</li>
+    </ol>
+  </div>
+
+  <h2>Agreed so far</h2>
+  <div class="decisions">
+    <table>
+      <thead><tr><th>Topic</th><th>Decision</th></tr></thead>
+      <tbody>
+        <tr>
+          <td>Reader</td>
+          <td>STEM-literate general reader. Comfortable with vectors and angles; no optimisation
+          background assumed.</td>
+        </tr>
+        <tr>
+          <td>Tone</td>
+          <td>Recreational blog post, first person, light language. Not a paper: no formal claims,
+          no abstract, no takeaway paragraph. Technical parts stay informal.</td>
+        </tr>
+        <tr>
+          <td>Scope</td>
+          <td>Convex polytopes in the body. The sphere is the motivating failure, not a result.
+          Generality beyond polytopes gets a sentence, not a section.</td>
+        </tr>
+        <tr>
+          <td>Length</td>
+          <td>2,000–2,500 words, seven sections at roughly 300–400 words each.</td>
+        </tr>
+        <tr>
+          <td>Structure</td>
+          <td>Seven working titles (§1–§7 below). Contents are decided per section, not now.</td>
+        </tr>
+        <tr>
+          <td>Optimisation depth</td>
+          <td>The MIP gets one light paragraph and a figure. The relaxation is the interesting part
+          and gets the room.</td>
+        </tr>
+        <tr>
+          <td>Ending</td>
+          <td>“I made a cool thing, it isn't perfect, and that's fine.” Failures are part of the
+          story, not a confession and not a research agenda.</td>
+        </tr>
+        <tr>
+          <td>Teaser</td>
+          <td>Photo of the printed orange solids on wood —
+          <code>printed_platonic_solids.jpg</code>. Real photo, not a render.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h2>Facts to keep straight</h2>
+  <div class="decisions">
+    <p style="margin-top:0;color:var(--muted);">
+      Pulled from the code, because the story is easy to mis-remember.
+    </p>
+    <table>
+      <thead><tr><th>Fact</th><th>Truth</th></tr></thead>
+      <tbody>
+        <tr>
+          <td>Printability rule</td>
+          <td>A <em>rod</em> is printable if its axis is at ≥ 48° elevation, or it is a horizontal
+          bridge ≤ 10 mm; rods lying on the build plate are exempt. This is not the solid-overhang
+          (“face normal”) rule.</td>
+        </tr>
+        <tr>
+          <td>Stretch</td>
+          <td>Dodecahedron is the stretched one: face-down, ×1.93 vertical. Icosahedron is
+          vertex-down, not uniformly stretched — its tip pyramids are lifted locally so the tip
+          edges reach 50°.</td>
+        </tr>
+        <tr>
+          <td>No stretch</td>
+          <td>Tetrahedron, cube and octahedron are regular, face-down, no stretch. (Vertex-down octa
+          would have needed ×1.19 — that is why it is face-down.)</td>
+        </tr>
+        <tr>
+          <td>Pipeline</td>
+          <td>Place (frame + constructive face fill + uniform interior) → evolve (force relaxation
+          with support pull, 1/r² repulsion, anchor) → choose (MIP over candidate rods) → repair
+          (degree 3, flat horizontals, upward links).</td>
+        </tr>
+        <tr>
+          <td>Coulomb gas</td>
+          <td>It is a <em>force term in the relaxation</em>, not the sampling method. It gets a
+          figure, not a section.</td>
+        </tr>
+        <tr>
+          <td>Where it hurts</td>
+          <td>The horizontal top face: a ceiling of bridges with nothing below it. That is the real
+          narrative turn, not “the icosahedron needs stretching”.</td>
+        </tr>
+        <tr>
+          <td>Still imperfect</td>
+          <td>14 cube / 4 octahedron nodes have no printable upward link (the layer under the
+          ceiling is ~5.6 mm too low); top-face hatching has rods longer than the 10 mm bridge
+          limit.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h2>Gates</h2>
+  <div class="legend">
+    <span>◻ gate pending</span>
+    <span style="color:var(--yellow)">◼ in discussion</span>
+    <span style="color:var(--green)">✔ approved</span>
+  </div>
+  <div class="decisions" style="margin-bottom:1.5rem;">
+    <table>
+      <thead><tr><th>§</th><th>Section</th><th>Gate A — bullets</th><th>Gate B — draft</th></tr></thead>
+      <tbody>
+        <tr><td>1</td><td>Intro — the failure that produced the constraint</td><td>◻ pending</td><td>◻ pending</td></tr>
+        <tr><td>2</td><td>When does a rod print?</td><td>◻ pending</td><td>◻ pending</td></tr>
+        <tr><td>3</td><td>What that implies for a shape</td><td>◻ pending</td><td>◻ pending</td></tr>
+        <tr><td>4</td><td>The interior is the hard part</td><td>◻ pending</td><td>◻ pending</td></tr>
+        <tr><td>5</td><td>Making it legal</td><td>◻ pending</td><td>◻ pending</td></tr>
+        <tr><td>6</td><td>Making it physical</td><td>◻ pending</td><td>◻ pending</td></tr>
+        <tr><td>7</td><td>Verification and closing</td><td>◻ pending</td><td>◻ pending</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h2>Sections</h2>
+
+  <article class="phase">
+    <div class="head">
+      <span class="num">§1</span>
+      <span class="title">Intro — the failure that produced the constraint</span>
+      <span class="badge todo">A · bullets pending</span>
+      <span class="badge todo">B · draft pending</span>
+    </div>
+    <div class="deliverable">
+      <h4>Contents</h4>
+      <div class="placeholder"><em>Nothing agreed yet.</em> Filled in when the section opens.</div>
+    </div>
+    <details class="notes">
+      <summary>Open questions</summary>
+      <div class="body">
+        <p>n/a — to be raised at gate A.</p>
+      </div>
+    </details>
+  </article>
+
+  <article class="phase">
+    <div class="head">
+      <span class="num">§2</span>
+      <span class="title">When does a rod print?</span>
+      <span class="badge todo">A · bullets pending</span>
+      <span class="badge todo">B · draft pending</span>
+    </div>
+    <div class="deliverable">
+      <h4>Contents</h4>
+      <div class="placeholder"><em>Nothing agreed yet.</em> Filled in when the section opens.</div>
+    </div>
+    <details class="notes">
+      <summary>Open questions</summary>
+      <div class="body">
+        <p>n/a — to be raised at gate A.</p>
+      </div>
+    </details>
+  </article>
+
+  <article class="phase">
+    <div class="head">
+      <span class="num">§3</span>
+      <span class="title">What that implies for a shape</span>
+      <span class="badge todo">A · bullets pending</span>
+      <span class="badge todo">B · draft pending</span>
+    </div>
+    <div class="deliverable">
+      <h4>Contents</h4>
+      <div class="placeholder"><em>Nothing agreed yet.</em> Filled in when the section opens.</div>
+    </div>
+    <details class="notes">
+      <summary>Open questions</summary>
+      <div class="body">
+        <p>n/a — to be raised at gate A.</p>
+      </div>
+    </details>
+  </article>
+
+  <article class="phase">
+    <div class="head">
+      <span class="num">§4</span>
+      <span class="title">The interior is the hard part</span>
+      <span class="badge todo">A · bullets pending</span>
+      <span class="badge todo">B · draft pending</span>
+    </div>
+    <div class="deliverable">
+      <h4>Contents</h4>
+      <div class="placeholder"><em>Nothing agreed yet.</em> Filled in when the section opens.</div>
+    </div>
+    <details class="notes">
+      <summary>Open questions</summary>
+      <div class="body">
+        <p>n/a — to be raised at gate A.</p>
+      </div>
+    </details>
+  </article>
+
+  <article class="phase">
+    <div class="head">
+      <span class="num">§5</span>
+      <span class="title">Making it legal</span>
+      <span class="badge todo">A · bullets pending</span>
+      <span class="badge todo">B · draft pending</span>
+    </div>
+    <div class="deliverable">
+      <h4>Contents</h4>
+      <div class="placeholder"><em>Nothing agreed yet.</em> Filled in when the section opens.</div>
+    </div>
+    <details class="notes">
+      <summary>Open questions</summary>
+      <div class="body">
+        <p>n/a — to be raised at gate A.</p>
+      </div>
+    </details>
+  </article>
+
+  <article class="phase">
+    <div class="head">
+      <span class="num">§6</span>
+      <span class="title">Making it physical</span>
+      <span class="badge todo">A · bullets pending</span>
+      <span class="badge todo">B · draft pending</span>
+    </div>
+    <div class="deliverable">
+      <h4>Contents</h4>
+      <div class="placeholder"><em>Nothing agreed yet.</em> Filled in when the section opens.</div>
+    </div>
+    <details class="notes">
+      <summary>Open questions</summary>
+      <div class="body">
+        <p>n/a — to be raised at gate A.</p>
+      </div>
+    </details>
+  </article>
+
+  <article class="phase">
+    <div class="head">
+      <span class="num">§7</span>
+      <span class="title">Verification and closing</span>
+      <span class="badge todo">A · bullets pending</span>
+      <span class="badge todo">B · draft pending</span>
+    </div>
+    <div class="deliverable">
+      <h4>Contents</h4>
+      <div class="placeholder"><em>Nothing agreed yet.</em> Filled in when the section opens.</div>
+    </div>
+    <details class="notes">
+      <summary>Open questions</summary>
+      <div class="body">
+        <p>n/a — to be raised at gate A.</p>
+      </div>
+    </details>
+  </article>
+
+  <h2>Assets</h2>
+  <div class="decisions">
+    <table>
+      <thead><tr><th>Asset</th><th>For</th><th>Status</th></tr></thead>
+      <tbody>
+        <tr><td>Printed orange solids on wood</td><td>Teaser / ending</td><td>In place — <code>printed_platonic_solids.jpg</code></td></tr>
+        <tr><td>Rendered cube T5 lattice (dark, coloured by rod angle)</td><td>Figure candidate</td><td>In place — <code>blog/3d_print_platonic_solids/cube_t5.png</code></td></tr>
+        <tr><td>Rod-angle histogram (0–90°)</td><td>§7 verification</td><td>To produce</td></tr>
+        <tr><td>2D Coulomb / repulsion demo</td><td>§4 (a figure, not a section)</td><td>To produce</td></tr>
+        <tr><td>Ceiling / post diagram</td><td>§3–§4</td><td>To produce</td></tr>
+        <tr><td>Full printed set photo</td><td>§7 closing</td><td>Dependency: dodecahedron still printing</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h2>Change log</h2>
+  <div class="decisions">
+    <p style="margin-top:0;color:var(--muted);">
+      Append-only. New decisions get a line here; nothing above is silently rewritten.
+    </p>
+    <ul style="color:var(--muted);margin-bottom:0;">
+      <li><strong>2026-10-30</strong> — plan created. Seven working titles agreed as the spine;
+      contents explicitly left open. Teaser replaced with the printed photo.</li>
+    </ul>
+  </div>
+
+</main>
+
+<footer>
+  Living document · gate-driven · last updated 2026-10-30
+</footer>
+
+</body>
+</html>
