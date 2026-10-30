@@ -44,6 +44,7 @@
   .contract h3 { margin: 0 0 .5rem; font-size: .95rem; color: var(--accent); }
   .contract ol { margin: 0; padding-left: 1.2rem; }
   .contract li { margin: .3rem 0; }
+  .contract ol ol { margin: .3rem 0 .1rem; }
   code {
     background: var(--panel-2);
     padding: .1rem .35rem;
@@ -111,6 +112,15 @@
   .placeholder em { color: var(--gray); }
   .sketch { margin: .25rem 0 0; color: var(--muted); }
   .sketch + .sketch { margin-top: .45rem; }
+  .now {
+    background: rgba(52,211,153,.07);
+    border: 1px solid rgba(52,211,153,.3);
+    border-left: 3px solid var(--green);
+    border-radius: 10px;
+    padding: 1rem 1.25rem;
+    color: var(--muted);
+  }
+  .now strong { color: var(--text); }
   footer { color: var(--muted); font-size: .8rem; text-align: center; padding: 1rem 0 3rem; }
 </style>
 </head>
@@ -119,8 +129,8 @@
   <h1>Printable Surfaces — Blog Post Plan</h1>
   <p class="sub">
     Writing plan for the post about support-free lattices in the Platonic solids. Seven sections,
-    each with two human gates. This file records <em>structure, decisions and gate status</em> —
-    never drafted prose, and never section contents that have not been agreed out loud first.
+    each drafted one at a time and approved by a human before the next opens. This file records
+    <em>structure, decisions and status</em> — never drafted prose.
   </p>
   <p class="sub" style="margin:.7rem 0 0;">
     <a href="/plan/plan.html" style="color:var(--accent);text-decoration:none;">← Code implementation plan</a>
@@ -133,24 +143,46 @@
   <div class="contract">
     <h3>How this works</h3>
     <ol>
+      <li><strong>The outline is settled.</strong> The seven sketches below are the agreed
+      high-level description of the post — that is what “bullets” meant. They can still change,
+      but only by saying so out loud.</li>
       <li><strong>One section at a time.</strong> No drafting a section before the previous one is
-      approved. No exceptions, no "while I'm here" drafts.</li>
-      <li><strong>Two gates per section.</strong> Gate A: we agree, in rough bullets, what goes in
-      the section. Gate B: the draft is written and reviewed rendered in the browser.</li>
-      <li><strong>Recall before grilling.</strong> When a section opens, the agreed bullets are
-      restated back <em>before</em> any discussion of the draft, so the context is on the table.</li>
+      approved. No “while I'm here” drafts, no writing ahead.</li>
+      <li><strong>The section loop is always the same, in this order:</strong>
+        <ol type="a">
+          <li>I restate the agreed sketch for the section, so the context is on the table.</li>
+          <li>You rant about what you think belongs in it.</li>
+          <li>I ask follow-up questions until the section is clear to me.</li>
+          <li>I draft the section.</li>
+          <li>You read it and either send it back or approve it. We iterate on that one section
+          until you say to move on.</li>
+        </ol>
+      </li>
+      <li><strong>Figures and interactives are settled in step (c).</strong> They come out of the
+      conversation about the section, not from a list agreed in advance. I propose, you react, and
+      anything needed gets made before the draft is handed over — or in parallel when the prose
+      does not depend on it.</li>
       <li><strong>The draft is the only prose.</strong> It lives in
       <code>blog/src/posts/3d_print_platonic_solids.mdx</code> and is reviewed at
       <code>http://100.81.11.110:4321/blog/3d_print_platonic_solids</code>. This plan holds titles,
-      sketches, bullets, status and open questions only.</li>
-      <li><strong>Nothing is recorded as agreed until it is agreed.</strong> A section's bullets
-      box stays empty until we have actually talked it through.</li>
+      sketches, status and open questions.</li>
+      <li><strong>Nothing enters the draft that we have not discussed.</strong> No invented
+      anecdotes, no claims the code does not support.</li>
       <li><strong>No length target.</strong> A section takes as many words as it takes. We cut
       things that aren't earning their place, not words to hit a number.</li>
-      <li><strong>Figures and interactives belong to the section that uses them.</strong> Chosen at
-      gate A, produced before gate B, reviewed with the draft. Every interactive needs a static
-      fallback image so the post still reads when the component is unavailable.</li>
+      <li><strong>Every change to the .mdx is its own commit.</strong> The blog repo is clean before
+      I open the file, the change is committed when it lands, and the superproject pointer is
+      committed with it — so every revision is recoverable. Work in progress belonging to anything
+      else is never committed.</li>
     </ol>
+  </div>
+
+  <h2>Where we are</h2>
+  <div class="now">
+    <p style="margin:0;">
+      <strong>Outline: approved</strong> — all seven sections, no objections.
+      <strong>Drafts: none started.</strong> Next action: §1 enters the section loop.
+    </p>
   </div>
 
   <h2>Agreed so far</h2>
@@ -174,10 +206,14 @@
           Generality beyond polytopes gets a sentence, not a section.</td>
         </tr>
         <tr>
-          <td>Structure</td>
-          <td>Seven sections, informative working titles (§1–§7 below). The sketches in this file are
-          an overview to react to, not binding; gate A decides the actual bullets. Length is not a
-          target — sections run as long as they need.</td>
+          <td>Outline</td>
+          <td>Seven sections with descriptive working titles, each with a two-paragraph sketch.
+          Approved as a whole on 2026-10-30. Specifics are settled per section, not here.</td>
+        </tr>
+        <tr>
+          <td>Drafting flow</td>
+          <td>Recall the sketch → your rant → my follow-up questions (including figures and
+          interactives) → draft → your review. Iterate until you say move on.</td>
         </tr>
         <tr>
           <td>Optimisation depth</td>
@@ -200,8 +236,13 @@
           Vibe-coded components are cheap, so the bar is “does this make it clearer”, not “can we
           afford it”. The vehicle is the Three.js lattice viewer being built in the blog repo
           (<code>blog/src/lib/lattice/</code>, GLBs in <code>blog/src/assets/models/platonic/</code>),
-          which already mimics the orange-PLA-on-wood look of the teaser photo. Not every section
-          gets one, each needs a static fallback, and no embed is allowed to block a draft.</td>
+          which already mimics the orange-PLA-on-wood look of the teaser photo. Each embed needs a
+          static fallback and no embed is allowed to block a draft.</td>
+        </tr>
+        <tr>
+          <td>Spelling</td>
+          <td>American English, matching the existing posts (<em>optimization</em>,
+          <em>behavior</em>, <em>color</em>).</td>
         </tr>
       </tbody>
     </table>
@@ -260,38 +301,37 @@
 
   <h2>Gates</h2>
   <div class="legend">
-    <span>◻ gate pending</span>
-    <span style="color:var(--yellow)">◼ in discussion</span>
-    <span style="color:var(--green)">✔ approved</span>
+    <span style="color:var(--green)">✔ outline agreed</span>
+    <span>◻ draft pending</span>
+    <span style="color:var(--yellow)">◼ draft in review</span>
   </div>
   <div class="decisions" style="margin-bottom:1.5rem;">
     <table>
-      <thead><tr><th>§</th><th>Section</th><th>Gate A — bullets</th><th>Gate B — draft</th></tr></thead>
+      <thead><tr><th>§</th><th>Section</th><th>Outline</th><th>Draft</th></tr></thead>
       <tbody>
-        <tr><td>1</td><td>Trying to print a mathematical surface, and hitting the overhang wall</td><td>◻ pending</td><td>◻ pending</td></tr>
-        <tr><td>2</td><td>When is a rod printable? Steep, short bridge, or on the plate</td><td>◻ pending</td><td>◻ pending</td></tr>
-        <tr><td>3</td><td>What the rule implies for a shape: convex polytopes and why the Platonic solids work</td><td>◻ pending</td><td>◻ pending</td></tr>
-        <tr><td>4</td><td>The interior is the hard part: placing nodes and relaxing them into printable positions</td><td>◻ pending</td><td>◻ pending</td></tr>
-        <tr><td>5</td><td>From points to a lattice: choosing rods under the printability rules</td><td>◻ pending</td><td>◻ pending</td></tr>
-        <tr><td>6</td><td>From lattice to object: thickness, clipping, and bed contact</td><td>◻ pending</td><td>◻ pending</td></tr>
-        <tr><td>7</td><td>Checking the claim, what still fails, and the printed pieces</td><td>◻ pending</td><td>◻ pending</td></tr>
+        <tr><td>1</td><td>Trying to print a mathematical surface, and hitting the overhang wall</td><td>✔ agreed</td><td>◻ pending</td></tr>
+        <tr><td>2</td><td>When is a rod printable? Steep, short bridge, or on the plate</td><td>✔ agreed</td><td>◻ pending</td></tr>
+        <tr><td>3</td><td>What the rule implies for a shape: convex polytopes and why the Platonic solids work</td><td>✔ agreed</td><td>◻ pending</td></tr>
+        <tr><td>4</td><td>The interior is the hard part: placing nodes and relaxing them into printable positions</td><td>✔ agreed</td><td>◻ pending</td></tr>
+        <tr><td>5</td><td>From points to a lattice: choosing rods under the printability rules</td><td>✔ agreed</td><td>◻ pending</td></tr>
+        <tr><td>6</td><td>From lattice to object: thickness, clipping, and bed contact</td><td>✔ agreed</td><td>◻ pending</td></tr>
+        <tr><td>7</td><td>Checking the claim, what still fails, and the printed pieces</td><td>✔ agreed</td><td>◻ pending</td></tr>
       </tbody>
     </table>
   </div>
 
   <h2>Sections</h2>
   <p style="color:var(--muted);margin-top:-.2rem;">
-    Each section below carries a short sketch of what I imagine is in it. These sketches exist so
-    the whole article can be judged as a whole; they are not the agreed contents. When a section
-    opens, gate A replaces the sketch with accepted bullets.
+    The sketch under each title is the agreed outline. It is what I restate when the section opens,
+    and it is the thing we deviate from only deliberately.
   </p>
 
   <article class="phase">
     <div class="head">
       <span class="num">§1</span>
       <span class="title">Trying to print a mathematical surface, and hitting the overhang wall</span>
-      <span class="badge todo">A · bullets pending</span>
-      <span class="badge todo">B · draft pending</span>
+      <span class="badge done">outline agreed</span>
+      <span class="badge todo">draft pending</span>
     </div>
     <div class="deliverable">
       <h4>Sketch</h4>
@@ -308,9 +348,10 @@
       </p>
     </div>
     <details class="notes">
-      <summary>Agreed bullets &amp; open questions</summary>
+      <summary>Section notes</summary>
       <div class="body">
-        <p><em>Nothing agreed yet.</em> Bullets are set at gate A.</p>
+        <p>Specifics, figures and wording are settled in the section loop (recall → rant →
+        questions → draft).</p>
       </div>
     </details>
   </article>
@@ -319,8 +360,8 @@
     <div class="head">
       <span class="num">§2</span>
       <span class="title">When is a rod printable? Steep, short bridge, or on the plate</span>
-      <span class="badge todo">A · bullets pending</span>
-      <span class="badge todo">B · draft pending</span>
+      <span class="badge done">outline agreed</span>
+      <span class="badge todo">draft pending</span>
     </div>
     <div class="deliverable">
       <h4>Sketch</h4>
@@ -337,9 +378,9 @@
       </p>
     </div>
     <details class="notes">
-      <summary>Agreed bullets &amp; open questions</summary>
+      <summary>Section notes</summary>
       <div class="body">
-        <p><em>Nothing agreed yet.</em> Bullets are set at gate A.</p>
+        <p>Specifics, figures and wording are settled in the section loop.</p>
       </div>
     </details>
   </article>
@@ -348,8 +389,8 @@
     <div class="head">
       <span class="num">§3</span>
       <span class="title">What the rule implies for a shape: convex polytopes and why the Platonic solids work</span>
-      <span class="badge todo">A · bullets pending</span>
-      <span class="badge todo">B · draft pending</span>
+      <span class="badge done">outline agreed</span>
+      <span class="badge todo">draft pending</span>
     </div>
     <div class="deliverable">
       <h4>Sketch</h4>
@@ -367,9 +408,9 @@
       </p>
     </div>
     <details class="notes">
-      <summary>Agreed bullets &amp; open questions</summary>
+      <summary>Section notes</summary>
       <div class="body">
-        <p><em>Nothing agreed yet.</em> Bullets are set at gate A.</p>
+        <p>Specifics, figures and wording are settled in the section loop.</p>
       </div>
     </details>
   </article>
@@ -378,8 +419,8 @@
     <div class="head">
       <span class="num">§4</span>
       <span class="title">The interior is the hard part: placing nodes and relaxing them into printable positions</span>
-      <span class="badge todo">A · bullets pending</span>
-      <span class="badge todo">B · draft pending</span>
+      <span class="badge done">outline agreed</span>
+      <span class="badge todo">draft pending</span>
     </div>
     <div class="deliverable">
       <h4>Sketch</h4>
@@ -398,9 +439,9 @@
       </p>
     </div>
     <details class="notes">
-      <summary>Agreed bullets &amp; open questions</summary>
+      <summary>Section notes</summary>
       <div class="body">
-        <p><em>Nothing agreed yet.</em> Bullets are set at gate A.</p>
+        <p>Specifics, figures and wording are settled in the section loop.</p>
       </div>
     </details>
   </article>
@@ -409,8 +450,8 @@
     <div class="head">
       <span class="num">§5</span>
       <span class="title">From points to a lattice: choosing rods under the printability rules</span>
-      <span class="badge todo">A · bullets pending</span>
-      <span class="badge todo">B · draft pending</span>
+      <span class="badge done">outline agreed</span>
+      <span class="badge todo">draft pending</span>
     </div>
     <div class="deliverable">
       <h4>Sketch</h4>
@@ -429,9 +470,9 @@
       </p>
     </div>
     <details class="notes">
-      <summary>Agreed bullets &amp; open questions</summary>
+      <summary>Section notes</summary>
       <div class="body">
-        <p><em>Nothing agreed yet.</em> Bullets are set at gate A.</p>
+        <p>Specifics, figures and wording are settled in the section loop.</p>
       </div>
     </details>
   </article>
@@ -440,8 +481,8 @@
     <div class="head">
       <span class="num">§6</span>
       <span class="title">From lattice to object: thickness, clipping, and bed contact</span>
-      <span class="badge todo">A · bullets pending</span>
-      <span class="badge todo">B · draft pending</span>
+      <span class="badge done">outline agreed</span>
+      <span class="badge todo">draft pending</span>
     </div>
     <div class="deliverable">
       <h4>Sketch</h4>
@@ -459,9 +500,9 @@
       </p>
     </div>
     <details class="notes">
-      <summary>Agreed bullets &amp; open questions</summary>
+      <summary>Section notes</summary>
       <div class="body">
-        <p><em>Nothing agreed yet.</em> Bullets are set at gate A.</p>
+        <p>Specifics, figures and wording are settled in the section loop.</p>
       </div>
     </details>
   </article>
@@ -470,8 +511,8 @@
     <div class="head">
       <span class="num">§7</span>
       <span class="title">Checking the claim, what still fails, and the printed pieces</span>
-      <span class="badge todo">A · bullets pending</span>
-      <span class="badge todo">B · draft pending</span>
+      <span class="badge done">outline agreed</span>
+      <span class="badge todo">draft pending</span>
     </div>
     <div class="deliverable">
       <h4>Sketch</h4>
@@ -488,9 +529,8 @@
       </p>
     </div>
     <details class="notes">
-      <summary>Agreed bullets &amp; open questions</summary>
+      <summary>Section notes</summary>
       <div class="body">
-        <p><em>Nothing agreed yet.</em> Bullets are set at gate A.</p>
         <p>Open: whether verification and closing split into two sections (§7 and §8).</p>
       </div>
     </details>
@@ -503,68 +543,11 @@
       <tbody>
         <tr><td>Printed orange solids on wood</td><td>Teaser / ending</td><td>In place — <code>printed_platonic_solids.jpg</code></td></tr>
         <tr><td>Rendered cube T5 lattice (dark, coloured by rod angle)</td><td>Figure candidate</td><td>In place — <code>blog/3d_print_platonic_solids/cube_t5.png</code></td></tr>
+        <tr><td>Three.js lattice viewer</td><td>§2–§7 embeds</td><td>In progress — <code>blog/src/lib/lattice/</code>, five GLBs (exported by <code>src/printable_surfaces/glb.py</code>), wood textures.</td></tr>
         <tr><td>Rod-angle histogram (0–90°)</td><td>§7 verification</td><td>To produce</td></tr>
-        <tr><td>2D Coulomb / repulsion demo</td><td>§4 (a figure, not a section)</td><td>To produce</td></tr>
-        <tr><td>Ceiling / post diagram</td><td>§3–§4</td><td>To produce</td></tr>
-        <tr><td>Full printed set photo</td><td>§7 closing</td><td>Dependency: dodecahedron still printing</td></tr>
-        <tr><td>Three.js lattice viewer</td><td>§2–§7 embeds</td><td>In progress by you — <code>blog/src/lib/lattice/</code>, five GLBs (exported by <code>src/printable_surfaces/glb.py</code>), wood textures. Not touched by me.</td></tr>
         <tr><td>Relaxation trace (node positions per iteration)</td><td>§4 animation</td><td>To produce — export from <code>relax_printable</code></td></tr>
         <tr><td>Candidate / selected rod sets</td><td>§5 interactive</td><td>To produce — export from the MIP stage</td></tr>
-      </tbody>
-    </table>
-  </div>
-
-  <h2>Interactive candidates</h2>
-  <div class="decisions">
-    <p style="margin-top:0;color:var(--muted);">
-      Not commitments — a menu to pick from at gate A. Cost is effort for me, not for you:
-      “low” means the model and viewer already exist, “medium” means the pipeline has to export
-      something it currently throws away.
-    </p>
-    <table>
-      <thead><tr><th>§</th><th>Idea</th><th>Needs</th><th>Cost</th></tr></thead>
-      <tbody>
-        <tr>
-          <td>2</td>
-          <td>A single rod you can rotate and flatten, showing where the unsupported overhang comes
-          from; or a layer-by-layer build of a steep rod next to a shallow one.</td>
-          <td>One cylinder + an angle slider; no lattice data</td>
-          <td>Low</td>
-        </tr>
-        <tr>
-          <td>3</td>
-          <td>Rotate each solid, highlight the top face as a ceiling, and toggle the dodecahedron
-          between its regular and ×1.93 shape.</td>
-          <td>Existing GLBs; a stretch toggle needs a second GLB or a scale on z</td>
-          <td>Low</td>
-        </tr>
-        <tr>
-          <td>4</td>
-          <td>Play back the relaxation: nodes drifting into place, coloured by whether they have a
-          printable parent, with the count dropping as it runs.</td>
-          <td>Per-iteration positions exported once, played in the browser</td>
-          <td>Medium</td>
-        </tr>
-        <tr>
-          <td>5</td>
-          <td>Show candidate rods, then the chosen subset; step through the repair rules one at a
-          time and watch rods appear or flip flat.</td>
-          <td>Candidate and selected rod lists exported; before/after meshes per rule</td>
-          <td>Medium</td>
-        </tr>
-        <tr>
-          <td>6</td>
-          <td>Slide the clip plane across a face and watch joints get trimmed while the rods stay
-          whole — the fix for the half-rod mistake, as a gesture.</td>
-          <td>Existing GLB plus a clipping plane in the shader</td>
-          <td>Low</td>
-        </tr>
-        <tr>
-          <td>7</td>
-          <td>The five pieces, on the wood, rotatable — the same look as the photo.</td>
-          <td>Already built</td>
-          <td>Low</td>
-        </tr>
+        <tr><td>Full printed set photo</td><td>§7 closing</td><td>Dependency: dodecahedron still printing</td></tr>
       </tbody>
     </table>
   </div>
@@ -584,6 +567,10 @@
       figures: contract item widened, decision row added, and a per-section menu of candidates with
       data needs and effort. The Three.js viewer in the blog submodule is the vehicle; it is your
       work in progress and I don't touch or commit it.</li>
+      <li><strong>2026-10-30</strong> — outline approved as a whole, all seven sections, no
+      objections. The “bullets” gate is retired: the sketches <em>are</em> the high-level
+      description. The section loop is now fixed as recall → rant → follow-up questions (figures
+      included) → draft → review, and every .mdx change is its own commit in both repos.</li>
     </ul>
   </div>
 
