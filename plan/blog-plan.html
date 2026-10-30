@@ -109,6 +109,8 @@
     color: var(--muted); font-size: .9rem; background: transparent;
   }
   .placeholder em { color: var(--gray); }
+  .sketch { margin: .25rem 0 0; color: var(--muted); }
+  .sketch + .sketch { margin-top: .45rem; }
   footer { color: var(--muted); font-size: .8rem; text-align: center; padding: 1rem 0 3rem; }
 </style>
 </head>
@@ -140,8 +142,8 @@
       <li><strong>The draft is the only prose.</strong> It lives in
       <code>blog/src/posts/3d_print_platonic_solids.mdx</code> and is reviewed at
       <code>http://100.81.11.110:4321/blog/3d_print_platonic_solids</code>. This plan holds titles,
-      bullets, status and open questions only.</li>
-      <li><strong>Nothing is recorded as agreed until it is agreed.</strong> A section's contents
+      sketches, bullets, status and open questions only.</li>
+      <li><strong>Nothing is recorded as agreed until it is agreed.</strong> A section's bullets
       box stays empty until we have actually talked it through.</li>
       <li><strong>No length target.</strong> A section takes as many words as it takes. We cut
       things that aren't earning their place, not words to hit a number.</li>
@@ -172,8 +174,9 @@
         </tr>
         <tr>
           <td>Structure</td>
-          <td>Seven working titles (§1–§7 below). Contents are decided per section, not now.
-          Length is not a target — sections run as long as they need.</td>
+          <td>Seven sections, informative working titles (§1–§7 below). The sketches in this file are
+          an overview to react to, not binding; gate A decides the actual bullets. Length is not a
+          target — sections run as long as they need.</td>
         </tr>
         <tr>
           <td>Optimisation depth</td>
@@ -255,34 +258,49 @@
     <table>
       <thead><tr><th>§</th><th>Section</th><th>Gate A — bullets</th><th>Gate B — draft</th></tr></thead>
       <tbody>
-        <tr><td>1</td><td>Intro — the failure that produced the constraint</td><td>◻ pending</td><td>◻ pending</td></tr>
-        <tr><td>2</td><td>When does a rod print?</td><td>◻ pending</td><td>◻ pending</td></tr>
-        <tr><td>3</td><td>What that implies for a shape</td><td>◻ pending</td><td>◻ pending</td></tr>
-        <tr><td>4</td><td>The interior is the hard part</td><td>◻ pending</td><td>◻ pending</td></tr>
-        <tr><td>5</td><td>Making it legal</td><td>◻ pending</td><td>◻ pending</td></tr>
-        <tr><td>6</td><td>Making it physical</td><td>◻ pending</td><td>◻ pending</td></tr>
-        <tr><td>7</td><td>Verification and closing</td><td>◻ pending</td><td>◻ pending</td></tr>
+        <tr><td>1</td><td>Trying to print a mathematical surface, and hitting the overhang wall</td><td>◻ pending</td><td>◻ pending</td></tr>
+        <tr><td>2</td><td>When is a rod printable? Steep, short bridge, or on the plate</td><td>◻ pending</td><td>◻ pending</td></tr>
+        <tr><td>3</td><td>What the rule implies for a shape: convex polytopes and why the Platonic solids work</td><td>◻ pending</td><td>◻ pending</td></tr>
+        <tr><td>4</td><td>The interior is the hard part: placing nodes and relaxing them into printable positions</td><td>◻ pending</td><td>◻ pending</td></tr>
+        <tr><td>5</td><td>From points to a lattice: choosing rods under the printability rules</td><td>◻ pending</td><td>◻ pending</td></tr>
+        <tr><td>6</td><td>From lattice to object: thickness, clipping, and bed contact</td><td>◻ pending</td><td>◻ pending</td></tr>
+        <tr><td>7</td><td>Checking the claim, what still fails, and the printed pieces</td><td>◻ pending</td><td>◻ pending</td></tr>
       </tbody>
     </table>
   </div>
 
   <h2>Sections</h2>
+  <p style="color:var(--muted);margin-top:-.2rem;">
+    Each section below carries a short sketch of what I imagine is in it. These sketches exist so
+    the whole article can be judged as a whole; they are not the agreed contents. When a section
+    opens, gate A replaces the sketch with accepted bullets.
+  </p>
 
   <article class="phase">
     <div class="head">
       <span class="num">§1</span>
-      <span class="title">Intro — the failure that produced the constraint</span>
+      <span class="title">Trying to print a mathematical surface, and hitting the overhang wall</span>
       <span class="badge todo">A · bullets pending</span>
       <span class="badge todo">B · draft pending</span>
     </div>
     <div class="deliverable">
-      <h4>Contents</h4>
-      <div class="placeholder"><em>Nothing agreed yet.</em> Filled in when the section opens.</div>
+      <h4>Sketch</h4>
+      <p class="sketch">
+        The original ambition: take a mathematical surface, triangulate it, and print just the edges
+        as a cage — sphere first, Klein bottle eventually. It fails for a boring reason: near the
+        top and bottom of any such shape there are always rods too shallow to print, and no amount of
+        clever triangulation fixes that on the skin alone.
+      </p>
+      <p class="sketch">
+        The turn that sets up the rest: overhangs can be held from the <em>inside</em>, so the
+        question becomes about the whole volume rather than the surface. Polytopes make that
+        question checkable, because their faces are flat and their edges are few.
+      </p>
     </div>
     <details class="notes">
-      <summary>Open questions</summary>
+      <summary>Agreed bullets &amp; open questions</summary>
       <div class="body">
-        <p>n/a — to be raised at gate A.</p>
+        <p><em>Nothing agreed yet.</em> Bullets are set at gate A.</p>
       </div>
     </details>
   </article>
@@ -290,18 +308,28 @@
   <article class="phase">
     <div class="head">
       <span class="num">§2</span>
-      <span class="title">When does a rod print?</span>
+      <span class="title">When is a rod printable? Steep, short bridge, or on the plate</span>
       <span class="badge todo">A · bullets pending</span>
       <span class="badge todo">B · draft pending</span>
     </div>
     <div class="deliverable">
-      <h4>Contents</h4>
-      <div class="placeholder"><em>Nothing agreed yet.</em> Filled in when the section opens.</div>
+      <h4>Sketch</h4>
+      <p class="sketch">
+        What the nozzle is actually doing: each layer is a bead laid on top of the previous one, so a
+        cylinder rising steeply supports itself, while one lying nearly flat has nothing underneath.
+        From that, the three ways a rod survives — steep enough, short enough to bridge, or resting on
+        the plate — and where the numbers come from (48°, 5°, 10 mm).
+      </p>
+      <p class="sketch">
+        The important reframing: this is a rule about the <em>rod axis</em>, not about the surface
+        normal of the shape. That distinction is what makes the rest of the project possible, and it
+        is also the part most write-ups get wrong.
+      </p>
     </div>
     <details class="notes">
-      <summary>Open questions</summary>
+      <summary>Agreed bullets &amp; open questions</summary>
       <div class="body">
-        <p>n/a — to be raised at gate A.</p>
+        <p><em>Nothing agreed yet.</em> Bullets are set at gate A.</p>
       </div>
     </details>
   </article>
@@ -309,18 +337,29 @@
   <article class="phase">
     <div class="head">
       <span class="num">§3</span>
-      <span class="title">What that implies for a shape</span>
+      <span class="title">What the rule implies for a shape: convex polytopes and why the Platonic solids work</span>
       <span class="badge todo">A · bullets pending</span>
       <span class="badge todo">B · draft pending</span>
     </div>
     <div class="deliverable">
-      <h4>Contents</h4>
-      <div class="placeholder"><em>Nothing agreed yet.</em> Filled in when the section opens.</div>
+      <h4>Sketch</h4>
+      <p class="sketch">
+        Apply the rule to a convex polytope sitting on one face. Its edges are either steep or
+        horizontal; each face is either vertical, where steep rods fit, or horizontal, where only
+        bridges fit. So the frame is printable almost for free, and the trouble is concentrated in
+        exactly one place: a horizontal top face is a ceiling with nothing under it.
+      </p>
+      <p class="sketch">
+        Stretching the shape vertically steepens the edges that would otherwise be too shallow,
+        which is how the awkward solids are rescued — the dodecahedron at ×1.93, the icosahedron by
+        lifting its tips rather than stretching it uniformly. This section ends by naming the ceiling
+        as the thing the rest of the post has to solve, not the stretching trick.
+      </p>
     </div>
     <details class="notes">
-      <summary>Open questions</summary>
+      <summary>Agreed bullets &amp; open questions</summary>
       <div class="body">
-        <p>n/a — to be raised at gate A.</p>
+        <p><em>Nothing agreed yet.</em> Bullets are set at gate A.</p>
       </div>
     </details>
   </article>
@@ -328,18 +367,30 @@
   <article class="phase">
     <div class="head">
       <span class="num">§4</span>
-      <span class="title">The interior is the hard part</span>
+      <span class="title">The interior is the hard part: placing nodes and relaxing them into printable positions</span>
       <span class="badge todo">A · bullets pending</span>
       <span class="badge todo">B · draft pending</span>
     </div>
     <div class="deliverable">
-      <h4>Contents</h4>
-      <div class="placeholder"><em>Nothing agreed yet.</em> Filled in when the section opens.</div>
+      <h4>Sketch</h4>
+      <p class="sketch">
+        Nothing about the inside of the shape is automatically printable. The naive version — scatter
+        points, connect the nearest ones, maybe push them apart with a Coulomb force so they spread
+        evenly — produces something that looks right and prints badly, because "evenly spread" says
+        nothing about having a parent below.
+      </p>
+      <p class="sketch">
+        The fix is a two-part placement: a constructive bottom-up fill on the faces, which gives every
+        face node parents by construction, and then a force relaxation over all nodes at once — a pull
+        towards printable positions, a 1/r² repulsion to keep things even, and an anchor that drags
+        interior nodes under the ceiling. After that, positions are good enough to choose rods from.
+        This is where the Coulomb picture belongs, as one force among three.
+      </p>
     </div>
     <details class="notes">
-      <summary>Open questions</summary>
+      <summary>Agreed bullets &amp; open questions</summary>
       <div class="body">
-        <p>n/a — to be raised at gate A.</p>
+        <p><em>Nothing agreed yet.</em> Bullets are set at gate A.</p>
       </div>
     </details>
   </article>
@@ -347,18 +398,30 @@
   <article class="phase">
     <div class="head">
       <span class="num">§5</span>
-      <span class="title">Making it legal</span>
+      <span class="title">From points to a lattice: choosing rods under the printability rules</span>
       <span class="badge todo">A · bullets pending</span>
       <span class="badge todo">B · draft pending</span>
     </div>
     <div class="deliverable">
-      <h4>Contents</h4>
-      <div class="placeholder"><em>Nothing agreed yet.</em> Filled in when the section opens.</div>
+      <h4>Sketch</h4>
+      <p class="sketch">
+        Positions are not a lattice yet. Enumerate candidate rods between nearby nodes, then pick a
+        subset: reward printable rods and reasonable degree, forbid rods that collide, and insist that
+        nodes which need a parent get one. That selection is a small integer program — described as
+        "choose a good subset under constraints", with one figure and no solver talk.
+      </p>
+      <p class="sketch">
+        The integer program cannot fix everything, so a repair pass follows: raise the minimum degree
+        to 3, make every horizontal rod exactly horizontal, and give every node below the top a
+        neighbour above it. Those repairs are allowed to break length and degree limits, but never the
+        48° rule — that ordering, and what it cost in failed attempts, is the honest core of this
+        section.
+      </p>
     </div>
     <details class="notes">
-      <summary>Open questions</summary>
+      <summary>Agreed bullets &amp; open questions</summary>
       <div class="body">
-        <p>n/a — to be raised at gate A.</p>
+        <p><em>Nothing agreed yet.</em> Bullets are set at gate A.</p>
       </div>
     </details>
   </article>
@@ -366,18 +429,29 @@
   <article class="phase">
     <div class="head">
       <span class="num">§6</span>
-      <span class="title">Making it physical</span>
+      <span class="title">From lattice to object: thickness, clipping, and bed contact</span>
       <span class="badge todo">A · bullets pending</span>
       <span class="badge todo">B · draft pending</span>
     </div>
     <div class="deliverable">
-      <h4>Contents</h4>
-      <div class="placeholder"><em>Nothing agreed yet.</em> Filled in when the section opens.</div>
+      <h4>Sketch</h4>
+      <p class="sketch">
+        A correct graph is not a printable part. The rods had to get thicker to survive handling, the
+        joints thicker still so they can be trimmed without cutting the rods, and the clipping had to
+        happen only at the faces — the first attempt cut the bottom rods in half and left hollow
+        shells. The vertex-down icosahedron needed a small flat base, because a point cannot sit on a
+        bed.
+      </p>
+      <p class="sketch">
+        The print that exposed all of this: the first layers came out as isolated node cross-sections
+        because joints dipped below the plate while rods did not. Ends on what it took to make the
+        thing sit flat and solid — and what still doesn't.
+      </p>
     </div>
     <details class="notes">
-      <summary>Open questions</summary>
+      <summary>Agreed bullets &amp; open questions</summary>
       <div class="body">
-        <p>n/a — to be raised at gate A.</p>
+        <p><em>Nothing agreed yet.</em> Bullets are set at gate A.</p>
       </div>
     </details>
   </article>
@@ -385,18 +459,29 @@
   <article class="phase">
     <div class="head">
       <span class="num">§7</span>
-      <span class="title">Verification and closing</span>
+      <span class="title">Checking the claim, what still fails, and the printed pieces</span>
       <span class="badge todo">A · bullets pending</span>
       <span class="badge todo">B · draft pending</span>
     </div>
     <div class="deliverable">
-      <h4>Contents</h4>
-      <div class="placeholder"><em>Nothing agreed yet.</em> Filled in when the section opens.</div>
+      <h4>Sketch</h4>
+      <p class="sketch">
+        How the claim gets checked rather than asserted: classify every rod by its elevation, count
+        the ones that fall in the dead band between a bridge and a steep rod, and see that the number
+        is zero. Then the honest part — a handful of nodes with no printable upward link, and ceiling
+        rods longer than the bridge limit, and why those are geometric rather than bugs.
+      </p>
+      <p class="sketch">
+        The printed solids, the photo, and a short closing thought: the same rule should apply to
+        other convex shapes and maybe to surfaces with enough interior, but the horizontal-face problem
+        is still there, and that is a fine place to stop.
+      </p>
     </div>
     <details class="notes">
-      <summary>Open questions</summary>
+      <summary>Agreed bullets &amp; open questions</summary>
       <div class="body">
-        <p>n/a — to be raised at gate A.</p>
+        <p><em>Nothing agreed yet.</em> Bullets are set at gate A.</p>
+        <p>Open: whether verification and closing split into two sections (§7 and §8).</p>
       </div>
     </details>
   </article>
@@ -424,6 +509,9 @@
     <ul style="color:var(--muted);margin-bottom:0;">
       <li><strong>2026-10-30</strong> — plan created. Seven working titles agreed as the spine;
       contents explicitly left open. Teaser replaced with the printed photo.</li>
+      <li><strong>2026-10-30</strong> — titles rewritten to be descriptive rather than snappy, and
+      every section given a two-paragraph sketch for whole-article review. Sketches are explicitly
+      non-binding; gate A still decides the bullets. Word targets removed.</li>
     </ul>
   </div>
 
