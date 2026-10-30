@@ -147,8 +147,9 @@
       box stays empty until we have actually talked it through.</li>
       <li><strong>No length target.</strong> A section takes as many words as it takes. We cut
       things that aren't earning their place, not words to hit a number.</li>
-      <li><strong>Figures belong to the section that uses them.</strong> Chosen at gate A, produced
-      before gate B, reviewed with the draft.</li>
+      <li><strong>Figures and interactives belong to the section that uses them.</strong> Chosen at
+      gate A, produced before gate B, reviewed with the draft. Every interactive needs a static
+      fallback image so the post still reads when the component is unavailable.</li>
     </ol>
   </div>
 
@@ -192,6 +193,15 @@
           <td>Teaser</td>
           <td>Photo of the printed orange solids on wood —
           <code>printed_platonic_solids.jpg</code>. Real photo, not a render.</td>
+        </tr>
+        <tr>
+          <td>Interactives</td>
+          <td>Prefer a 3D embed over a static diagram wherever it explains the point better.
+          Vibe-coded components are cheap, so the bar is “does this make it clearer”, not “can we
+          afford it”. The vehicle is the Three.js lattice viewer being built in the blog repo
+          (<code>blog/src/lib/lattice/</code>, GLBs in <code>blog/src/assets/models/platonic/</code>),
+          which already mimics the orange-PLA-on-wood look of the teaser photo. Not every section
+          gets one, each needs a static fallback, and no embed is allowed to block a draft.</td>
         </tr>
       </tbody>
     </table>
@@ -497,6 +507,64 @@
         <tr><td>2D Coulomb / repulsion demo</td><td>§4 (a figure, not a section)</td><td>To produce</td></tr>
         <tr><td>Ceiling / post diagram</td><td>§3–§4</td><td>To produce</td></tr>
         <tr><td>Full printed set photo</td><td>§7 closing</td><td>Dependency: dodecahedron still printing</td></tr>
+        <tr><td>Three.js lattice viewer</td><td>§2–§7 embeds</td><td>In progress by you — <code>blog/src/lib/lattice/</code>, five GLBs (exported by <code>src/printable_surfaces/glb.py</code>), wood textures. Not touched by me.</td></tr>
+        <tr><td>Relaxation trace (node positions per iteration)</td><td>§4 animation</td><td>To produce — export from <code>relax_printable</code></td></tr>
+        <tr><td>Candidate / selected rod sets</td><td>§5 interactive</td><td>To produce — export from the MIP stage</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h2>Interactive candidates</h2>
+  <div class="decisions">
+    <p style="margin-top:0;color:var(--muted);">
+      Not commitments — a menu to pick from at gate A. Cost is effort for me, not for you:
+      “low” means the model and viewer already exist, “medium” means the pipeline has to export
+      something it currently throws away.
+    </p>
+    <table>
+      <thead><tr><th>§</th><th>Idea</th><th>Needs</th><th>Cost</th></tr></thead>
+      <tbody>
+        <tr>
+          <td>2</td>
+          <td>A single rod you can rotate and flatten, showing where the unsupported overhang comes
+          from; or a layer-by-layer build of a steep rod next to a shallow one.</td>
+          <td>One cylinder + an angle slider; no lattice data</td>
+          <td>Low</td>
+        </tr>
+        <tr>
+          <td>3</td>
+          <td>Rotate each solid, highlight the top face as a ceiling, and toggle the dodecahedron
+          between its regular and ×1.93 shape.</td>
+          <td>Existing GLBs; a stretch toggle needs a second GLB or a scale on z</td>
+          <td>Low</td>
+        </tr>
+        <tr>
+          <td>4</td>
+          <td>Play back the relaxation: nodes drifting into place, coloured by whether they have a
+          printable parent, with the count dropping as it runs.</td>
+          <td>Per-iteration positions exported once, played in the browser</td>
+          <td>Medium</td>
+        </tr>
+        <tr>
+          <td>5</td>
+          <td>Show candidate rods, then the chosen subset; step through the repair rules one at a
+          time and watch rods appear or flip flat.</td>
+          <td>Candidate and selected rod lists exported; before/after meshes per rule</td>
+          <td>Medium</td>
+        </tr>
+        <tr>
+          <td>6</td>
+          <td>Slide the clip plane across a face and watch joints get trimmed while the rods stay
+          whole — the fix for the half-rod mistake, as a gesture.</td>
+          <td>Existing GLB plus a clipping plane in the shader</td>
+          <td>Low</td>
+        </tr>
+        <tr>
+          <td>7</td>
+          <td>The five pieces, on the wood, rotatable — the same look as the photo.</td>
+          <td>Already built</td>
+          <td>Low</td>
+        </tr>
       </tbody>
     </table>
   </div>
@@ -512,6 +580,10 @@
       <li><strong>2026-10-30</strong> — titles rewritten to be descriptive rather than snappy, and
       every section given a two-paragraph sketch for whole-article review. Sketches are explicitly
       non-binding; gate A still decides the bullets. Word targets removed.</li>
+      <li><strong>2026-10-30</strong> — interactives promoted to a first-class option next to static
+      figures: contract item widened, decision row added, and a per-section menu of candidates with
+      data needs and effort. The Three.js viewer in the blog submodule is the vehicle; it is your
+      work in progress and I don't touch or commit it.</li>
     </ul>
   </div>
 
