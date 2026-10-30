@@ -171,9 +171,9 @@
       <li><strong>No length target.</strong> A section takes as many words as it takes. We cut
       things that aren't earning their place, not words to hit a number.</li>
       <li><strong>Every change to the .mdx is its own commit.</strong> The blog repo is clean before
-      I open the file, the change is committed when it lands, and the superproject pointer is
-      committed with it — so every revision is recoverable. Work in progress belonging to anything
-      else is never committed.</li>
+      I open the file, and the change is committed when it lands, so every revision is recoverable.
+      The superproject only gets a commit when something in it actually changed — not on every blog
+      commit. Work in progress belonging to anything else is never committed.</li>
     </ol>
   </div>
 
@@ -243,6 +243,114 @@
           <td>Spelling</td>
           <td>American English, matching the existing posts (<em>optimization</em>,
           <em>behavior</em>, <em>color</em>).</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h2>Drafting conventions</h2>
+  <div class="decisions">
+    <table>
+      <thead><tr><th>Thing</th><th>How we do it</th></tr></thead>
+      <tbody>
+        <tr>
+          <td>Reading drafts</td>
+          <td>Mostly the text pasted in chat. The rendered page only when a draft has figures or
+          math that needs checking in place — no need to look at it otherwise.</td>
+        </tr>
+        <tr>
+          <td>Handover</td>
+          <td>Whole section at a time. No splitting planned; none of these sections should get long
+          enough to need it.</td>
+        </tr>
+        <tr>
+          <td>Moving on</td>
+          <td>You say it. It will be clear; I don't infer approval from silence, and I don't make a
+          ceremony of it.</td>
+        </tr>
+        <tr>
+          <td>Corrections</td>
+          <td>If something is wrong, I say so when you say it. No banking fact-checks for later.</td>
+        </tr>
+        <tr>
+          <td>Voice</td>
+          <td>Mix of “I” and “we”, as the existing posts do — “I” for what happened, “we” for
+          working through the reasoning. See the voice notes below.</td>
+        </tr>
+        <tr>
+          <td>Handover note</td>
+          <td>Each draft comes with 3–5 bullets: what I left out on purpose, what I'm unsure about,
+          what I need from you.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h2>Voice — notes from the existing posts</h2>
+  <div class="decisions">
+    <p style="margin-top:0;color:var(--muted);">
+      From a survey of the posts already on the blog. Short version: personal posts are “I”-heavy,
+      teaching posts are “we”-heavy, and mixing the two is the house style.
+    </p>
+    <table>
+      <thead><tr><th>Aspect</th><th>What the posts do</th></tr></thead>
+      <tbody>
+        <tr>
+          <td>Person</td>
+          <td>“I” for history, opinions, and things that happened. “We” for walking the reader
+          through the reasoning. Project posts run 50–100 “I” and almost no “we”; math posts are the
+          reverse.</td>
+        </tr>
+        <tr>
+          <td>Openings</td>
+          <td>Anecdote, claim-then-question, or a flat first-person debrief (“I made a dashboard
+          for…”). No throat-clearing, no abstract.</td>
+        </tr>
+        <tr>
+          <td>Rhythm</td>
+          <td>Long comma-chained sentences (~20 words on average) followed by a short paragraph for
+          the punchline. Rhetorical questions as transitions. Parentheses often.</td>
+        </tr>
+        <tr>
+          <td>Typography</td>
+          <td>Spaced <code>--</code> for dashes, not em dashes. “...” for ellipses. Italics for
+          terms and emphasis (heavily), bold sparingly, American spelling.</td>
+        </tr>
+        <tr>
+          <td>Register</td>
+          <td>Contractions everywhere, jokes, self-deprecation (“I have no idea why I did it this
+          way”). No profanity. One-sentence personal asides inside technical paragraphs, then
+          straight back to the task.</td>
+        </tr>
+        <tr>
+          <td>Headings</td>
+          <td>Sentence case. Question headings are normal (“What's next?”). This post's headings are
+          descriptive and already agreed.</td>
+        </tr>
+        <tr>
+          <td>Math and code</td>
+          <td>Define in words first, then name the notation. Display equations unnumbered.
+          Derivations sketched, signposted (“Recall that”, “It turns out”, “Fortunately”). Small
+          runnable code blocks, then one sentence interpreting the output.</td>
+        </tr>
+        <tr>
+          <td>Figures</td>
+          <td>Bare images without captions; the explanation sits in the sentence before. Captions
+          are allowed here where a figure needs one, but the prose should still do the work.</td>
+        </tr>
+        <tr>
+          <td>Endings</td>
+          <td>A “Conclusion” that points forward, or a reflective last paragraph with no heading. A
+          direct address to the reader is fine.</td>
+        </tr>
+        <tr>
+          <td>Tics</td>
+          <td>“just”, “actually”, “really”, “quite”, “Let's”, “It turns out”. The small informal
+          words carry the voice; don't sand them off.</td>
+        </tr>
+        <tr>
+          <td>Length</td>
+          <td>Median ≈2.2k words, most posts 1.7k–3.5k. Calibration only, not a target.</td>
         </tr>
       </tbody>
     </table>
@@ -571,6 +679,11 @@
       objections. The “bullets” gate is retired: the sketches <em>are</em> the high-level
       description. The section loop is now fixed as recall → rant → follow-up questions (figures
       included) → draft → review, and every .mdx change is its own commit in both repos.</li>
+      <li><strong>2026-10-30</strong> — drafting conventions settled: drafts read in chat, rendered
+      page only when figures or math need checking; whole-section handovers; immediate pushback on
+      anything wrong; mixed “I”/“we” voice; a 3–5 bullet note with each draft. Commit rule
+      corrected: the superproject is committed only when it actually changes. Voice notes from a
+      survey of the existing posts added above.</li>
     </ul>
   </div>
 
