@@ -76,7 +76,7 @@ def main() -> None:
         has_floor = bool(np.any((np.abs(normals[:, 2]) > 0.99) & (normals[:, 2] < 0.0)))
         base_cut = None if has_floor else float(poly[:, 2].min()) + BASE_CUT
         mesh = build_frame_mesh(sc, rods, rod_radius=ROD_R, joint_radius=JOINT_R,
-                                color_by_direction=True,
+                                color_by="direction",
                                 clip_planes=(normals, offset_centers), clip_base_z=base_cut)
         mesh.apply_translation([0.0, 0.0, -float(mesh.bounds[0][2])])  # sit on z = 0
 

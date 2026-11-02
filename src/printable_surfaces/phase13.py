@@ -144,7 +144,7 @@ def build_and_register(name: str, stretch: float) -> None:
     all_pts = relax(all_pts, n_frame, all_ids, face_paras, normals, centers, SPACING)
     all_edges = wire(all_pts, chain, n_frame, k=4)
 
-    mesh = build_frame_mesh(all_pts, all_edges, rod_radius=ROD_MM, joint_radius=JOINT_MM, color_by_direction=True)
+    mesh = build_frame_mesh(all_pts, all_edges, rod_radius=ROD_MM, joint_radius=JOINT_MM, color_by="direction")
     stl_path = f"output/lattice/rhombohedron_{name}.stl"
     ply_path = f"output/lattice/rhombohedron_{name}.ply"
     os.makedirs(os.path.dirname(stl_path), exist_ok=True)

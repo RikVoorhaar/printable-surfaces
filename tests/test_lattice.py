@@ -2,6 +2,7 @@
 
 import numpy as np
 
+from printable_surfaces.colormap import elevation_ramp
 from printable_surfaces.lattice import (
     _rod_color,
     boundary_mask,
@@ -46,7 +47,7 @@ def test_build_frame_mesh_color_by_direction():
     # horizontal rod (should be orange) + vertical rod (should be green) + joints (grey)
     nodes = np.array([[0.0, 0.0, 0.0], [10.0, 0.0, 0.0], [0.0, 0.0, 10.0]])
     edges = np.array([[0, 1], [0, 2]])
-    mesh = build_frame_mesh(nodes, edges, rod_radius=1.0, joint_radius=1.5, color_by_direction=True)
+    mesh = build_frame_mesh(nodes, edges, rod_radius=1.0, joint_radius=1.5, color_by="direction")
     vc = mesh.visual.vertex_colors
     assert vc is not None
     assert vc.shape == (len(mesh.vertices), 4)
@@ -58,6 +59,20 @@ def test_build_frame_mesh_color_by_direction():
     # continuous scale: a 45° rod gives the yellow threshold colour, not an endpoint
     c45 = tuple(int(x) for x in _rod_color(np.array([1.0, 0.0, 1.0]))[:3])
     assert c45[0] > 200 and c45[1] > 180 and c45[2] < 80  # yellow-ish
+
+
+def test_build_frame_mesh_color_by_elevation():
+    # Horizontal rod vs vertical rod land at opposite ends of the ramp; joints are coloured
+    # by the mean of the rods meeting there, so a grey joint never punches a hole in the scale.
+    nodes = np.array([[0.0, 0.0, 0.0], [10.0, 0.0, 0.0], [0.0, 0.0, 10.0]])
+    edges = np.array([[0, 1], [0, 2]])
+    mesh = build_frame_mesh(nodes, edges, rod_radius=1.0, joint_radius=1.5, color_by="elevation")
+    vc = mesh.visual.vertex_colors
+    assert vc.shape == (len(mesh.vertices), 4)
+    colors = {tuple(int(x) for x in c[:3]) for c in vc[:, :3]}
+    assert tuple(int(x) for x in elevation_ramp(0)) in colors
+    assert tuple(int(x) for x in elevation_ramp(90)) in colors
+    assert (154, 163, 178) not in colors
 
 
 def test_clip_segment_inside_returns_full_segment():

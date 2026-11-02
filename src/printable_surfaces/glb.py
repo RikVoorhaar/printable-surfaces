@@ -32,12 +32,13 @@ import trimesh
 
 # glTF component types
 _BYTE = 5120
+_UBYTE = 5121
 _SHORT = 5122
 _UINT = 5125
 _USHORT = 5123
 
 # glTF accessor types
-_SCALAR, _VEC3 = "SCALAR", "VEC3"
+_SCALAR, _VEC3, _VEC4 = "SCALAR", "VEC3", "VEC4"
 
 
 def _pad(data: bytes, fill: bytes = b"\x00") -> bytes:
@@ -51,6 +52,15 @@ def load_mesh(path: str | Path, *, weld: bool = True) -> trimesh.Trimesh:
     mesh = trimesh.load(str(path), force="mesh")
     if isinstance(mesh, trimesh.Scene):  # pragma: no cover - defensive
         mesh = trimesh.util.concatenate(tuple(mesh.geometry.values()))
+
+    if getattr(mesh.visual, "kind", None) == "vertex":
+        # Already an indexed mesh carrying per-vertex data (a coloured PLY, say). Rebuilding
+        # or welding it here would drop or scramble the colour attribute, and the export is
+        # welded already, so take it as it is.
+        return trimesh.Trimesh(
+            vertices=mesh.vertices, faces=mesh.faces, process=False, visual=mesh.visual
+        )
+
     mesh = trimesh.Trimesh(vertices=mesh.vertices, faces=mesh.faces, process=True)
     if weld:
         mesh.merge_vertices()
@@ -86,6 +96,35 @@ def _quantize_normals(normals: np.ndarray) -> np.ndarray:
     """Map unit normals into normalised int8."""
     q = np.round(normals * 127.0)
     return np.clip(q, -127, 127).astype(np.int8)
+
+
+def _linear_colors(colors: np.ndarray) -> np.ndarray:
+    """sRGB RGBA bytes → linear RGBA bytes.
+
+    glTF defines ``COLOR_0`` as linear. trimesh stores what you gave it (sRGB hex, in
+    practice), so writing it straight through would wash every colour out in the viewer.
+    """
+    srgb = colors[:, :3].astype(np.float64) / 255.0
+    linear = np.where(srgb <= 0.04045, srgb / 12.92, ((srgb + 0.055) / 1.055) ** 2.4)
+    rgba = np.concatenate([np.round(linear * 255.0), colors[:, 3:4].astype(np.float64)], axis=1)
+    return np.clip(rgba, 0, 255).astype(np.uint8)
+
+
+def _mesh_colors(mesh: trimesh.Trimesh, vertex_count: int) -> np.ndarray | None:
+    """The mesh's per-vertex colours, or ``None`` if it does not carry any."""
+    visual = getattr(mesh, "visual", None)
+    if visual is None or getattr(visual, "kind", None) != "vertex":
+        return None
+    colors = np.asarray(visual.vertex_colors)
+    if len(colors) != vertex_count or len(colors) == 0:
+        return None
+    if colors.dtype != np.uint8:
+        scale = 255.0 if colors.max() <= 1.0 else 1.0
+        colors = np.clip(colors * scale, 0, 255).astype(np.uint8)
+    # A single flat colour is the material's job, not an attribute's.
+    if float(np.ptp(colors[:, :3].astype(np.int16))) == 0.0:
+        return None
+    return colors[:, :4]
 
 
 def _buffer_view(blob: bytearray, payload: bytes, target: int | None = None) -> dict:
@@ -152,10 +191,26 @@ def glb_bytes(
         }
     )
 
+    colors = _mesh_colors(mesh, len(vertices))
+    color_accessor = None
+    if colors is not None:
+        views.append(_buffer_view(blob, _linear_colors(colors).tobytes(), target=34962))
+        color_accessor = len(accessors)
+        accessors.append(
+            {
+                "bufferView": len(views) - 1,
+                "componentType": _UBYTE,
+                "count": int(len(colors)),
+                "type": _VEC4,
+                "normalized": True,
+            }
+        )
+
     index_type = _USHORT if len(vertices) < 65536 else _UINT
     index_dtype = np.uint16 if index_type == _USHORT else np.uint32
     indices = faces.astype(index_dtype).ravel()
     views.append(_buffer_view(blob, indices.tobytes(), target=34963))
+    index_accessor = len(accessors)
     accessors.append(
         {
             "bufferView": len(views) - 1,
@@ -164,6 +219,10 @@ def glb_bytes(
             "type": _SCALAR,
         }
     )
+
+    attributes: dict = {pos_index.upper(): 0, "NORMAL": 1}
+    if color_accessor is not None:
+        attributes["COLOR_0"] = color_accessor
 
     tree: dict = {
         "asset": {"version": "2.0", "generator": "printable-surfaces glb.py"},
@@ -175,8 +234,8 @@ def glb_bytes(
                 "name": name,
                 "primitives": [
                     {
-                        "attributes": {pos_index.upper(): 0, "NORMAL": 1},
-                        "indices": 2,
+                        "attributes": attributes,
+                        "indices": index_accessor,
                         "material": 0,
                         "mode": 4,
                     }
@@ -188,7 +247,8 @@ def glb_bytes(
                 "name": "PLA",
                 "doubleSided": True,
                 "pbrMetallicRoughness": {
-                    "baseColorFactor": list(color),
+                    # Vertex colours multiply this, so a coloured mesh gets white.
+                    "baseColorFactor": [1.0, 1.0, 1.0, 1.0] if colors is not None else list(color),
                     "metallicFactor": 0.0,
                     "roughnessFactor": 0.62,
                 },
