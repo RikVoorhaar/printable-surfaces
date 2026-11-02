@@ -71,6 +71,32 @@ static figure with n=6 and n=24 side by side rather than a second viewer.
   it came from stays in gitignored `output/`.
 - The existing posts and `lattice_viewer_test.mdx` still render after the engine change.
 
+## Second figure: the Klein bottle
+
+The first paragraph of §1 names a Klein bottle, so the reader should see one — and see that it
+fails the same way the sphere does. This one is aspirational: if it turns out to need weeks, the
+sphere carries §1 on its own and the Klein bottle can be cut without touching the prose.
+
+- **Geometry.** Figure-8 immersion, the standard parametrization over `u, v ∈ [0, 2π)`:
+  `x = (a + cos(u/2) sin v − sin(u/2) sin 2v) cos u`,
+  `y = (a + cos(u/2) sin v − sin(u/2) sin 2v) sin u`,
+  `z = sin(u/2) sin v + cos(u/2) sin 2v`.
+- **No rod-rod collisions.** The surface self-intersects; the lattice must not. Triangulate the
+  `(u, v)` grid so the preimage of the intersection curve falls **inside triangles, not along
+  edges**, then check clearance numerically (min distance between non-adjacent rods ≥ rod
+  diameter + gap) rather than by eye. If it fails near the crossing, coarsen locally instead of
+  nudging vertices — nudging changes the shape.
+- **Same pipeline as the sphere.** 1-skeleton → `build_frame_mesh` → GLB, same continuous
+  colormap, same 48° tick, same legend.
+- **Composition.** One interactive with a sphere/Klein-bottle toggle, or two stacked viewers if
+  the toggle is fiddly. The colorbar is shared between them.
+- **Report the numbers** (nodes, rods, % below 48°) for the Klein bottle the same way as the
+  sphere. If the bands look different, say why — that difference may be worth a sentence in §1.
+
+**Not in this session:** actually running the relaxation/selection pipeline on the Klein bottle
+to see whether it can be *made* printable. That is a research question, and it belongs to the
+post only if it produces something.
+
 ## Coordination
 
 `blog/src/lib/lattice/*.ts` was being edited when this handover was written. One writer at a
