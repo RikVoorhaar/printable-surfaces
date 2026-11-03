@@ -22,9 +22,12 @@ The parametrisation (``u, v ∈ [0, 2π]``, ``H = 100 mm`` target height)::
 
 Why ``c`` is what it is: on the first sheet ``z = s[b − (16 + r cos v) sin u]``, so the
 lowest point is ``s[b − max(16 + r(u)) sin u]``. Maximising ``(20 − 2 cos u) sin u`` gives
-``cos u = c`` and the maximum ``(20 − 2c)√(1 − c²) = b``. Hence ``min z = 0`` exactly, and
-``max z = s[b + 16] = H`` at ``u = 3π/2``. So the surface already sits on the build plate
-and needs no rescaling beyond ``s``.
+``cos u = c`` and the maximum ``(20 − 2c)√(1 − c²) = b``. Hence the body reaches ``z = 0``
+exactly and the neck top reaches ``s[b + 16] = H`` at ``u = 3π/2``.
+
+``UPSIDE_DOWN`` then reflects ``z`` about the mid-plane, so the *neck* is what rests on the
+plate. The reflection is an isometry: the lattice, its rod clearances and every rod's angle
+above horizontal are identical either way round, only the orientation changes.
 
 The seam. ``P(0, v) = (12 + 2cos v, 2 sin v, b)`` and ``P(2π, v) = (12 − 2cos v, 2 sin v, b)``
 (on the second sheet), so the two ends of the hose are glued by the **glide reflection**
@@ -103,7 +106,13 @@ C_CUSP = (5.0 - 3.0 * np.sqrt(3.0)) / 2.0  # ≈ −0.0980762
 B_LIFT = (20.0 - 2.0 * C_CUSP) * np.sqrt(1.0 - C_CUSP**2)  # ≈ 20.0987849
 H0 = 16.0 + B_LIFT  # ≈ 36.0987849
 SCALE = SIZE_MM / H0  # ≈ 2.77017635
-U_CUSP = float(np.arccos(C_CUSP))  # ≈ 1.6690305 rad, where z first touches the plate
+U_CUSP = float(np.arccos(C_CUSP))  # ≈ 1.6690305 rad, where the body cusp sits
+
+# The parametrisation below is written with the *body* on the plate and the neck on top.
+# The figure we want is the other way up — neck down, body up — so z is reflected through
+# the mid-plane. This is an isometry, so the lattice, its clearances and every rod angle are
+# unchanged; only which end touches the table moves.
+UPSIDE_DOWN = True
 
 
 # ---------------------------------------------------------------------------------------
@@ -134,6 +143,8 @@ def bottle(u, v):
 
     x = 6.0 + 6.0 * cu * (1.0 + su) + x_off
     z = B_LIFT + z_off
+    if UPSIDE_DOWN:
+        z = H0 - z
     return SCALE * np.stack([x, y, z], axis=-1)
 
 
