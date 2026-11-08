@@ -19,8 +19,7 @@ from scipy.spatial import ConvexHull
 
 from .artifacts import register
 from .lattice import build_frame_mesh
-from .platonic import (cube_face_down, dodecahedron, face_planes, icosahedron,
-                       octahedron_face_down, tetrahedron)
+from .platonic import cube_face_down, dodecahedron, face_planes, icosahedron, octahedron_face_down, tetrahedron
 from .printable import printable_lattice
 
 PLA_DENSITY = 1.24  # g/cm^3 (PrusaSlicer nominal PLA)

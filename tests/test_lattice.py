@@ -1,6 +1,8 @@
 """Tests for lattice construction (Phase 2)."""
 
 import numpy as np
+import trimesh
+import trimesh.visual
 
 from printable_surfaces.colormap import elevation_ramp
 from printable_surfaces.lattice import (
@@ -48,6 +50,7 @@ def test_build_frame_mesh_color_by_direction():
     nodes = np.array([[0.0, 0.0, 0.0], [10.0, 0.0, 0.0], [0.0, 0.0, 10.0]])
     edges = np.array([[0, 1], [0, 2]])
     mesh = build_frame_mesh(nodes, edges, rod_radius=1.0, joint_radius=1.5, color_by="direction")
+    assert isinstance(mesh.visual, trimesh.visual.ColorVisuals)
     vc = mesh.visual.vertex_colors
     assert vc is not None
     assert vc.shape == (len(mesh.vertices), 4)
@@ -67,7 +70,9 @@ def test_build_frame_mesh_color_by_elevation():
     nodes = np.array([[0.0, 0.0, 0.0], [10.0, 0.0, 0.0], [0.0, 0.0, 10.0]])
     edges = np.array([[0, 1], [0, 2]])
     mesh = build_frame_mesh(nodes, edges, rod_radius=1.0, joint_radius=1.5, color_by="elevation")
+    assert isinstance(mesh.visual, trimesh.visual.ColorVisuals)
     vc = mesh.visual.vertex_colors
+    assert vc is not None
     assert vc.shape == (len(mesh.vertices), 4)
     colors = {tuple(int(x) for x in c[:3]) for c in vc[:, :3]}
     assert tuple(int(x) for x in elevation_ramp(0)) in colors
@@ -77,14 +82,18 @@ def test_build_frame_mesh_color_by_elevation():
 
 def test_clip_segment_inside_returns_full_segment():
     c = np.array([0.0, 0.0, 0.0])
-    q0, q1 = clip_segment_to_sphere(np.array([-5.0, 0.0, 0.0]), np.array([5.0, 0.0, 0.0]), c, 10.0)
+    seg = clip_segment_to_sphere(np.array([-5.0, 0.0, 0.0]), np.array([5.0, 0.0, 0.0]), c, 10.0)
+    assert seg is not None
+    q0, q1 = seg
     assert np.allclose(q0, [-5.0, 0.0, 0.0])
     assert np.allclose(q1, [5.0, 0.0, 0.0])
 
 
 def test_clip_segment_crossing_sphere():
     c = np.array([0.0, 0.0, 0.0])
-    q0, q1 = clip_segment_to_sphere(np.array([-20.0, 0.0, 0.0]), np.array([20.0, 0.0, 0.0]), c, 10.0)
+    seg = clip_segment_to_sphere(np.array([-20.0, 0.0, 0.0]), np.array([20.0, 0.0, 0.0]), c, 10.0)
+    assert seg is not None
+    q0, q1 = seg
     assert np.allclose(q0, [-10.0, 0.0, 0.0])
     assert np.allclose(q1, [10.0, 0.0, 0.0])
 

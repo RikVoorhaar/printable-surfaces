@@ -109,7 +109,7 @@ def clearance_pairs(
     closer than ``clearance`` must have midpoints within that). Then the exact
     segment-segment distance for every surviving pair.
     """
-    from scipy.spatial import cKDTree
+    from scipy.spatial import cKDTree  # ty: ignore[import-not-found]
 
     e = np.asarray(edges, dtype=int)
     p1, p2 = np.asarray(nodes, float)[e[:, 0]], np.asarray(nodes, float)[e[:, 1]]
@@ -163,7 +163,7 @@ def printability(nodes: np.ndarray, edges: np.ndarray) -> dict:
         "steep_pct": float(100.0 * steep.mean()),
         "bridge_pct": float(100.0 * bridge.mean()),
         "on_plate": int(on_plate.sum()),
-        "hist": {f"{lo:.0f}-{lo + 10:.0f}": int(c) for lo, c in zip(np.arange(0, 90, 10), hist)},
+        "hist": {f"{lo:.0f}-{lo + 10:.0f}": int(c) for lo, c in zip(np.arange(0, 90, 10), hist, strict=False)},
         "median_elev": float(np.median(elev)),
         "mean_length": float(length.mean()),
         "min_length": float(length.min()),

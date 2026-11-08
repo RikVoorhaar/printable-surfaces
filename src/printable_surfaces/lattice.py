@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import numpy as np
 import trimesh
+import trimesh.visual
 
 from .colormap import elevation_ramp
 
@@ -106,7 +107,6 @@ def _clip_convex_halfspace(
     clipped triangles — the result stays a closed, solid shell rather than a leaky triangle
     soup.
     """
-    from scipy.spatial import ConvexHull
 
     v = np.asarray(mesh.vertices, dtype=float)
     f = np.asarray(mesh.faces, dtype=int)
@@ -165,15 +165,15 @@ def _clip_convex_halfspace(
     # leave T-junction cracks.
     if len(cut_ids) >= 3:
         uniq = sorted(set(cut_ids))
-        pts = np.asarray([verts[i] for i in uniq])
+        poly_pts = np.asarray([verts[i] for i in uniq])
         helper = np.array([1.0, 0.0, 0.0])
         if abs(float(normal @ helper)) > 0.9:
             helper = np.array([0.0, 1.0, 0.0])
         u = np.cross(normal, helper)
         u /= np.linalg.norm(u)
         w = np.cross(normal, u)
-        centre = pts.mean(axis=0)
-        rel = pts - centre
+        centre = poly_pts.mean(axis=0)
+        rel = poly_pts - centre
         ang = np.arctan2(rel @ w, rel @ u)
         order = np.argsort(ang)
         ring = [uniq[int(k)] for k in order]
@@ -236,9 +236,9 @@ def build_frame_mesh(
     rod_planes: list[tuple[np.ndarray, np.ndarray]] = []
     if clip_planes is not None:
         pn, pc = np.asarray(clip_planes[0], dtype=float), np.asarray(clip_planes[1], dtype=float)
-        joint_planes.extend(zip(pn, pc))
+        joint_planes.extend(zip(pn, pc, strict=False))
         if clip_rods:
-            rod_planes.extend(zip(pn, pc))
+            rod_planes.extend(zip(pn, pc, strict=False))
     if clip_base_z is not None:
         base = (np.array([0.0, 0.0, -1.0]), np.array([0.0, 0.0, float(clip_base_z)]))
         joint_planes.append(base)
@@ -247,10 +247,11 @@ def build_frame_mesh(
     def _finish(mesh: trimesh.Trimesh, color: np.ndarray,
                 planes: list[tuple[np.ndarray, np.ndarray]]) -> trimesh.Trimesh | None:
         for n, c in planes:
-            mesh = _clip_convex_halfspace(mesh, c, n)
-            if mesh is None or len(mesh.faces) == 0:
+            clipped = _clip_convex_halfspace(mesh, c, n)
+            if clipped is None or len(clipped.faces) == 0:
                 return None
-        if color_by is not None:
+            mesh = clipped
+        if color_by is not None and isinstance(mesh.visual, trimesh.visual.ColorVisuals):
             mesh.visual.vertex_colors = np.tile(color, (len(mesh.vertices), 1))
         return mesh
 
@@ -276,7 +277,10 @@ def build_frame_mesh(
         part = _finish(s, color, joint_planes)
         if part is not None:
             parts.append(part)
-    return trimesh.util.concatenate(parts)
+    merged = trimesh.util.concatenate(parts)
+    if not isinstance(merged, trimesh.Trimesh):
+        raise TypeError(f"expected a single mesh, got {type(merged).__name__}")
+    return merged
 
 
 def surface_frame_mesh(radius: float, n: int, rod_radius: float, joint_radius: float) -> trimesh.Trimesh:
@@ -339,7 +343,7 @@ def diamond_lattice(
     ``a`` is the cubic unit-cell edge length in the same units as ``radius`` (smaller
     ``a`` = denser). Returns ``(nodes, edges)``.
     """
-    center = np.asarray(center, dtype=float)
+    c = np.asarray(center, dtype=float)
 
     # FCC sublattice A basis + the B sublattice offset, and the 4 tetrahedral bond
     # directions (each of length a·√3/4).
@@ -364,11 +368,11 @@ def diamond_lattice(
     for i in range(-n, n + 1):
         for j in range(-n, n + 1):
             for k in range(-n, n + 1):
-                base = np.array([i, j, k], dtype=float) * a + center
+                base = np.array([i, j, k], dtype=float) * a + c
                 for A in A_offsets:
                     p0 = base + A
                     for d in bond_dirs:
-                        seg = clip_segment_to_sphere(p0, p0 + d, center, radius)
+                        seg = clip_segment_to_sphere(p0, p0 + d, c, radius)
                         if seg is None:
                             continue
                         ia = node_index(seg[0])
@@ -487,7 +491,7 @@ def random_lattice(
     nodes) and in the interior, then connects each point to its ``k`` nearest neighbours.
     Degree stays near ``k``, so the result is sparse and non-cubic. Returns ``(nodes, edges)``.
     """
-    from scipy.spatial import cKDTree
+    from scipy.spatial import cKDTree  # ty: ignore[import-not-found]
 
     rng = np.random.default_rng(seed)
 

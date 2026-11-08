@@ -9,7 +9,7 @@ inside by a soft wall. This yields a lattice with near-uniform rod lengths every
 from __future__ import annotations
 
 import numpy as np
-from scipy.spatial import cKDTree
+from scipy.spatial import cKDTree  # ty: ignore[import-not-found]
 
 
 def seed_vertices(radius: float, n_surface: int, n_interior: int, seed: int = 0) -> np.ndarray:
@@ -92,7 +92,6 @@ def wire_surface_reinforced(
     boundary additionally connect to their ``k_surface`` nearest *surface* neighbours,
     densifying only the shell.
     """
-    n = len(points)
     r = np.linalg.norm(points, axis=1)
     if surface_band is None:
         tree = cKDTree(points)

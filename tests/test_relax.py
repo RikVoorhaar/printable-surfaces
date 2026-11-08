@@ -35,7 +35,7 @@ def test_knn_edges_within_bounds_and_symmetric():
 
 
 def test_coulomb_lattice_uniform_and_in_sphere():
-    from scipy.spatial import cKDTree
+    from scipy.spatial import cKDTree  # ty: ignore[import-not-found]
 
     nodes, edges = coulomb_lattice(radius=40.0, n_points=80, k=4, seed=1, iterations=1200)
     r = np.linalg.norm(nodes, axis=1)

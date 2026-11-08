@@ -57,7 +57,8 @@ def build_and_register(radius: float, name: str, label: str, L: float, seed: int
 
     print(
         f"{label:22s} {len(nodes):4d} nodes ({b.sum():3d} surf)  {len(all_edges):4d} rods  "
-        f"spring {spring_len.mean():.1f}±{spring_len.std():.1f}  hull {hull_len.mean():.1f}±{hull_len.std():.1f}  -> {status}"
+        f"spring {spring_len.mean():.1f}±{spring_len.std():.1f}  "
+        f"hull {hull_len.mean():.1f}±{hull_len.std():.1f}  -> {status}"
     )
 
 

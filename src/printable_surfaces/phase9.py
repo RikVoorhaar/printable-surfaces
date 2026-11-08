@@ -41,14 +41,16 @@ def build_and_register(radius: float, name: str, label: str, nodes: np.ndarray, 
     try:
         proc = slice_stl(path, gcode)
         ok = proc.returncode == 0 and os.path.exists(gcode) and os.path.getsize(gcode) > 0
-        text = (proc.stdout or "") + (proc.stderr or "")
     except FileNotFoundError:
-        ok, text = False, "prusa-slicer binary not found"
+        ok = False
     status = "sliced OK" if ok else "FAILED"
     if ok:
         register("slicer", gcode, "gcode", f"{label} · {status}")
 
-    print(f"{label:24s} {len(nodes):4d} nodes ({n_boundary:3d} surf)  {len(all_edges):4d} rods  {len(mesh.faces):,} tris  -> {status}")
+    print(
+        f"{label:24s} {len(nodes):4d} nodes ({n_boundary:3d} surf)  "
+        f"{len(all_edges):4d} rods  {len(mesh.faces):,} tris  -> {status}"
+    )
 
 
 def main() -> None:

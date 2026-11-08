@@ -28,7 +28,6 @@ from .klein import (
     SIZE_MM,
     immersed_bbox,
     printability,
-    rod_elevations,
 )
 
 TWO_PI = 2.0 * np.pi
@@ -167,7 +166,7 @@ def relax(
     edges = grid_edges(m, n)
     physical = np.arange(m * n)  # one slot per physical node, ordered (i, j) with i < m
 
-    from scipy.spatial import cKDTree
+    from scipy.spatial import cKDTree  # ty: ignore[import-not-found]
 
     for it in range(iterations):
         apply_seam(u, v)

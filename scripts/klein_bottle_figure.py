@@ -115,7 +115,10 @@ def report_double_curve() -> dict:
     print(f"                  internal tangency (d = |r₁−r₂|, i.e. sin u = −2/3) at u = {hi:.6f}")
     print(f"u₂ − (3π−u₁) max  = {np.abs(x[:,2] - (3*np.pi - x[:,0])).max():.3e}")
     print(f"preimage v range  = [{ana['v1'].min():.6f}, {ana['v1'].max():.6f}] rad")
-    print(f"closure P(u₁,v₁)=P(u₂,v₂) max err = {np.linalg.norm(kb.bottle(x[:,0],x[:,1]) - kb.bottle(x[:,2],x[:,3]), axis=1).max():.3e} mm")
+    closure_err = np.linalg.norm(
+        kb.bottle(x[:, 0], x[:, 1]) - kb.bottle(x[:, 2], x[:, 3]), axis=1
+    ).max()
+    print(f"closure P(u₁,v₁)=P(u₂,v₂) max err = {closure_err:.3e} mm")
     print(f"\nimage: radius √(x²+y²) = {ana['radius'].min():.3f} … {ana['radius'].max():.3f} mm")
     print(f"       height z        = {ana['height'].min():.3f} … {ana['height'].max():.3f} mm")
     print(f"       x               = {ana['points'][:,0].min():.3f} … {ana['points'][:,0].max():.3f} mm")
@@ -124,7 +127,7 @@ def report_double_curve() -> dict:
     print("where the neck (second sheet) dives through the body wall.")
 
     num = kb.double_curve(nu=181, nv=90, coarse=2.5, verbose=True)
-    from scipy.spatial import cKDTree
+    from scipy.spatial import cKDTree  # ty: ignore[import-not-found]
 
     closure = np.linalg.norm(
         kb.bottle(num["pairs"][:, 0], num["pairs"][:, 1])
@@ -173,7 +176,7 @@ def report_lattice(curve_points: np.ndarray) -> dict:
     print(f"pairs below 3.0 mm (margin check) = {st2['violations']}")
     print(f"pairs examined (broadphase)       = {st['pairs']}")
 
-    from scipy.spatial import cKDTree
+    from scipy.spatial import cKDTree  # ty: ignore[import-not-found]
 
     nn = cKDTree(nodes).query(nodes, k=2)[0][:, 1]
     print(f"min node-node distance            = {nn.min():.3f} mm  (joint Ø{2*kb.JOINT_R:.1f} mm)")

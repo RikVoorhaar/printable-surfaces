@@ -258,7 +258,7 @@ def face_planes(vertices: np.ndarray, faces: np.ndarray):
 def inside_mask(points: np.ndarray, normals: np.ndarray, centers: np.ndarray, eps: float = 1e-6) -> np.ndarray:
     """Boolean: True for points on the inner side of every face (i.e. inside the polytope)."""
     inside = np.ones(len(points), dtype=bool)
-    for n, c in zip(normals, centers):
+    for n, c in zip(normals, centers, strict=False):
         inside &= (points - c) @ n <= eps
     return inside
 
@@ -377,4 +377,5 @@ def clamp_to_polygon(poly: np.ndarray, p: np.ndarray) -> np.ndarray:
         if dd < bestd:
             bestd = dd
             best = q
+    assert best is not None
     return best

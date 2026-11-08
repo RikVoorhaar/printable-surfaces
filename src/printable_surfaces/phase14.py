@@ -47,7 +47,8 @@ def main() -> None:
     except FileNotFoundError:
         pass
 
-    print(f"nodes={len(nodes)} rods={len(rods)} unprintable={unprintable.sum()} -> {'sliced OK' if ok else 'slice n/a'}")
+    status = "sliced OK" if ok else "slice n/a"
+    print(f"nodes={len(nodes)} rods={len(rods)} unprintable={unprintable.sum()} -> {status}")
 
 
 if __name__ == "__main__":

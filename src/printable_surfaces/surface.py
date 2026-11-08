@@ -11,8 +11,8 @@ a uniform grid -> triangles -> lattice on any surface.
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
+from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Callable
 
 import numpy as np
 
@@ -116,7 +116,12 @@ class Sphere(ParametricSurface):
                     q = np.stack([tu, tv, sign * ones], axis=-1)
                 return c + r * q / np.linalg.norm(q, axis=-1, keepdims=True)
 
-            return Chart(name=f"{'+' if sign > 0 else '-'}{'XYZ'[axis]}", u_min=-1.0, u_max=1.0, v_min=-1.0, v_max=1.0, map_fn=fn)
+            name = f"{'+' if sign > 0 else '-'}{'XYZ'[axis]}"
+            return Chart(
+                name=name,
+                u_min=-1.0, u_max=1.0, v_min=-1.0, v_max=1.0,
+                map_fn=fn,
+            )
 
         return [
             _face(0, +1.0),

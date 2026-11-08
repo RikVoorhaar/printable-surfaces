@@ -90,7 +90,7 @@ and :mod:`printable_surfaces.klein_lattice` and is left alone.
 from __future__ import annotations
 
 import numpy as np
-from scipy.spatial import cKDTree
+from scipy.spatial import cKDTree  # ty: ignore[import-not-found]
 
 # ---------------------------------------------------------------------------------------
 # Constants
@@ -582,7 +582,7 @@ def rods_near_curve(nodes: np.ndarray, edges: np.ndarray, curve_points: np.ndarr
     A rod that lies *on* the double curve scores ~0; that is the configuration that must be
     avoided, because there the two sheets coincide and a rod has a twin under its feet.
     """
-    from scipy.spatial import cKDTree
+    from scipy.spatial import cKDTree  # ty: ignore[import-not-found]
 
     e = np.asarray(edges, dtype=int)
     p0, p1 = nodes[e[:, 0]], nodes[e[:, 1]]
@@ -608,7 +608,7 @@ def rods_along_curve(nodes: np.ndarray, edges: np.ndarray, curve_points: np.ndar
     does. *Running along* it is the failure mode: such a rod sits on top of its own image on
     the other sheet. This returns, per rod, the length of its longest near-touching run.
     """
-    from scipy.spatial import cKDTree
+    from scipy.spatial import cKDTree  # ty: ignore[import-not-found]
 
     e = np.asarray(edges, dtype=int)
     p0, p1 = nodes[e[:, 0]], nodes[e[:, 1]]
@@ -754,7 +754,6 @@ def double_curve_branch2(nu: int = 721):
 
     Returns arrays ``u1, v1, u2, v2`` and the 3-D image.
     """
-    from scipy.optimize import brentq
 
     rows = []
     for u in np.linspace(np.pi, TWO_PI, nu):

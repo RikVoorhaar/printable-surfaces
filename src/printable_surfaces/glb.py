@@ -52,6 +52,8 @@ def load_mesh(path: str | Path, *, weld: bool = True) -> trimesh.Trimesh:
     mesh = trimesh.load(str(path), force="mesh")
     if isinstance(mesh, trimesh.Scene):  # pragma: no cover - defensive
         mesh = trimesh.util.concatenate(tuple(mesh.geometry.values()))
+    if not isinstance(mesh, trimesh.Trimesh):  # pragma: no cover - defensive
+        raise TypeError(f"expected a single mesh, got {type(mesh).__name__}")
 
     if getattr(mesh.visual, "kind", None) == "vertex":
         # Already an indexed mesh carrying per-vertex data (a coloured PLY, say). Rebuilding

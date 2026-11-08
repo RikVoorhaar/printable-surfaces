@@ -13,6 +13,7 @@ import os
 
 import numpy as np
 
+from . import viz
 from .parametrizations import (
     area_stats,
     cube_sphere_grid,
@@ -21,7 +22,6 @@ from .parametrizations import (
     naive_cube_sphere_grid,
 )
 from .surface import Sphere
-from . import viz
 
 
 def _compare() -> dict[str, dict[str, float]]:
@@ -59,7 +59,7 @@ def main() -> None:
     probes = np.array([[0.0, 0.0, 0.0], [0.9, 0.9, 0.9], [2.0, 0.0, 0.0], [0.5, 0.5, 0.5]])
     inside = sphere.inside(probes)
     print("\nInside/outside test (|p| <= 1):")
-    for p, isin in zip(probes, inside):
+    for p, isin in zip(probes, inside, strict=False):
         print(f"  {p.tolist()}  ->  inside={bool(isin)}")
 
     # Chart coverage sanity: each chart's corners should land on the sphere.
@@ -76,7 +76,9 @@ def main() -> None:
     uv = np.linspace(-1.0, 1.0, n)
     u, v = np.meshgrid(uv, uv, indexing="ij")
     chart_grids = [c.evaluate(u, v) for c in sphere.charts()]
-    fig, _ = viz.plot_grid_lines(uv, chart_grids, labels=[c.name for c in sphere.charts()], title="Cube-sphere (6 charts)")
+    fig, _ = viz.plot_grid_lines(
+        uv, chart_grids, labels=[c.name for c in sphere.charts()], title="Cube-sphere (6 charts)"
+    )
     viz.save(fig, os.path.join(out_dir, "cube_sphere.png"))
 
     # Visualization: lat/long wireframe (to show the degenerate poles).

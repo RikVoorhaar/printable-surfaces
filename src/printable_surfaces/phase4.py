@@ -43,6 +43,7 @@ def main() -> None:
         interior = build_frame_mesh(inodes, iedges, rod_radius=ROD_MM, joint_radius=JOINT_MM)
 
         combined = trimesh.util.concatenate([surface, interior])
+        assert isinstance(combined, trimesh.Trimesh)
 
         interior_path = f"output/lattice/sphere_interior_diamond_{tag}.stl"
         os.makedirs(os.path.dirname(interior_path), exist_ok=True)
@@ -52,7 +53,10 @@ def main() -> None:
         combined_path = f"output/lattice/sphere_full_cage_{tag}.stl"
         os.makedirs(os.path.dirname(combined_path), exist_ok=True)
         combined.export(combined_path)
-        register("lattice", combined_path, "stl", f"Full cage · {label} ({len(surface_edges)} surf + {len(iedges)} int rods)")
+        register(
+            "lattice", combined_path, "stl",
+            f"Full cage · {label} ({len(surface_edges)} surf + {len(iedges)} int rods)",
+        )
 
         print(
             f"{label}: surface {len(nodes)}n/{len(surface_edges)}e | "
