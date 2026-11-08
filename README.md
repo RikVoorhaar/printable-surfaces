@@ -76,3 +76,7 @@ python3 serve.py
 Both read from `output/`, which is generated locally and not in the repository. Generate
 something first if the dashboard looks empty. `models/platonic/` is checked in, so the
 finished STLs are available without running anything.
+
+## License
+
+MIT. The code and the STLs, do what you like with them.
