@@ -1,5 +1,7 @@
 # printable-surfaces
 
+[![CI](https://github.com/RikVoorhaar/printable-surfaces/actions/workflows/ci.yml/badge.svg)](https://github.com/RikVoorhaar/printable-surfaces/actions/workflows/ci.yml)
+
 Turn mathematical shapes into **printable rod-and-node lattices**: cages of cylindrical
 rods and spherical joints that hold themselves up on an FDM printer, with no supports.
 
