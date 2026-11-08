@@ -1,10 +1,10 @@
 """Platonic-solid geometry, optionally stretched into printable polytopes.
 
-Per the Perplexity report, a cube with its body diagonal vertical, stretched along Z,
-becomes a rhombohedron whose edges are all at a printable elevation (≥45°). The
-"edges-suffice" theorem means getting the edges right is enough.
+A cube with its body diagonal vertical, stretched along Z, becomes a rhombohedron whose
+edges are all at a printable elevation (≥45°). The "edges-suffice" theorem means getting
+the edges right is enough.
 
-The other four solids (from docs/Support-Free Rod Lattices for the Platonic Solids…):
+The other four solids:
   - tetrahedron:   face down, no stretch
   - octahedron:    vertex down, vertical stretch ×1.19
   - icosahedron:   vertex down, tip pyramids lifted (tip edges → 50°)
