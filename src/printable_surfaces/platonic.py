@@ -1,10 +1,10 @@
 """Platonic-solid geometry, optionally stretched into printable polytopes.
 
-Per the Perplexity report, a cube with its body diagonal vertical, stretched along Z,
-becomes a rhombohedron whose edges are all at a printable elevation (≥45°). The
-"edges-suffice" theorem means getting the edges right is enough.
+A cube with its body diagonal vertical, stretched along Z, becomes a rhombohedron whose
+edges are all at a printable elevation (≥45°). The "edges-suffice" theorem means getting
+the edges right is enough.
 
-The other four solids (from docs/Support-Free Rod Lattices for the Platonic Solids…):
+The other four solids:
   - tetrahedron:   face down, no stretch
   - octahedron:    vertex down, vertical stretch ×1.19
   - icosahedron:   vertex down, tip pyramids lifted (tip edges → 50°)
@@ -258,7 +258,7 @@ def face_planes(vertices: np.ndarray, faces: np.ndarray):
 def inside_mask(points: np.ndarray, normals: np.ndarray, centers: np.ndarray, eps: float = 1e-6) -> np.ndarray:
     """Boolean: True for points on the inner side of every face (i.e. inside the polytope)."""
     inside = np.ones(len(points), dtype=bool)
-    for n, c in zip(normals, centers):
+    for n, c in zip(normals, centers, strict=False):
         inside &= (points - c) @ n <= eps
     return inside
 
@@ -377,4 +377,5 @@ def clamp_to_polygon(poly: np.ndarray, p: np.ndarray) -> np.ndarray:
         if dd < bestd:
             bestd = dd
             best = q
+    assert best is not None
     return best

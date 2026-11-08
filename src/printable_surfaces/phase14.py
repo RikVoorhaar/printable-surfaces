@@ -30,7 +30,7 @@ def main() -> None:
     sin_elev = np.abs(d[:, 2]) / L
     unprintable = (sin_elev < np.sin(np.deg2rad(45))) & ~((sin_elev <= np.sin(np.deg2rad(5))) & (L <= 10))
 
-    mesh = build_frame_mesh(nodes, rods, rod_radius=ROD_MM, joint_radius=JOINT_MM, color_by_direction=True)
+    mesh = build_frame_mesh(nodes, rods, rod_radius=ROD_MM, joint_radius=JOINT_MM, color_by="direction")
     ply = "output/lattice/rhombohedron_printable.ply"
     stl = "output/lattice/rhombohedron_printable.stl"
     os.makedirs(os.path.dirname(ply), exist_ok=True)
@@ -47,7 +47,8 @@ def main() -> None:
     except FileNotFoundError:
         pass
 
-    print(f"nodes={len(nodes)} rods={len(rods)} unprintable={unprintable.sum()} -> {'sliced OK' if ok else 'slice n/a'}")
+    status = "sliced OK" if ok else "slice n/a"
+    print(f"nodes={len(nodes)} rods={len(rods)} unprintable={unprintable.sum()} -> {status}")
 
 
 if __name__ == "__main__":

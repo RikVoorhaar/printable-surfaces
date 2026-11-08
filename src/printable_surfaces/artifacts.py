@@ -10,13 +10,15 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+from typing import Any
 
 STAGES = ("surface", "triangulation", "lattice", "slicer")
 
 
-def load(manifest_path: str | Path = "manifest.json") -> dict:
+def load(manifest_path: str | Path = "manifest.json") -> dict[str, Any]:
     """Read the manifest, returning a fresh default if it doesn't exist."""
     path = Path(manifest_path)
+    data: dict[str, Any]
     if path.exists():
         data = json.loads(path.read_text())
     else:
@@ -43,13 +45,13 @@ def register(
     folder = folder or stage
 
     data = load(manifest_path)
-    folders = data["folders"]
-    target = next((f for f in folders if f.get("name") == folder), None)
+    folders: list[dict[str, Any]] = data["folders"]
+    target: dict[str, Any] | None = next((f for f in folders if f.get("name") == folder), None)
     if target is None:
         target = {"name": folder, "artifacts": []}
         folders.insert(0, target)  # newest first
 
-    artifacts = target.setdefault("artifacts", [])
+    artifacts: list[dict[str, Any]] = target.setdefault("artifacts", [])
     entry = next((a for a in artifacts if a.get("path") == path), None)
     if entry is None:
         entry = {"path": path}

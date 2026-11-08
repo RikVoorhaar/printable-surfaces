@@ -13,7 +13,7 @@ from __future__ import annotations
 
 import numpy as np
 from scipy.optimize import Bounds, LinearConstraint, milp
-from scipy.spatial import Delaunay, cKDTree
+from scipy.spatial import Delaunay, cKDTree  # ty: ignore[import-not-found]
 
 from .platonic import clamp_to_polygon, face_geometry, sample_in_polygon, shrink_polygon
 
@@ -77,7 +77,8 @@ def segment_segment_dist(p1, p2, p3, p4):
 def _allowed_parents(face_ids, normals, centers, n_frame, frame_on_face):
     """Boolean (n,n): j is an *allowed* parent of i (Section 4). Constant during relaxation."""
     n = len(face_ids)
-    is_frame = np.zeros(n, dtype=bool); is_frame[:n_frame] = True
+    is_frame = np.zeros(n, dtype=bool)
+    is_frame[:n_frame] = True
     is_face = face_ids >= 0
     is_interior = ~is_frame & ~is_face
     overhang = np.zeros(n, dtype=bool)
@@ -103,7 +104,6 @@ def _psi_grad(pos):
 
     ψ(p,q) = (sinα·L − Δz)₊² + (L−Lmax)₊² + (Lmin−L)₊² with p the child, q the parent.
     Returns (psi, L, d, deltaz)."""
-    n = len(pos)
     d = pos[None, :, :] - pos[:, None, :]      # d[i,j] = pos[j] - pos[i]
     L = np.linalg.norm(d, axis=-1)
     np.fill_diagonal(L, np.inf)
@@ -178,7 +178,6 @@ def _anchor_forces(pos, allowed, overhang, is_frame, is_face, is_interior, norma
 
 def _parent_matrix(pos, allowed):
     """Boolean (n,n): j is a printable parent of i (steep/bridge + allowed)."""
-    n = len(pos)
     d = pos[None, :, :] - pos[:, None, :]
     dist = np.linalg.norm(d, axis=-1)
     np.fill_diagonal(dist, np.inf)
@@ -221,7 +220,7 @@ def _project(pos, fixed, face_ids, face_geoms, normals, centers, margin):
     for fi in np.unique(face_ids[face_ids >= 0]):
         m = face_ids == fi
         pos[m] = _face_project(face_geoms[fi], pos[m])
-    for n_, c_ in zip(normals, centers):
+    for n_, c_ in zip(normals, centers, strict=False):
         proj = (pos - c_) @ n_
         too_close = is_interior & (proj > -margin)
         if too_close.any():
@@ -276,7 +275,10 @@ def relax_printable(
         # support + anchor
         if it >= iters // 3:
             F += _support_forces(pos, allowed, is_frame, lam_t)
-            F += anchor_scale * _anchor_forces(pos, allowed, overhang, is_frame, is_face, is_interior, normals, face_ids, lam_t, post_nodes)
+            F += anchor_scale * _anchor_forces(
+                pos, allowed, overhang, is_frame, is_face, is_interior,
+                normals, face_ids, lam_t, post_nodes,
+            )
 
         F[fixed] = 0.0
 
@@ -297,7 +299,8 @@ def relax_printable(
                 for _attempt in range(5):
                     trial = _project(pos[i:i + 1] + d_i[None, :], np.array([False]),
                                      face_ids[i:i + 1], face_geoms, normals, centers, margin)[0]
-                    trial_pos = pos.copy(); trial_pos[i] = trial
+                    trial_pos = pos.copy()
+                    trial_pos[i] = trial
                     if old < 2 or _count_parents(trial_pos, i, allowed[i]) >= 2:
                         pos[i] = trial
                         placed = True
@@ -316,7 +319,8 @@ def relax_printable(
 # ------------------------------------------------------------------ candidate rods
 def _node_classes(n, n_frame, face_ids, normals):
     """Classify nodes: frame (fixed), F↓ (overhanging face), F↑ (other face), I (interior)."""
-    is_frame = np.zeros(n, dtype=bool); is_frame[:n_frame] = True
+    is_frame = np.zeros(n, dtype=bool)
+    is_frame[:n_frame] = True
     is_face = face_ids >= 0
     is_interior = ~is_frame & ~is_face
     overhang = np.zeros(n, dtype=bool)
@@ -402,7 +406,8 @@ def select_rods(pos, cand, frame_chain, face_ids, normals, centers, n_frame, cle
     if E == 0:
         return np.zeros((0, 2), dtype=int), empty
 
-    is_frame = np.zeros(n, dtype=bool); is_frame[:n_frame] = True
+    is_frame = np.zeros(n, dtype=bool)
+    is_frame[:n_frame] = True
     is_face = face_ids >= 0
     is_interior = ~is_frame & ~is_face
     post = np.zeros(n, dtype=bool)
@@ -480,7 +485,9 @@ def select_rods(pos, cand, frame_chain, face_ids, normals, centers, n_frame, cle
         row = np.zeros(total)
         row[:E] = mask[nd]
         row[E + slack_off + nd] = 1.0
-        rows.append(row); lb.append(rhs); ub.append(np.inf)
+        rows.append(row)
+        lb.append(rhs)
+        ub.append(np.inf)
 
     for nd in range(n):
         if not is_frame[nd] or post[nd]:
@@ -495,28 +502,36 @@ def select_rods(pos, cand, frame_chain, face_ids, normals, centers, n_frame, cle
             row = np.zeros(total)
             row[:E] = inc_mask[nd]
             row[E + 2 * n + nd] = 1.0
-            rows.append(row); lb.append(need); ub.append(np.inf)
+            rows.append(row)
+            lb.append(need)
+            ub.append(np.inf)
         if frame_deg[nd] < DEG_MAX:
             row = np.zeros(total)
             row[:E] = inc_mask[nd]
-            rows.append(row); lb.append(-np.inf); ub.append(float(DEG_MAX - frame_deg[nd]))
+            rows.append(row)
+            lb.append(-np.inf)
+            ub.append(float(DEG_MAX - frame_deg[nd]))
 
     # rod-rod clearance: pairs that do NOT share a node and whose axes are < clearance apart
     mids = (pos[cand[:, 0]] + pos[cand[:, 1]]) / 2.0
     tree = cKDTree(mids)
     for e, f in tree.query_pairs(r=L_MAX + clearance):
         i, j = cand[e]
-        k, l = cand[f]
-        if i == k or i == l or j == k or j == l:
+        k, m = cand[f]
+        if i == k or i == m or j == k or j == m:
             continue  # shared node: not a conflict
-        if segment_segment_dist(pos[i], pos[j], pos[k], pos[l]) < clearance:
+        if segment_segment_dist(pos[i], pos[j], pos[k], pos[m]) < clearance:
             row = np.zeros(total)
             row[e] = row[f] = 1.0
-            rows.append(row); lb.append(-np.inf); ub.append(1.0)
+            rows.append(row)
+            lb.append(-np.inf)
+            ub.append(1.0)
 
     A = np.asarray(rows)
-    lb_lo = np.zeros(total); lb_lo[:E] = 0.0
-    lb_hi = np.full(total, np.inf); lb_hi[:E] = 1.0
+    lb_lo = np.zeros(total)
+    lb_lo[:E] = 0.0
+    lb_hi = np.full(total, np.inf)
+    lb_hi[:E] = 1.0
     res = milp(c=C, constraints=[LinearConstraint(A, np.asarray(lb), np.asarray(ub))],
                integrality=integrality, bounds=Bounds(lb_lo, lb_hi))
     x = res.x if res.success else np.zeros(total)
@@ -567,7 +582,7 @@ def repair(all_pts, all_ids, fixed, face_paras, normals, centers, n_frame, frame
                 t = np.clip((g11 * (q @ e2) - g12 * (q @ e1)) / det, 0.0, 1.0)
                 all_pts[nd] = corner + s * e1 + t * e2
             else:
-                for n_, c_ in zip(normals, centers):
+                for n_, c_ in zip(normals, centers, strict=False):
                     if (all_pts[nd] - c_) @ n_ > 0.0:
                         all_pts[nd] -= n_ * ((all_pts[nd] - c_) @ n_)
         # re-check and delete any still stuck
@@ -644,10 +659,12 @@ def _repair(pos, fixed, face_ids, face_geoms, normals, centers, n_frame, frame_o
                 trial = _project((pos[i] + rng.uniform(-1.0, 1.0, 3) * 0.6 * spacing)[None, :],
                                  np.array([False]), face_ids[i:i + 1], face_geoms,
                                  normals, centers, margin)[0]
-                dd = np.linalg.norm(pos - trial, axis=1); dd[i] = np.inf
+                dd = np.linalg.norm(pos - trial, axis=1)
+                dd[i] = np.inf
                 if dd.min() < 0.65 * spacing:
                     continue
-                trial_pos = pos.copy(); trial_pos[i] = trial
+                trial_pos = pos.copy()
+                trial_pos[i] = trial
                 cnt = _count_parents(trial_pos, i, allowed[i])
                 if cnt > best_cnt:
                     best_cnt = cnt
@@ -678,7 +695,8 @@ def _repair(pos, fixed, face_ids, face_geoms, normals, centers, n_frame, frame_o
     # clearance-aware fallback for any remaining unsupported free node
     deg = np.zeros(len(pos), dtype=int)
     for a, b in rods:
-        deg[a] += 1; deg[b] += 1
+        deg[a] += 1
+        deg[b] += 1
     for nd in range(len(pos)):
         if fixed[nd]:
             continue
@@ -698,19 +716,23 @@ def _repair(pos, fixed, face_ids, face_geoms, normals, centers, n_frame, frame_o
                 if a == nd or b == nd or a == p or b == p:
                     continue
                 if segment_segment_dist(pos[nd], pos[p], pos[a], pos[b]) < CLEARANCE:
-                    ok = False; break
+                    ok = False
+                    break
             if not ok:
                 continue
             for k in range(len(pos)):
                 if k == nd or k == p:
                     continue
                 if point_segment_dist(pos[k], pos[nd], pos[p]) < NODE_CLEARANCE:
-                    ok = False; break
+                    ok = False
+                    break
             if ok and dd < best_d:
-                best = p; best_d = dd
+                best = p
+                best_d = dd
         if best is not None:
             rods.append((min(nd, best), max(nd, best)))
-            deg[nd] += 1; deg[best] += 1
+            deg[nd] += 1
+            deg[best] += 1
 
     rods = np.unique(np.sort(np.asarray(rods, dtype=int), axis=1), axis=0)
     return pos, rods, fixed, face_ids
@@ -898,7 +920,8 @@ def _force_min_degree(pos, rods, fixed, min_deg=3):
     rods = [tuple(map(int, e)) for e in np.asarray(rods, dtype=int).reshape(-1, 2)]
     deg = np.zeros(len(pos), dtype=int)
     for a, b in rods:
-        deg[a] += 1; deg[b] += 1
+        deg[a] += 1
+        deg[b] += 1
     while True:
         added = False
         for i in np.where(deg < min_deg)[0]:
@@ -909,7 +932,8 @@ def _force_min_degree(pos, rods, fixed, min_deg=3):
             if j is None:
                 continue
             rods.append((min(i, j), max(i, j)))
-            deg[i] += 1; deg[j] += 1
+            deg[i] += 1
+            deg[j] += 1
             added = True
         if not added:
             break
@@ -930,7 +954,8 @@ def _force_upward_links(pos, rods, zmax, eps=1e-6):
     rods = [tuple(map(int, e)) for e in np.asarray(rods, dtype=int).reshape(-1, 2)]
     deg = np.zeros(len(pos), dtype=int)
     for a, b in rods:
-        deg[a] += 1; deg[b] += 1
+        deg[a] += 1
+        deg[b] += 1
     for _ in range(2):
         for i in np.where(pos[:, 2] < zmax - eps)[0]:
             i = int(i)
@@ -947,7 +972,8 @@ def _force_upward_links(pos, rods, zmax, eps=1e-6):
             if j is None:
                 continue
             rods.append((min(i, j), max(i, j)))
-            deg[i] += 1; deg[j] += 1
+            deg[i] += 1
+            deg[j] += 1
     rods = np.asarray(rods, dtype=int).reshape(-1, 2)
     return np.unique(np.sort(rods, axis=1), axis=0)
 
@@ -1010,7 +1036,6 @@ def printable_lattice(
     bottom_face = horizontal_face & (normals[:, 2] < 0.0)   # on the build plate
     top_face = horizontal_face & (normals[:, 2] > 0.0)      # horizontal ceiling (left open)
     zmin = float(vertices[:, 2].min())
-    zmax = float(vertices[:, 2].max())
 
     # frame: subdivide each edge; horizontal edges become ≤10 mm bridge spans (unless on raft)
     frame_pts = [v for v in vertices]
@@ -1115,7 +1140,7 @@ def printable_lattice(
     r_construct = 0.73 * spacing
 
     face_pts, face_ids = [], []
-    for fi, face in enumerate(faces):
+    for fi, _face in enumerate(faces):
         if bottom_face[fi] or top_face[fi]:
             continue  # bottom face is on the plate; top face is a horizontal ceiling left open
         geom = face_geoms[fi]
@@ -1139,7 +1164,8 @@ def printable_lattice(
 
     # interior points (rejection sampling in the bounding box), kept ≥ L_MIN inside the raft
     # and ceiling so they can find steep parents/posts
-    lo = vertices.min(axis=0); hi = vertices.max(axis=0)
+    lo = vertices.min(axis=0)
+    hi = vertices.max(axis=0)
     lo[2] += L_MIN  # bottom margin
     hi[2] -= L_MIN  # top margin
     interior = []
@@ -1150,7 +1176,8 @@ def printable_lattice(
 
     all_pts = np.vstack([frame_pts, face_pts, interior])
     all_ids = np.concatenate([np.full(n_frame, -1), face_ids, np.full(n_interior, -1)])
-    fixed = np.zeros(len(all_pts), dtype=bool); fixed[:n_frame] = True
+    fixed = np.zeros(len(all_pts), dtype=bool)
+    fixed[:n_frame] = True
 
     all_pts = relax_printable(all_pts, fixed, all_ids, face_geoms, normals, centers,
                               n_frame, frame_on_face, spacing, iters=iters, lam=lam,

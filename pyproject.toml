@@ -3,6 +3,8 @@ name = "printable-surfaces"
 version = "0.1.0"
 description = "Turn shapes into printable rod-and-node lattices — cool geometric cages."
 readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
 requires-python = ">=3.12"
 dependencies = [
     "matplotlib>=3.11.2",
@@ -22,4 +24,13 @@ packages = ["src/printable_surfaces"]
 [dependency-groups]
 dev = [
     "pytest>=9.1.1",
+    "ruff>=0.17.4",
+    "ty>=0.0.99",
 ]
+
+[tool.ruff]
+line-length = 120
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP"]

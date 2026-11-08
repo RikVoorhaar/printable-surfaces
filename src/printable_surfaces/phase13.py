@@ -12,7 +12,7 @@ from __future__ import annotations
 import os
 
 import numpy as np
-from scipy.spatial import cKDTree
+from scipy.spatial import cKDTree  # ty: ignore[import-not-found]
 
 from .artifacts import register, remove_artifact
 from .lattice import build_frame_mesh
@@ -87,7 +87,7 @@ def relax(all_pts, n_frame, face_ids, face_paras, normals, centers, spacing, ite
             all_pts[m] = _clamp_parallelogram(all_pts[m], corner, e1, e2)
 
         # all movable points stay inside the polytope (safety)
-        for n_, c_ in zip(normals, centers):
+        for n_, c_ in zip(normals, centers, strict=False):
             out = movable & ((all_pts - c_) @ n_ > 0.0)
             if out.any():
                 all_pts[out] -= n_ * ((all_pts[out] - c_) @ n_)[:, None]
@@ -144,7 +144,7 @@ def build_and_register(name: str, stretch: float) -> None:
     all_pts = relax(all_pts, n_frame, all_ids, face_paras, normals, centers, SPACING)
     all_edges = wire(all_pts, chain, n_frame, k=4)
 
-    mesh = build_frame_mesh(all_pts, all_edges, rod_radius=ROD_MM, joint_radius=JOINT_MM, color_by_direction=True)
+    mesh = build_frame_mesh(all_pts, all_edges, rod_radius=ROD_MM, joint_radius=JOINT_MM, color_by="direction")
     stl_path = f"output/lattice/rhombohedron_{name}.stl"
     ply_path = f"output/lattice/rhombohedron_{name}.ply"
     os.makedirs(os.path.dirname(stl_path), exist_ok=True)
@@ -161,7 +161,11 @@ def build_and_register(name: str, stretch: float) -> None:
     except FileNotFoundError:
         pass
 
-    print(f"stretch ×{stretch:.2f}: {len(all_pts)} nodes ({n_frame} frame)  {len(all_edges)} rods  -> {'sliced OK' if ok else 'slice n/a'}")
+    status = "sliced OK" if ok else "slice n/a"
+    print(
+        f"stretch ×{stretch:.2f}: {len(all_pts)} nodes ({n_frame} frame)  "
+        f"{len(all_edges)} rods  -> {status}"
+    )
 
 
 def main() -> None:

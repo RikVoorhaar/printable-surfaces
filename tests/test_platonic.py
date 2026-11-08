@@ -2,7 +2,7 @@
 
 import numpy as np
 
-from printable_surfaces.platonic import cube_rhombohedron, face_parallelogram, inside_mask
+from printable_surfaces.platonic import cube_rhombohedron, face_parallelogram
 
 
 def test_cube_rhombohedron_shape():

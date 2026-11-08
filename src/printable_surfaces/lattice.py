@@ -9,6 +9,9 @@ from __future__ import annotations
 
 import numpy as np
 import trimesh
+import trimesh.visual
+
+from .colormap import elevation_ramp
 
 
 def merge_vertices(vertices: np.ndarray, decimals: int = 6) -> tuple[np.ndarray, np.ndarray]:
@@ -58,6 +61,43 @@ def _rod_color(d: np.ndarray) -> np.ndarray:
     return np.array([int(round(c[0])), int(round(c[1])), int(round(c[2])), 255], dtype=np.uint8)
 
 
+def _elevation_color(d: np.ndarray) -> np.ndarray:
+    """RGBA (uint8) for a rod, on a continuous scale of its own angle above horizontal.
+
+    Unlike ``_rod_color`` this is not a verdict — 0° is the dark end of the ramp and 90° the
+    bright end, with no threshold marked. It is meant to be shown alongside a colourbar.
+    """
+    length = float(np.linalg.norm(d))
+    if length < 1e-9:
+        return np.array([154, 163, 178, 255], dtype=np.uint8)  # joint grey
+    s = min(1.0, abs(float(d[2])) / length)
+    r, g, b = elevation_ramp(np.degrees(np.arcsin(s)))
+    return np.array([int(r), int(g), int(b), 255], dtype=np.uint8)
+
+
+def _node_elevation_colors(nodes: np.ndarray, edges: np.ndarray) -> np.ndarray:
+    """Colour every node by the mean elevation of the rods meeting there.
+
+    Grey joints on a 450-rod ramp read as speckle; averaging keeps the joint continuous with
+    the rods around it instead of punching holes in the scale.
+    """
+    nodes = np.asarray(nodes, dtype=float)
+    edges = np.asarray(edges, dtype=int)
+    d = nodes[edges[:, 1]] - nodes[edges[:, 0]]
+    length = np.linalg.norm(d, axis=1)
+    good = length > 1e-9
+    elevation = np.zeros(len(edges))
+    elevation[good] = np.degrees(np.arcsin(np.clip(np.abs(d[good, 2]) / length[good], 0.0, 1.0)))
+
+    ends = edges[good].ravel()
+    total = np.bincount(ends, weights=np.repeat(elevation[good], 2), minlength=len(nodes))
+    count = np.bincount(ends, minlength=len(nodes))
+    mean = np.divide(total, count, out=np.full(len(nodes), 45.0), where=count > 0)
+
+    rgb = elevation_ramp(mean)
+    return np.concatenate([rgb, np.full((len(nodes), 1), 255, dtype=np.uint8)], axis=1)
+
+
 def _clip_convex_halfspace(
     mesh: trimesh.Trimesh, origin: np.ndarray, normal: np.ndarray, tol: float = 1e-7
 ) -> trimesh.Trimesh | None:
@@ -67,7 +107,6 @@ def _clip_convex_halfspace(
     clipped triangles — the result stays a closed, solid shell rather than a leaky triangle
     soup.
     """
-    from scipy.spatial import ConvexHull
 
     v = np.asarray(mesh.vertices, dtype=float)
     f = np.asarray(mesh.faces, dtype=int)
@@ -126,15 +165,15 @@ def _clip_convex_halfspace(
     # leave T-junction cracks.
     if len(cut_ids) >= 3:
         uniq = sorted(set(cut_ids))
-        pts = np.asarray([verts[i] for i in uniq])
+        poly_pts = np.asarray([verts[i] for i in uniq])
         helper = np.array([1.0, 0.0, 0.0])
         if abs(float(normal @ helper)) > 0.9:
             helper = np.array([0.0, 1.0, 0.0])
         u = np.cross(normal, helper)
         u /= np.linalg.norm(u)
         w = np.cross(normal, u)
-        centre = pts.mean(axis=0)
-        rel = pts - centre
+        centre = poly_pts.mean(axis=0)
+        rel = poly_pts - centre
         ang = np.arctan2(rel @ w, rel @ u)
         order = np.argsort(ang)
         ring = [uniq[int(k)] for k in order]
@@ -164,7 +203,7 @@ def build_frame_mesh(
     joint_radius: float,
     rod_sections: int = 12,
     joint_count: tuple[int, int] = (6, 6),
-    color_by_direction: bool = False,
+    color_by: str | None = None,
     clip_planes: tuple[np.ndarray, np.ndarray] | None = None,
     clip_base_z: float | None = None,
     clip_rods: bool = False,
@@ -175,9 +214,14 @@ def build_frame_mesh(
     triangle soup. (This is intentionally *not* boolean-unioned; overlapping joints are
     fine for viewing and slicing, and a true watertight union is a later refinement.)
 
-    If ``color_by_direction`` is True, rods are vertex-coloured by their angle from
-    horizontal (green=steep, orange=horizontal, red=shallow) and joints grey — bake this
-    into a PLY export for the viewer.
+    ``color_by`` bakes a vertex colour per part for the web viewer:
+
+    * ``None`` — no colour attribute, a flat material.
+    * ``"direction"`` — red → yellow → green by angle above horizontal, joints grey. A
+      verdict-shaped ramp (green reads "printable") for the phase screenshots.
+    * ``"elevation"`` — a continuous blue → yellow ramp on the rod's own angle above
+      horizontal, joints coloured by the mean of their rods. No threshold marked; this is
+      the one that goes next to a colourbar.
 
     ``clip_planes = (normals, centers)`` trims only the **joints** against the convex
     polytope's faces, so the part of each node that sticks out of a face is cut off flush
@@ -192,9 +236,9 @@ def build_frame_mesh(
     rod_planes: list[tuple[np.ndarray, np.ndarray]] = []
     if clip_planes is not None:
         pn, pc = np.asarray(clip_planes[0], dtype=float), np.asarray(clip_planes[1], dtype=float)
-        joint_planes.extend(zip(pn, pc))
+        joint_planes.extend(zip(pn, pc, strict=False))
         if clip_rods:
-            rod_planes.extend(zip(pn, pc))
+            rod_planes.extend(zip(pn, pc, strict=False))
     if clip_base_z is not None:
         base = (np.array([0.0, 0.0, -1.0]), np.array([0.0, 0.0, float(clip_base_z)]))
         joint_planes.append(base)
@@ -203,12 +247,17 @@ def build_frame_mesh(
     def _finish(mesh: trimesh.Trimesh, color: np.ndarray,
                 planes: list[tuple[np.ndarray, np.ndarray]]) -> trimesh.Trimesh | None:
         for n, c in planes:
-            mesh = _clip_convex_halfspace(mesh, c, n)
-            if mesh is None or len(mesh.faces) == 0:
+            clipped = _clip_convex_halfspace(mesh, c, n)
+            if clipped is None or len(clipped.faces) == 0:
                 return None
-        if color_by_direction:
+            mesh = clipped
+        if color_by is not None and isinstance(mesh.visual, trimesh.visual.ColorVisuals):
             mesh.visual.vertex_colors = np.tile(color, (len(mesh.vertices), 1))
         return mesh
+
+    node_colors = (
+        _node_elevation_colors(nodes, edges) if color_by == "elevation" else None
+    )
 
     parts: list[trimesh.Trimesh] = []
     for a, b in edges:
@@ -216,16 +265,22 @@ def build_frame_mesh(
         if np.linalg.norm(seg[1] - seg[0]) < 1e-9:
             continue  # skip degenerate (zero-length) edges
         cyl = trimesh.creation.cylinder(radius=rod_radius, segment=seg, sections=rod_sections)
-        part = _finish(cyl, _rod_color(seg[1] - seg[0]), rod_planes)
+        direction = seg[1] - seg[0]
+        color = _elevation_color(direction) if color_by == "elevation" else _rod_color(direction)
+        part = _finish(cyl, color, rod_planes)
         if part is not None:
             parts.append(part)
-    for p in np.asarray(nodes, dtype=float):
+    for index, p in enumerate(np.asarray(nodes, dtype=float)):
         s = trimesh.creation.uv_sphere(radius=joint_radius, count=joint_count)
         s.apply_translation(p)
-        part = _finish(s, joint_color, joint_planes)
+        color = joint_color if node_colors is None else node_colors[index]
+        part = _finish(s, color, joint_planes)
         if part is not None:
             parts.append(part)
-    return trimesh.util.concatenate(parts)
+    merged = trimesh.util.concatenate(parts)
+    if not isinstance(merged, trimesh.Trimesh):
+        raise TypeError(f"expected a single mesh, got {type(merged).__name__}")
+    return merged
 
 
 def surface_frame_mesh(radius: float, n: int, rod_radius: float, joint_radius: float) -> trimesh.Trimesh:
@@ -288,7 +343,7 @@ def diamond_lattice(
     ``a`` is the cubic unit-cell edge length in the same units as ``radius`` (smaller
     ``a`` = denser). Returns ``(nodes, edges)``.
     """
-    center = np.asarray(center, dtype=float)
+    c = np.asarray(center, dtype=float)
 
     # FCC sublattice A basis + the B sublattice offset, and the 4 tetrahedral bond
     # directions (each of length a·√3/4).
@@ -313,11 +368,11 @@ def diamond_lattice(
     for i in range(-n, n + 1):
         for j in range(-n, n + 1):
             for k in range(-n, n + 1):
-                base = np.array([i, j, k], dtype=float) * a + center
+                base = np.array([i, j, k], dtype=float) * a + c
                 for A in A_offsets:
                     p0 = base + A
                     for d in bond_dirs:
-                        seg = clip_segment_to_sphere(p0, p0 + d, center, radius)
+                        seg = clip_segment_to_sphere(p0, p0 + d, c, radius)
                         if seg is None:
                             continue
                         ia = node_index(seg[0])
@@ -436,7 +491,7 @@ def random_lattice(
     nodes) and in the interior, then connects each point to its ``k`` nearest neighbours.
     Degree stays near ``k``, so the result is sparse and non-cubic. Returns ``(nodes, edges)``.
     """
-    from scipy.spatial import cKDTree
+    from scipy.spatial import cKDTree  # ty: ignore[import-not-found]
 
     rng = np.random.default_rng(seed)
 
